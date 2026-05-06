@@ -1,0 +1,30 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# build outputs
+.next/
+dist/
+build/
+
+# turbo
+.turbo
+
+# env
+.env
+.env.local
+.env.*.local
+packages/db/.env
+
+# misc
+.DS_Store
+*.pem
+
+# prisma
+packages/db/generated/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

@@ -1,0 +1,480 @@
+// 이음 (Ieum) — Phase 2 양조 공정 관리 데이터베이스 스키마
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────
+
+enum Unit {
+  KG
+  G
+  MG
+  L
+  ML
+  PIECE
+  PERCENT
+  BX
+  SRM
+  IBU
+  PH
+}
+
+enum BrewType {
+  BEER
+  MAKGEOLLI
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  BREWER
+  VIEWER
+}
+
+enum NodeType {
+  GRAIN_PREP
+  MASH
+  MASH_BEER
+  BOIL
+  FERMENTATION
+  CONDITIONING
+  PACKAGING
+  CUSTOM
+}
+
+enum BatchStatus {
+  PLANNED
+  IN_PROGRESS
+  FERMENTING
+  CONDITIONING
+  PACKAGING
+  COMPLETED
+  ABORTED
+}
+
+enum MeasurementType {
+  GRAVITY_ORIGINAL
+  GRAVITY_FINAL
+  TEMPERATURE
+  PH
+  ALCOHOL
+  BRIX
+  COLOR_SRM
+  IBU
+  DISSOLVED_OXYGEN
+  TURBIDITY
+  CUSTOM
+}
+
+enum IngredientCategory {
+  GRAIN
+  HOP
+  YEAST
+  NURUK
+  RICE
+  OTHER
+}
+
+enum TransactionType {
+  IN
+  OUT
+  ADJUST
+  PURCHASE
+  BATCH_DEDUCT
+  RESTORE
+}
+
+enum SharePermission {
+  VIEW
+  COPY
+  EDIT
+}
+
+// ─── 테넌트 / 사용자 ──────────────────────────────────────────
+
+// 1. tenants
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users              User[]
+  recipes            Recipe[]
+  recipeTemplates    RecipeTemplate[]
+  inventory          Inventory[]
+  batches            Batch[]
+  tenantGroupMembers TenantGroupMember[]
+  accessMappings     AccessMapping[]
+
+  @@index([slug])
+}
+
+// 2. users
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String?
+  role      UserRole @default(BREWER)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batches        Batch[]
+  recipeShares   RecipeShare[]
+  accessMappings AccessMapping[]
+  tastingNotes   TastingNote[]
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+// ─── 레시피 ───────────────────────────────────────────────────
+
+// 3. recipes
+model Recipe {
+  id           String          @id @default(cuid())
+  tenantId     String
+  tenant       Tenant          @relation(fields: [tenantId], references: [id])
+  templateId   String?
+  template     RecipeTemplate? @relation(fields: [templateId], references: [id])
+  name         String
+  brewType     BrewType        @default(BEER)
+  version      Int             @default(1)
+  description  String?
+  targetVolume Float
+  targetUnit   Unit            @default(L)
+  isPublished  Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  nodes        RecipeNode[]
+  ingredients  Ingredient[]
+  batches      Batch[]
+  recipeShares RecipeShare[]
+
+  @@index([tenantId])
+  @@index([templateId])
+  @@index([tenantId, isPublished])
+}
+
+// 4. recipe_templates
+model RecipeTemplate {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  description String?
+  isGlobal    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  recipes Recipe[]
+
+  @@index([tenantId])
+  @@index([isGlobal])
+}
+
+// 5. step_type_catalog
+model StepTypeCatalog {
+  id          String   @id @default(cuid())
+  nodeType    NodeType @unique
+  label       String
+  description String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([nodeType])
+  @@index([sortOrder])
+}
+
+// 6. recipe_nodes
+model RecipeNode {
+  id          String   @id @default(cuid())
+  recipeId    String
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  nodeType    NodeType
+  order       Int
+  name        String
+  description String?
+  durationMin Int?
+  targetTemp  Float?
+  extraParams Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batchNodes            BatchNode[]
+  recipeNodeIngredients RecipeNodeIngredient[]
+
+  @@index([recipeId])
+  @@index([recipeId, order])
+}
+
+// 7. ingredients
+model Ingredient {
+  id       String  @id @default(cuid())
+  recipeId String
+  recipe   Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  name     String
+  amount   Float
+  unit     Unit
+  notes    String?
+
+  recipeNodeIngredients RecipeNodeIngredient[]
+  batchIngredients      BatchIngredient[]
+
+  @@index([recipeId])
+}
+
+// 7b. inventory_metadata — see Inventory model below
+
+// ─── 재고 ─────────────────────────────────────────────────────
+
+// 8. inventory
+model Inventory {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  name         String
+  category     IngredientCategory @default(OTHER)
+  sku          String?
+  quantity     Float    @default(0)
+  unit         Unit
+  reorderLevel Float?
+  notes        String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transactions     InventoryTransaction[]
+  batchIngredients BatchIngredient[]
+
+  @@index([tenantId])
+  @@index([tenantId, sku])
+}
+
+// 9. inventory_transactions
+model InventoryTransaction {
+  id          String          @id @default(cuid())
+  inventoryId String
+  inventory   Inventory       @relation(fields: [inventoryId], references: [id])
+  type        TransactionType
+  quantity    Float
+  notes       String?
+  occurredAt  DateTime        @default(now())
+
+  @@index([inventoryId])
+  @@index([inventoryId, occurredAt])
+}
+
+// ─── 배치 (실제 양조 기록) ────────────────────────────────────
+
+// 10. batch_ingredients
+model BatchIngredient {
+  id           String     @id @default(cuid())
+  batchId      String
+  batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  ingredientId String?
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
+  inventoryId  String?
+  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
+  plannedAmt   Float
+  actualAmt    Float?
+  unit         Unit
+  notes        String?
+
+  @@index([batchId])
+  @@index([ingredientId])
+  @@index([inventoryId])
+}
+
+// 11. batches
+model Batch {
+  id           String      @id @default(cuid())
+  tenantId     String
+  tenant       Tenant      @relation(fields: [tenantId], references: [id])
+  recipeId     String?
+  recipe       Recipe?     @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  brewerId     String
+  brewer       User        @relation(fields: [brewerId], references: [id])
+  batchNumber     String      @unique
+  status          BatchStatus @default(PLANNED)
+  recipeSnapshot  Json?
+  actualVolume    Float?
+  actualUnit      Unit?
+  notes           String?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  batchNodes       BatchNode[]
+  measurements     Measurement[]
+  batchIngredients BatchIngredient[]
+  tastingNotes     TastingNote[]
+
+  @@index([tenantId])
+  @@index([recipeId])
+  @@index([brewerId])
+  @@index([tenantId, status])
+  @@index([batchNumber])
+}
+
+// 12. batch_nodes
+model BatchNode {
+  id           String     @id @default(cuid())
+  batchId      String
+  batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  recipeNodeId String?
+  recipeNode   RecipeNode? @relation(fields: [recipeNodeId], references: [id], onDelete: SetNull)
+  order        Int
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  actualTemp   Float?
+  actualParams Json?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([batchId])
+  @@index([recipeNodeId])
+  @@index([batchId, order])
+}
+
+// 13. measurements
+model Measurement {
+  id      String          @id @default(cuid())
+  batchId String
+  batch   Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  type    MeasurementType
+  value   Float
+  unit    Unit
+  takenAt DateTime        @default(now())
+  notes   String?
+
+  @@index([batchId])
+  @@index([batchId, type])
+  @@index([batchId, takenAt])
+}
+
+// ─── 공유 / 접근 제어 ─────────────────────────────────────────
+
+// 14. tasting_notes
+model TastingNote {
+  id          String   @id @default(cuid())
+  batchId     String
+  batch       Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  tasterId    String
+  taster      User     @relation(fields: [tasterId], references: [id], onDelete: Cascade)
+
+  appearance      Json?
+  aromaGrain      Int      @default(0)
+  aromaFruit      Int      @default(0)
+  aromaNuruk      Int      @default(0)
+  aromaHop        Int      @default(0)
+  aromaAlcohol    Int      @default(0)
+  aromaOther      String?
+
+  tasteSweet      Int      @default(0)
+  tasteSour       Int      @default(0)
+  tasteBitter     Int      @default(0)
+  tasteUmami      Int      @default(0)
+
+  body            Int      @default(0)
+  carbonation     Int      @default(0)
+
+  overallScore    Int      @default(0)
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([batchId])
+  @@index([tasterId])
+}
+
+// 15. recipe_shares
+model RecipeShare {
+  id         String          @id @default(cuid())
+  recipeId   String
+  recipe     Recipe          @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  sharedById String
+  sharedBy   User            @relation(fields: [sharedById], references: [id])
+  permission SharePermission @default(VIEW)
+  expiresAt  DateTime?
+  createdAt  DateTime        @default(now())
+
+  @@index([recipeId])
+  @@index([sharedById])
+}
+
+// 15. access_mappings
+model AccessMapping {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  role      UserRole
+  grantedAt DateTime @default(now())
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+}
+
+// ─── 테넌트 그룹 ──────────────────────────────────────────────
+
+// 16. tenant_groups
+model TenantGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members TenantGroupMember[]
+
+  @@index([name])
+}
+
+// 17. tenant_group_members
+model TenantGroupMember {
+  id            String      @id @default(cuid())
+  tenantGroupId String
+  tenantGroup   TenantGroup @relation(fields: [tenantGroupId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  joinedAt      DateTime    @default(now())
+
+  @@unique([tenantGroupId, tenantId])
+  @@index([tenantGroupId])
+  @@index([tenantId])
+}
+
+// 18. recipe_node_ingredients
+model RecipeNodeIngredient {
+  id           String     @id @default(cuid())
+  recipeNodeId String
+  recipeNode   RecipeNode @relation(fields: [recipeNodeId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  amount       Float
+  unit         Unit
+  notes        String?
+
+  @@unique([recipeNodeId, ingredientId])
+  @@index([recipeNodeId])
+  @@index([ingredientId])
+}
