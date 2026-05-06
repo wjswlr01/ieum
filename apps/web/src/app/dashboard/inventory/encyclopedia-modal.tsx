@@ -129,16 +129,30 @@ function YeastCard({ item }: { item: EncyclopediaItem }) {
 function GrainCard({ item }: { item: EncyclopediaItem }) {
   const m = item.metadata;
   const isRice = item.category === "RICE";
+  const isOther = item.category === "OTHER";
+  const badge = isRice
+    ? { cls: "border-lime-200 bg-lime-50 text-lime-800", label: "쌀" }
+    : isOther
+    ? { cls: "border-purple-200 bg-purple-50 text-purple-800", label: "보조곡물" }
+    : { cls: "border-amber-200 bg-amber-50 text-amber-800", label: "몰트" };
   return (
     <div className="rounded-xl border border-brew-border bg-brew-surface p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-serif font-semibold text-brew-text">{item.name}</h3>
-        <span className={`shrink-0 text-xs rounded-full border px-2 py-0.5 ${isRice ? "border-lime-200 bg-lime-50 text-lime-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
-          {isRice ? "쌀" : "곡물"}
+        <span className={`shrink-0 text-xs rounded-full border px-2 py-0.5 ${badge.cls}`}>
+          {badge.label}
         </span>
       </div>
       {m.description != null && (
         <p className="text-xs text-brew-muted leading-relaxed">{str(m.description)}</p>
+      )}
+      {Array.isArray(m.recommendedUse) && m.recommendedUse.length > 0 && (
+        <div>
+          <p className="text-[10px] text-brew-subtle mb-1.5">추천 용도</p>
+          <div className="flex flex-wrap gap-1">
+            {(m.recommendedUse as string[]).map((t) => <Tag key={t} label={t} />)}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -146,7 +160,9 @@ function GrainCard({ item }: { item: EncyclopediaItem }) {
 
 function TabContent({ items, tab }: { items: EncyclopediaItem[]; tab: Tab }) {
   const filtered = items.filter((i) =>
-    tab === "GRAIN" ? i.category === "GRAIN" || i.category === "RICE" : i.category === tab
+    tab === "GRAIN"
+      ? i.category === "GRAIN" || i.category === "RICE" || i.category === "OTHER"
+      : i.category === tab
   );
 
   if (filtered.length === 0) {

@@ -4,10 +4,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── 라이트 모드 CSS 변수 ─────────────────────────────── */
+:root {
+  --brew-bg: #FAF7F2;
+  --brew-surface: #F0EBE0;
+  --brew-surface-dark: #E6DFD1;
+  --brew-border-rgb: 224 216 204;   /* #E0D8CC */
+  --brew-border-hover: #C8BCA8;
+  --brew-text: #1A1A1A;
+  --brew-muted: #6B6560;
+  --brew-subtle: #8B7B6B;
+  --brew-faint: #A09080;
+}
+
+/* ── 다크 모드 CSS 변수 ──────────────────────────────── */
+.dark {
+  --brew-bg: #1A1814;
+  --brew-surface: #26231C;
+  --brew-surface-dark: #2D2A22;
+  --brew-border-rgb: 61 56 48;      /* #3D3830 */
+  --brew-border-hover: #4D4840;
+  --brew-text: #F0EBE0;
+  --brew-muted: #9C9687;
+  --brew-subtle: #7C7268;
+  --brew-faint: #6C6258;
+}
+
 @layer base {
   body {
-    background-color: #FAF7F2;
-    color: #1A1A1A;
+    background-color: var(--brew-bg);
+    color: var(--brew-text);
     font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -16,4 +42,14 @@
   h1, h2, h3 {
     font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   }
+}
+
+/* ── Gantt 차트 활성 노드 애니메이션 ─────────────────── */
+@keyframes gantt-pulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.25; }
+}
+
+.gantt-active-pulse {
+  animation: gantt-pulse 1.8s ease-in-out infinite;
 }

@@ -31,7 +31,6 @@ type WizardState = {
 const STEPS = ["주종 선택", "템플릿", "기본 정보", "공정 확인"];
 
 const RICE_TYPES = ["찹쌀", "멥쌀", "흑미", "현미", "기타"];
-const MILL_DEGREES = ["7분도", "9분도", "12분도", "백미"];
 const STEAMING_METHODS = ["시루", "찜기", "압력솥"];
 const NURUK_TYPES = ["개량누룩", "전통누룩", "입국", "조효소제"];
 const MEASURE_INTERVALS = ["매일", "2일마다", "3일마다"];
@@ -195,17 +194,6 @@ function GrainPrepPanel({
             placeholder="입력 시 비율로 중량 자동 계산"
             className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none"
           />
-        </div>
-        <div>
-          <label className="block text-xs text-brew-subtle mb-1">도정도</label>
-          <select
-            value={p.millDegree ?? ""}
-            onChange={(e) => onMultiChange({ millDegree: e.target.value || undefined })}
-            className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-          >
-            <option value="">선택</option>
-            {MILL_DEGREES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
         </div>
         <div>
           <label className="block text-xs text-brew-subtle mb-1">세미 횟수 (회)</label>

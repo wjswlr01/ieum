@@ -5,15 +5,15 @@ import { useRouter } from "next/navigation";
 import { addMeasurement } from "@/lib/actions/batch";
 
 const BEER_TYPES = [
-  { type: "GRAVITY_ORIGINAL", label: "현재 비중 (SG)", unit: "PIECE", placeholder: "1.050", step: "0.001" },
-  { type: "TEMPERATURE", label: "온도 (°C)", unit: "PIECE", placeholder: "20.0", step: "0.1" },
+  { type: "GRAVITY_ORIGINAL", label: "현재 비중 (SG)", unit: "SG", placeholder: "1.050", step: "0.001" },
+  { type: "TEMPERATURE", label: "온도 (°C)", unit: "CELSIUS", placeholder: "20.0", step: "0.1" },
   { type: "PH", label: "pH", unit: "PH", placeholder: "4.5", step: "0.1" },
 ];
 
 const MAKGEOLLI_TYPES = [
   { type: "BRIX", label: "Brix (°Bx)", unit: "BX", placeholder: "12.0", step: "0.1" },
   { type: "CUSTOM", label: "산도 (%)", unit: "PERCENT", placeholder: "0.30", step: "0.01" },
-  { type: "TEMPERATURE", label: "온도 (°C)", unit: "PIECE", placeholder: "20.0", step: "0.1" },
+  { type: "TEMPERATURE", label: "온도 (°C)", unit: "CELSIUS", placeholder: "20.0", step: "0.1" },
   { type: "PH", label: "pH", unit: "PH", placeholder: "3.5", step: "0.1" },
 ];
 

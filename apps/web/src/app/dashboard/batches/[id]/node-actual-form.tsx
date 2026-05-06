@@ -47,7 +47,6 @@ type FieldDef = {
 };
 
 const GRAIN_PREP_FIELDS: FieldDef[] = [
-  { key: "millDegree", label: "도정도", unit: "", type: "select", options: ["7분도", "9분도", "12분도", "백미"] },
   { key: "soakingHours", label: "침지 시간", unit: "시간", type: "number", step: "0.5",
     diffFn: (a, p) => diffMinutesToStr(Math.round((a - p) * 60)) },
   { key: "steamingMethod", label: "증자 방법", unit: "", type: "select", options: ["시루", "찜기", "압력솥"] },

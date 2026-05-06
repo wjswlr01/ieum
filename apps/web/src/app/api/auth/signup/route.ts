@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { seedDefaultRecipes } from "@/lib/seed/default-recipes";
 
 export async function POST(req: Request) {
   try {
@@ -37,6 +38,8 @@ export async function POST(req: Request) {
         tenantId: tenant.id,
       },
     });
+
+    await seedDefaultRecipes(tenant.id);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

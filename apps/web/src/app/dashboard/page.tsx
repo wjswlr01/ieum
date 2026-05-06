@@ -3,12 +3,22 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
+import ActiveBatchesPanel from "./active-batches-panel";
+import { seedDefaultRecipes } from "@/lib/seed/default-recipes";
+import { seedCatalog } from "@/lib/seed/catalog";
+
+const ACTIVE_STATUSES = ["IN_PROGRESS", "FERMENTING", "CONDITIONING", "PACKAGING"] as const;
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const [recipeCount, activeBatchCount, inventoryCount] = await Promise.all([
+  await Promise.all([
+    seedDefaultRecipes(session.user.tenantId),
+    seedCatalog(session.user.tenantId),
+  ]);
+
+  const [recipeCount, activeBatchCount, inventoryCount, rawActiveBatches] = await Promise.all([
     db.recipe.count({ where: { tenantId: session.user.tenantId } }),
     db.batch.count({
       where: {
@@ -16,8 +26,50 @@ export default async function DashboardPage() {
         status: { in: ["PLANNED", "IN_PROGRESS", "FERMENTING", "CONDITIONING", "PACKAGING"] },
       },
     }),
-    db.inventory.count({ where: { tenantId: session.user.tenantId } }),
+    db.inventory.count({ where: { tenantId: session.user.tenantId, isCatalog: false } }),
+    db.batch.findMany({
+      where: {
+        tenantId: session.user.tenantId,
+        status: { in: [...ACTIVE_STATUSES] },
+      },
+      orderBy: { startedAt: "asc" },
+      include: {
+        recipe: { select: { name: true, brewType: true } },
+        batchNodes: {
+          where: { startedAt: { not: null }, finishedAt: null },
+          orderBy: { order: "asc" },
+          take: 1,
+          include: { recipeNode: { select: { name: true } } },
+        },
+        measurements: {
+          orderBy: { takenAt: "asc" },
+          take: 30,
+          select: { id: true, type: true, value: true, unit: true, takenAt: true },
+        },
+      },
+    }),
   ]);
+
+  type RawBatch = (typeof rawActiveBatches)[number];
+  const activeBatches = rawActiveBatches.map((b: RawBatch) => {
+    const snapshot = b.recipeSnapshot as { name?: string; brewType?: string } | null;
+    return {
+      id: b.id,
+      batchNumber: b.batchNumber,
+      status: b.status,
+      startedAt: b.startedAt?.toISOString() ?? null,
+      recipeName: snapshot?.name ?? b.recipe?.name ?? "삭제된 레시피",
+      brewType: snapshot?.brewType ?? b.recipe?.brewType ?? "BEER",
+      currentNodeName: b.batchNodes[0]?.recipeNode?.name ?? null,
+      recentMeasurements: b.measurements.map((m) => ({
+        id: m.id,
+        type: m.type,
+        value: m.value,
+        unit: m.unit,
+        takenAt: m.takenAt.toISOString(),
+      })),
+    };
+  });
 
   return (
     <main className="px-6 py-10 md:px-12 max-w-5xl mx-auto w-full">
@@ -27,6 +79,8 @@ export default async function DashboardPage() {
           이음 양조 공정 관리 플랫폼에 오신 것을 환영합니다.
         </p>
       </div>
+
+      <ActiveBatchesPanel batches={activeBatches} />
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10">
@@ -52,7 +106,7 @@ export default async function DashboardPage() {
       {/* Quick actions */}
       <div className="rounded-xl border border-brew-border bg-brew-surface px-6 py-6">
         <h2 className="text-sm font-semibold text-brew-text mb-4">빠른 시작</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Link
             href="/dashboard/recipes/new"
             className="text-left rounded-lg border border-brew-border px-4 py-3 hover:border-brew-accent hover:bg-[#C8B32A]/5 transition-colors"
@@ -66,6 +120,13 @@ export default async function DashboardPage() {
           >
             <p className="text-sm font-medium text-brew-text">레시피 목록 보기</p>
             <p className="text-xs text-brew-subtle mt-0.5">저장된 레시피를 확인합니다.</p>
+          </Link>
+          <Link
+            href="/dashboard/batches/new"
+            className="text-left rounded-lg border border-brew-border px-4 py-3 hover:border-brew-border-hover hover:bg-[#E8DFD0] transition-colors"
+          >
+            <p className="text-sm font-medium text-brew-text">바로 배치 시작</p>
+            <p className="text-xs text-brew-subtle mt-0.5">레시피 없이 자유 양조를 기록합니다.</p>
           </Link>
         </div>
       </div>

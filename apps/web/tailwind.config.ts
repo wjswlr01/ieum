@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
@@ -19,13 +20,15 @@ const config: Config = {
         warning: "#D4A017",
         danger: "#C0392B",
 
-        // ── brew-* 레거시 토큰 (하위 호환) ───────────────────────
+        // ── brew-* 토큰 (CSS 변수 기반 → 다크모드 자동 반영) ─────
         brew: {
-          bg: "#FAF7F2",
-          surface: "#F0EBE0",
-          "surface-dark": "#E6DFD1",
-          border: "#E0D8CC",
-          "border-hover": "#C8BCA8",
+          bg: "var(--brew-bg)",
+          surface: "var(--brew-surface)",
+          "surface-dark": "var(--brew-surface-dark)",
+          // border는 opacity modifier(/50 등) 지원을 위해 RGB 채널 방식 사용
+          border: "rgb(var(--brew-border-rgb) / <alpha-value>)",
+          "border-hover": "var(--brew-border-hover)",
+          // 고정값 (다크/라이트 공통)
           dark: "#2D2A22",
           "dark-border": "#3D3830",
           accent: "#C8B32A",
@@ -33,11 +36,11 @@ const config: Config = {
           success: "#3A7D4A",
           fermenting: "#E0EEFA",
           conditioning: "#FFF4E0",
-          text: "#1A1A1A",
+          text: "var(--brew-text)",
           "text-light": "#FAF7F2",
-          muted: "#6B6560",
-          subtle: "#8B7B6B",
-          faint: "#A09080",
+          muted: "var(--brew-muted)",
+          subtle: "var(--brew-subtle)",
+          faint: "var(--brew-faint)",
         },
       },
       fontFamily: {

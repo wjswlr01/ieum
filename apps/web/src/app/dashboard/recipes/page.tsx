@@ -99,13 +99,20 @@ export default async function RecipesPage({ searchParams }: Props) {
                 href={`/dashboard/recipes/${recipe.id}`}
                 className="block rounded-xl border border-brew-border bg-brew-surface p-5 hover:border-brew-border-hover transition-colors"
               >
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium mb-3 ${
-                    BREW_TYPE_COLOR[recipe.brewType] ?? "text-stone-600 bg-stone-100 border-stone-200"
-                  }`}
-                >
-                  {BREW_TYPE_LABEL[recipe.brewType] ?? recipe.brewType}
-                </span>
+                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                      BREW_TYPE_COLOR[recipe.brewType] ?? "text-stone-600 bg-stone-100 border-stone-200"
+                    }`}
+                  >
+                    {BREW_TYPE_LABEL[recipe.brewType] ?? recipe.brewType}
+                  </span>
+                  {recipe.templateId && (
+                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium text-blue-700 bg-blue-50 border-blue-200">
+                      기본 레시피
+                    </span>
+                  )}
+                </div>
 
                 <h2 className="font-semibold text-brew-text group-hover:text-brew-accent transition-colors truncate pr-6">
                   {recipe.name}

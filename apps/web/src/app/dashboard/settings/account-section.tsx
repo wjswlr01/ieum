@@ -2,27 +2,38 @@
 
 import { useState, useTransition } from "react";
 import { deleteAccount } from "@/lib/actions/settings";
+import { useTheme, type Theme } from "@/components/theme-provider";
+
+const THEME_OPTIONS: { value: Theme; label: string }[] = [
+  { value: "light", label: "☀ 라이트" },
+  { value: "dark", label: "🌙 다크" },
+  { value: "system", label: "⚙ 시스템" },
+];
 
 export function PreferencesSection({ defaultBrewType }: { defaultBrewType?: string }) {
   const [brewType, setBrewType] = useState(defaultBrewType ?? "BEER");
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="flex flex-col gap-5">
       <div>
         <p className="text-sm text-brew-text mb-2">테마</p>
         <div className="flex gap-2">
-          {["라이트", "다크"].map((t) => (
+          {THEME_OPTIONS.map((t) => (
             <button
-              key={t}
+              key={t.value}
               type="button"
-              disabled
-              className="px-4 py-2 rounded-lg border border-brew-border text-sm text-brew-muted cursor-not-allowed opacity-60"
+              onClick={() => setTheme(t.value)}
+              className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
+                theme === t.value
+                  ? "border-brew-accent bg-brew-accent/10 text-brew-accent"
+                  : "border-brew-border text-brew-muted hover:border-brew-border-hover"
+              }`}
             >
-              {t === "라이트" ? "☀ 라이트" : "🌙 다크"}
+              {t.label}
             </button>
           ))}
         </div>
-        <p className="text-xs text-brew-faint mt-1">테마 전환은 향후 지원 예정입니다.</p>
       </div>
 
       <div>
@@ -72,36 +83,63 @@ export function PreferencesSection({ defaultBrewType }: { defaultBrewType?: stri
   );
 }
 
+function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+  desc,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  desc: string;
+}) {
+  return (
+    <label className="flex items-center justify-between cursor-pointer select-none">
+      <div>
+        <p className="text-sm text-brew-text">{label}</p>
+        <p className="text-xs text-brew-subtle mt-0.5">{desc}</p>
+      </div>
+      {/* 트랙 */}
+      <div
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative shrink-0 w-[44px] h-[24px] rounded-full transition-colors duration-200 ${
+          checked
+            ? "bg-brew-accent"
+            : "bg-gray-300 dark:bg-gray-600"
+        }`}
+      >
+        {/* 핸들: 44px 트랙 - 20px 핸들 - 2px 양쪽 패딩 = 22px 이동 */}
+        <span
+          className={`absolute top-[2px] left-[2px] w-[20px] h-[20px] rounded-full bg-white shadow-md transition-transform duration-200 ${
+            checked ? "translate-x-[22px]" : "translate-x-0"
+          }`}
+        />
+      </div>
+    </label>
+  );
+}
+
 export function NotificationsSection() {
   const [lowStock, setLowStock] = useState(true);
   const [reminder, setReminder] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
-      {[
-        { key: "lowStock" as const, label: "저재고 알림", desc: "재고가 알림 기준 미만일 때 알림", value: lowStock, set: setLowStock },
-        { key: "reminder" as const, label: "발효 측정 리마인더", desc: "발효 중 측정 주기 알림", value: reminder, set: setReminder },
-      ].map((item) => (
-        <div key={item.key} className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-brew-text">{item.label}</p>
-            <p className="text-xs text-brew-subtle mt-0.5">{item.desc}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => item.set((v) => !v)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${
-              item.value ? "bg-brew-accent" : "bg-brew-border"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                item.value ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-        </div>
-      ))}
+      <ToggleSwitch
+        checked={lowStock}
+        onChange={setLowStock}
+        label="저재고 알림"
+        desc="재고가 알림 기준 미만일 때 알림"
+      />
+      <ToggleSwitch
+        checked={reminder}
+        onChange={setReminder}
+        label="발효 측정 리마인더"
+        desc="발효 중 측정 주기 알림"
+      />
       <p className="text-xs text-brew-faint">실제 알림 발송은 향후 지원 예정입니다.</p>
     </div>
   );

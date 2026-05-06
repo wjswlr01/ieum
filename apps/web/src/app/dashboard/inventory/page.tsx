@@ -42,6 +42,7 @@ export default async function InventoryPage({ searchParams }: Props) {
   const items = await db.inventory.findMany({
     where: {
       tenantId: session.user.tenantId,
+      isCatalog: false,
       ...(catFilter !== "ALL" ? { category: catFilter as any } : {}),
     },
     orderBy: [{ category: "asc" }, { name: "asc" }],

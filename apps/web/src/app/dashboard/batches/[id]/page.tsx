@@ -9,6 +9,7 @@ import NodeActions from "./node-actions";
 import NodeActualForm from "./node-actual-form";
 import DeleteBatchButton from "../delete-batch-button";
 import TastingNoteCard from "./tasting-note-card";
+import { estimateABV } from "@/lib/abv-calculator";
 
 const STATUS_LABEL: Record<string, string> = {
   PLANNED: "대기",
@@ -23,9 +24,202 @@ const STATUS_BADGE: Record<string, string> = {
   ABORTED: "text-red-700 bg-[#FCE8E8] border-red-200",
 };
 
-const ACTUAL_PARAMS_NODE_TYPES = new Set(["GRAIN_PREP", "MASH", "FERMENTATION"]);
+// FERMENTATION은 자동 계산 패널로 처리하므로 제외
+const ACTUAL_PARAMS_NODE_TYPES = new Set(["GRAIN_PREP", "MASH"]);
 
-type RecipeSnapshot = { name: string; brewType: string; targetVolume: number };
+// ── actualParams 한글 포맷팅 ─────────────────────────────────────
+
+const PARAM_LABELS: Record<string, string> = {
+  soakingHours: "침지 시간",
+  totalWeightKg: "총 중량",
+  steamingMethod: "증자 방법",
+  steamingMinutes: "증자 시간",
+  coolingTargetTemp: "냉각 목표",
+  nurukType: "누룩 종류",
+  nurukSource: "제조사/출처",
+  nurukRatio: "누룩 비율",
+  waterL: "물 투입량",
+  waterTemp: "물 온도",
+  mixTemp: "혼합 온도",
+  actualTargetTemp: "실제 온도",
+  durationDays: "발효 기간",
+  measureInterval: "측정 주기",
+  targetAcidity: "목표 산도",
+};
+
+const PARAM_UNITS: Record<string, string> = {
+  soakingHours: "시간",
+  totalWeightKg: "kg",
+  steamingMinutes: "분",
+  coolingTargetTemp: "°C",
+  nurukRatio: "%",
+  waterL: "L",
+  waterTemp: "°C",
+  mixTemp: "°C",
+  actualTargetTemp: "°C",
+  durationDays: "일",
+};
+
+function formatActualParams(params: Record<string, unknown>): Array<{ label: string; value: string }> {
+  const results: Array<{ label: string; value: string }> = [];
+
+  if (params.riceBlend && Array.isArray(params.riceBlend)) {
+    const blend = params.riceBlend as Array<{ type: string; ratio: number; weightKg: number }>;
+    const str = blend.map((r) => `${r.type} ${r.ratio}% (${r.weightKg}kg)`).join(", ");
+    results.push({ label: "쌀 혼합", value: str });
+  }
+
+  for (const [key, val] of Object.entries(params)) {
+    if (key === "riceBlend") continue;
+    const label = PARAM_LABELS[key] ?? key;
+    const unit = PARAM_UNITS[key] ?? "";
+    results.push({ label, value: unit ? `${val}${unit}` : String(val) });
+  }
+
+  return results;
+}
+
+// ── 발효 자동 계산 ───────────────────────────────────────────────
+
+type MeasRow = { type: string; value: number; takenAt: Date };
+
+function calcFermentationStats(measurements: MeasRow[], startedAt: Date | null, finishedAt: Date | null) {
+  const temps = measurements.filter((m) => m.type === "TEMPERATURE");
+  const acidities = measurements.filter((m) => m.type === "CUSTOM");
+
+  const avgTemp =
+    temps.length > 0
+      ? parseFloat((temps.reduce((s, m) => s + m.value, 0) / temps.length).toFixed(1))
+      : null;
+
+  const dates = measurements.map((m) => m.takenAt.getTime()).sort((a, b) => a - b);
+  const measDurationDays =
+    dates.length >= 2
+      ? parseFloat(((dates[dates.length - 1]! - dates[0]!) / (1000 * 60 * 60 * 24)).toFixed(1))
+      : null;
+
+  const isOngoing = !!startedAt && !finishedAt;
+  const ongoingDays =
+    isOngoing && startedAt
+      ? Math.floor((Date.now() - startedAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+  const tempIntervals =
+    temps.length >= 2
+      ? temps.slice(1).map((m, i) => (m.takenAt.getTime() - temps[i]!.takenAt.getTime()) / (1000 * 60 * 60 * 24))
+      : [];
+  const avgIntervalDays =
+    tempIntervals.length > 0
+      ? parseFloat((tempIntervals.reduce((s, d) => s + d, 0) / tempIntervals.length).toFixed(1))
+      : null;
+
+  const latestAcidity = acidities.length > 0 ? acidities[acidities.length - 1]!.value : null;
+
+  return { avgTemp, tempCount: temps.length, measDurationDays, isOngoing, ongoingDays, avgIntervalDays, latestAcidity };
+}
+
+function FermentationStatsPanel({
+  measurements,
+  plannedTargetTemp,
+  plannedDurationDays,
+  plannedMeasureInterval,
+  plannedTargetAcidity,
+  startedAt,
+  finishedAt,
+}: {
+  measurements: MeasRow[];
+  plannedTargetTemp: number | null;
+  plannedDurationDays: number | null;
+  plannedMeasureInterval: string | null;
+  plannedTargetAcidity: number | null;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+}) {
+  const s = calcFermentationStats(measurements, startedAt, finishedAt);
+
+  return (
+    <div className="mt-3 rounded-xl border border-brew-border bg-white overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-brew-border bg-[#F8F4EE]">
+        <p className="text-xs font-semibold text-brew-text">측정값 기반 실적</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-brew-border bg-[#FAF7F2] text-brew-subtle">
+              <th className="px-3 py-2 text-left font-medium w-[120px]">항목</th>
+              <th className="px-3 py-2 text-right font-medium w-[80px]">계획</th>
+              <th className="px-3 py-2 text-left font-medium">실적 (자동)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-brew-border/50">
+              <td className="px-3 py-2 text-brew-muted">목표 온도</td>
+              <td className="px-3 py-2 text-right font-mono text-brew-subtle">
+                {plannedTargetTemp != null ? `${plannedTargetTemp}°C` : "—"}
+              </td>
+              <td className="px-3 py-2 font-mono text-brew-text">
+                {s.avgTemp != null ? (
+                  `평균 ${s.avgTemp}°C (${s.tempCount}회 측정)`
+                ) : (
+                  <span className="text-brew-faint">측정 없음</span>
+                )}
+              </td>
+            </tr>
+            <tr className="border-b border-brew-border/50">
+              <td className="px-3 py-2 text-brew-muted">발효 기간</td>
+              <td className="px-3 py-2 text-right font-mono text-brew-subtle">
+                {plannedDurationDays != null ? `${plannedDurationDays}일` : "—"}
+              </td>
+              <td className="px-3 py-2 font-mono text-brew-text">
+                {s.isOngoing && s.ongoingDays != null ? (
+                  `D+${s.ongoingDays} (진행 중)`
+                ) : s.measDurationDays != null ? (
+                  `${s.measDurationDays}일`
+                ) : (
+                  <span className="text-brew-faint">—</span>
+                )}
+              </td>
+            </tr>
+            <tr className="border-b border-brew-border/50">
+              <td className="px-3 py-2 text-brew-muted">측정 주기</td>
+              <td className="px-3 py-2 text-right font-mono text-brew-subtle">
+                {plannedMeasureInterval ?? "—"}
+              </td>
+              <td className="px-3 py-2 font-mono text-brew-text">
+                {s.avgIntervalDays != null ? (
+                  `약 ${s.avgIntervalDays}일 간격`
+                ) : (
+                  <span className="text-brew-faint">—</span>
+                )}
+              </td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 text-brew-muted">산도</td>
+              <td className="px-3 py-2 text-right font-mono text-brew-subtle">
+                {plannedTargetAcidity != null ? `${plannedTargetAcidity}%` : "—"}
+              </td>
+              <td className="px-3 py-2 font-mono text-brew-text">
+                {s.latestAcidity != null ? (
+                  `${s.latestAcidity}% (최근값)`
+                ) : (
+                  <span className="text-brew-faint">측정 없음</span>
+                )}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+type RecipeSnapshot = {
+  name?: string;
+  brewType?: string;
+  targetVolume?: number;
+  freeForm?: boolean;
+  nodes?: Array<{ order: number; nodeType: string; name: string }>;
+};
 type Props = { params: { id: string } };
 
 export default async function BatchDetailPage({ params }: Props) {
@@ -50,6 +244,10 @@ export default async function BatchDetailPage({ params }: Props) {
         },
       },
       recipe: { select: { name: true, brewType: true } },
+      measurements: {
+        orderBy: { takenAt: "asc" },
+        select: { type: true, value: true, takenAt: true },
+      },
       tastingNotes: {
         orderBy: { createdAt: "asc" },
         include: { taster: { select: { name: true } } },
@@ -59,17 +257,18 @@ export default async function BatchDetailPage({ params }: Props) {
   if (!batch) notFound();
 
   const snapshot = batch.recipeSnapshot as unknown as RecipeSnapshot | null;
+  const isFreeForm = snapshot?.freeForm === true;
   const rawName = snapshot?.name ?? batch.recipe?.name;
   const recipeName = rawName ?? "삭제된 레시피";
-  const isRecipeDeleted = !rawName;
+  const isRecipeDeleted = !rawName && !isFreeForm;
   const brewType = snapshot?.brewType ?? (batch.recipe?.brewType as string | undefined) ?? "BEER";
+  const freeformNodes = isFreeForm ? (snapshot?.nodes ?? []) : [];
 
   const completedCount = batch.batchNodes.filter((n) => n.finishedAt).length;
   const totalCount = batch.batchNodes.length;
 
   return (
     <main className="px-6 py-10 md:px-12 max-w-3xl mx-auto w-full">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-brew-subtle mb-8">
         <Link href="/dashboard/batches" className="hover:text-brew-text transition-colors">
           배치
@@ -78,7 +277,6 @@ export default async function BatchDetailPage({ params }: Props) {
         <span className="text-brew-text font-mono">{batch.batchNumber}</span>
       </nav>
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-10">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -91,10 +289,11 @@ export default async function BatchDetailPage({ params }: Props) {
             </span>
             <span className="text-sm">{brewType === "BEER" ? "🍺 맥주" : "🍶 막걸리"}</span>
           </div>
-          <h1 className="font-mono text-2xl font-bold text-brew-text">{batch.batchNumber}</h1>
-          <p className={`mt-1 ${isRecipeDeleted ? "text-brew-subtle italic text-sm" : "text-brew-muted"}`}>
-            {recipeName}
-          </p>
+          <h1 className={`font-serif text-2xl font-semibold text-brew-text ${isRecipeDeleted ? "italic text-brew-subtle" : ""}`}>{recipeName}</h1>
+          {isFreeForm && (
+            <p className="mt-0.5 text-xs text-brew-subtle">레시피 없음 (자유 양조)</p>
+          )}
+          <p className="mt-0.5 font-mono text-sm text-brew-muted">#{batch.batchNumber}</p>
           <div className="mt-2 flex flex-col gap-0.5">
             {batch.startedAt && (
               <p className="text-xs text-brew-faint">
@@ -129,55 +328,64 @@ export default async function BatchDetailPage({ params }: Props) {
               양조 완료 ✓
             </div>
           )}
-          <DeleteBatchButton
-            batchId={batch.id}
-            batchNumber={batch.batchNumber}
-            variant="text"
-          />
+          <DeleteBatchButton batchId={batch.id} batchNumber={batch.batchNumber} variant="text" />
         </div>
       </div>
 
-      {/* Node timeline */}
       <div>
         <h2 className="text-sm font-semibold text-brew-text mb-4">공정 타임라인</h2>
-        <div className="relative">
-          {batch.batchNodes.length > 1 && (
-            <div className="absolute left-5 top-10 bottom-10 w-px bg-brew-border" />
-          )}
-          <div className="flex flex-col gap-4">
-            {batch.batchNodes.map((node) => {
-              const isCompleted = !!node.finishedAt;
-              const isActive = !!node.startedAt && !node.finishedAt;
-              const isPending = !node.startedAt;
-              const nodeType = node.recipeNode?.nodeType ?? "CUSTOM";
-              const nodeName = node.recipeNode?.name ?? "삭제된 공정";
-              const meta = NODE_TYPE_META[nodeType];
-              const isFermentation =
-                nodeType === "FERMENTATION" || nodeName.includes("발효");
-              const showActualForm =
-                isActive && ACTUAL_PARAMS_NODE_TYPES.has(nodeType);
+        <div className="flex flex-col">
+          {batch.batchNodes.map((node, index) => {
+            const isCompleted = !!node.finishedAt;
+            const isActive = !!node.startedAt && !node.finishedAt;
+            const isPending = !node.startedAt;
+            const isLast = index === batch.batchNodes.length - 1;
+            const freeformNode = freeformNodes.find((n) => n.order === node.order);
+            const nodeType = node.recipeNode?.nodeType ?? freeformNode?.nodeType ?? "CUSTOM";
+            const nodeName = node.recipeNode?.name ?? freeformNode?.name ?? "삭제된 공정";
+            const meta = NODE_TYPE_META[nodeType];
+            const isFermentation = nodeType === "FERMENTATION" || nodeName.includes("발효");
+            const isFermentationNode = nodeType === "FERMENTATION";
+            const showActualForm = isActive && ACTUAL_PARAMS_NODE_TYPES.has(nodeType);
 
-              const plannedParams = (node.recipeNode?.extraParams ?? null) as Record<string, unknown> | null;
-              const actualParams = node.actualParams as Record<string, unknown> | null;
+            const plannedParams = (node.recipeNode?.extraParams ?? null) as Record<string, unknown> | null;
+            const actualParams = node.actualParams as Record<string, unknown> | null;
 
-              return (
-                <div key={node.id} className={`flex items-start gap-4 ${isPending ? "opacity-40" : ""}`}>
-                  {/* Status circle */}
+            const plannedTargetTemp = node.recipeNode?.targetTemp ?? null;
+            const plannedDurationDays =
+              (plannedParams?.durationDays != null ? Number(plannedParams.durationDays) : null) ??
+              (node.recipeNode?.durationMin != null ? Math.round(node.recipeNode.durationMin / 1440) : null);
+            const plannedMeasureInterval = (plannedParams?.measureInterval as string | null) ?? null;
+            const plannedTargetAcidity =
+              plannedParams?.targetAcidity != null ? Number(plannedParams.targetAcidity) : null;
+
+              const brixValues = isFermentationNode
+                ? (batch.measurements as MeasRow[]).filter((m) => m.type === "BRIX").map((m) => m.value)
+                : [];
+              const estimatedAbv = isFermentationNode ? estimateABV(brixValues) : null;
+
+            return (
+              <div key={node.id} className={`flex gap-4 ${isPending ? "opacity-40" : ""}`}>
+                <div className="flex flex-col items-center shrink-0 w-10">
                   <div
-                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 relative z-10 bg-brew-bg transition-all ${
+                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 z-10 transition-all ${
                       isCompleted
-                        ? "border-brew-success text-brew-success"
+                        ? "border-brew-accent bg-brew-accent text-white"
                         : isActive
-                        ? "border-brew-accent text-brew-accent shadow-[0_0_12px_rgba(200,179,42,0.25)]"
-                        : "border-brew-border text-brew-subtle"
+                        ? "border-brew-accent bg-brew-bg text-brew-accent shadow-[0_0_12px_rgba(200,179,42,0.25)]"
+                        : "border-brew-border bg-brew-bg text-brew-subtle"
                     }`}
                   >
                     {isCompleted ? "✓" : node.order}
                   </div>
+                  {!isLast && (
+                    <div className={`w-px grow mt-1 ${isCompleted ? "bg-brew-accent" : "bg-[#E0D8CC]"}`} />
+                  )}
+                </div>
 
-                  {/* Content card */}
+                <div className={`flex-1 ${!isLast ? "pb-4" : ""}`}>
                   <div
-                    className={`flex-1 rounded-xl border p-4 transition-colors ${
+                    className={`rounded-xl border p-4 transition-colors ${
                       isActive
                         ? "border-brew-accent/40 bg-[#C8B32A]/5"
                         : isCompleted
@@ -197,8 +405,7 @@ export default async function BatchDetailPage({ params }: Props) {
                         {node.recipeNode?.durationMin && (
                           <p className="text-xs text-brew-subtle mt-0.5">
                             예상 {formatDuration(node.recipeNode.durationMin)}
-                            {node.recipeNode.targetTemp != null &&
-                              ` · ${node.recipeNode.targetTemp}°C`}
+                            {node.recipeNode.targetTemp != null && ` · ${node.recipeNode.targetTemp}°C`}
                           </p>
                         )}
                         {node.startedAt && (
@@ -214,34 +421,59 @@ export default async function BatchDetailPage({ params }: Props) {
                       </div>
 
                       {isActive && (
-                        <NodeActions
-                          nodeId={node.id}
-                          batchId={batch.id}
-                          isFermentation={isFermentation}
-                        />
+                        <NodeActions nodeId={node.id} batchId={batch.id} isFermentation={isFermentation} />
                       )}
                     </div>
 
-                    {/* Planned vs Actual panel — active nodes only */}
+                    {/* GRAIN_PREP / MASH: 계획값 vs 실제값 입력 폼 */}
                     {showActualForm && (
                       <NodeActualForm
                         nodeId={node.id}
                         nodeType={nodeType}
                         plannedParams={plannedParams}
-                        plannedTargetTemp={node.recipeNode?.targetTemp ?? null}
+                        plannedTargetTemp={plannedTargetTemp}
                         plannedDurationMin={node.recipeNode?.durationMin ?? null}
                         savedActualParams={actualParams}
                       />
                     )}
 
-                    {/* Completed: show saved actual params summary */}
-                    {isCompleted && actualParams && Object.keys(actualParams).length > 0 && (
+                    {/* FERMENTATION: 측정값 기반 자동 계산 패널 */}
+                    {isFermentationNode && (isActive || isCompleted) && (
+                      <FermentationStatsPanel
+                        measurements={batch.measurements as MeasRow[]}
+                        plannedTargetTemp={plannedTargetTemp}
+                        plannedDurationDays={plannedDurationDays}
+                        plannedMeasureInterval={plannedMeasureInterval}
+                        plannedTargetAcidity={plannedTargetAcidity}
+                        startedAt={node.startedAt}
+                        finishedAt={node.finishedAt}
+                      />
+                    )}
+
+                    {/* 예상 ABV 카드 (FERMENTATION + Brix 2회 이상) */}
+                    {estimatedAbv && (
+                      <div className="mt-2 rounded-xl border border-brew-accent/30 bg-brew-accent/5 px-4 py-3">
+                        <p className="text-xs text-brew-subtle mb-1">예상 알코올 도수</p>
+                        <p className="font-mono text-sm text-brew-text">
+                          초기 Brix:{" "}
+                          <span className="font-semibold">{estimatedAbv.initialBrix}</span>
+                          {" → "}현재:{" "}
+                          <span className="font-semibold">{estimatedAbv.finalBrix}</span>
+                          {" → "}예상 ABV:{" "}
+                          <span className="font-semibold text-brew-accent">{estimatedAbv.estimatedABV}%</span>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 완료된 비발효 노드: 실제 투입값 표시 */}
+                    {isCompleted && !isFermentationNode && actualParams && Object.keys(actualParams).length > 0 && (
                       <div className="mt-3 pt-3 border-t border-brew-border/50">
                         <p className="text-xs text-brew-subtle mb-1.5">실제 투입값</p>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1">
-                          {Object.entries(actualParams).map(([k, v]) => (
-                            <span key={k} className="font-mono text-xs text-brew-muted">
-                              {k}: <span className="text-brew-text">{String(v)}</span>
+                        <div className="flex flex-col gap-1">
+                          {formatActualParams(actualParams).map(({ label, value }) => (
+                            <span key={label} className="text-xs text-brew-muted">
+                              {label}:{" "}
+                              <span className="font-mono text-brew-text">{value}</span>
                             </span>
                           ))}
                         </div>
@@ -249,12 +481,12 @@ export default async function BatchDetailPage({ params }: Props) {
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-      {/* 시음 기록 섹션 */}
+
       <div className="mt-12">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-brew-text">시음 기록</h2>

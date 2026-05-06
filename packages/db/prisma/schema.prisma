@@ -25,6 +25,8 @@ enum Unit {
   SRM
   IBU
   PH
+  CELSIUS
+  SG
 }
 
 enum BrewType {
@@ -254,6 +256,7 @@ model Inventory {
   reorderLevel Float?
   notes        String?
   metadata     Json?
+  isCatalog    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

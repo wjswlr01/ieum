@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createInventoryItem } from "@/lib/actions/inventory";
+import { createInventoryItem, getCatalogItems } from "@/lib/actions/inventory";
 
 const CATEGORIES = [
   { value: "GRAIN", label: "곡물" },
@@ -176,6 +176,138 @@ const META_TITLE: Partial<Record<string, string>> = {
   YEAST: "효모 상세 정보",
 };
 
+const CAT_LABEL: Record<string, string> = {
+  GRAIN: "곡물", HOP: "홉", YEAST: "효모", NURUK: "누룩", RICE: "쌀", OTHER: "기타",
+};
+const CAT_COLOR: Record<string, string> = {
+  GRAIN: "text-amber-800 bg-amber-50 border-amber-200",
+  HOP:   "text-green-800 bg-green-50 border-green-200",
+  YEAST: "text-yellow-800 bg-yellow-50 border-yellow-200",
+  NURUK: "text-orange-800 bg-orange-50 border-orange-200",
+  RICE:  "text-lime-800 bg-lime-50 border-lime-200",
+  OTHER: "text-purple-800 bg-purple-50 border-purple-200",
+};
+
+type CatalogEntry = { id: string; name: string; category: string; unit: string; metadata: Record<string, unknown> };
+
+function CatalogPicker({ onSelect }: { onSelect: (item: CatalogEntry) => void }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<CatalogEntry[] | null>(null);
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState("ALL");
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  async function handleOpen() {
+    setOpen(true);
+    if (!items) {
+      const data = await getCatalogItems();
+      setItems(data as CatalogEntry[]);
+    }
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [open]);
+
+  const filtered = (items ?? []).filter((i) => {
+    const matchCat = catFilter === "ALL" || i.category === catFilter;
+    const matchSearch = i.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  const cats = ["ALL", "NURUK", "HOP", "YEAST", "GRAIN", "RICE", "OTHER"];
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={handleOpen}
+        className="w-full rounded-xl border border-dashed border-brew-accent/50 bg-brew-accent/5 px-4 py-3 text-sm font-medium text-brew-accent hover:bg-brew-accent/10 transition-colors text-left"
+      >
+        📖 도감에서 가져오기
+        <span className="ml-2 text-xs font-normal text-brew-muted">이름·카테고리·상세 정보 자동 입력</span>
+      </button>
+
+      {open && (
+        <div
+          ref={overlayRef}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onMouseDown={(e) => { if (e.target === overlayRef.current) setOpen(false); }}
+        >
+          <div className="flex flex-col w-full max-w-2xl max-h-[80vh] bg-brew-bg rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-brew-border shrink-0">
+              <h3 className="font-semibold text-brew-text">도감에서 가져오기</h3>
+              <button onClick={() => setOpen(false)} className="text-brew-muted hover:text-brew-text w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brew-surface text-xl">×</button>
+            </div>
+
+            {/* Search + Filter */}
+            <div className="px-5 py-3 border-b border-brew-border shrink-0 flex flex-col gap-2">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="재료 이름 검색..."
+                className="w-full rounded-lg border border-brew-border bg-white px-3 py-2 text-sm focus:border-brew-accent focus:outline-none"
+                autoFocus
+              />
+              <div className="flex gap-1.5 flex-wrap">
+                {cats.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCatFilter(c)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      catFilter === c
+                        ? "bg-brew-dark text-brew-text-light border-brew-dark"
+                        : "border-brew-border text-brew-muted hover:border-brew-border-hover"
+                    }`}
+                  >
+                    {c === "ALL" ? "전체" : CAT_LABEL[c] ?? c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto px-5 py-3">
+              {items === null ? (
+                <p className="text-sm text-brew-subtle text-center py-10">불러오는 중...</p>
+              ) : filtered.length === 0 ? (
+                <p className="text-sm text-brew-subtle text-center py-10">검색 결과 없음</p>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {filtered.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => { onSelect(item); setOpen(false); }}
+                      className="flex items-center gap-3 w-full text-left rounded-lg border border-brew-border bg-brew-surface px-4 py-3 hover:border-brew-accent hover:bg-brew-accent/5 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-brew-text text-sm truncate">{item.name}</p>
+                        {(item.metadata as any)?.description && (
+                          <p className="text-xs text-brew-subtle mt-0.5 line-clamp-1">{String((item.metadata as any).description)}</p>
+                        )}
+                      </div>
+                      <span className={`shrink-0 text-xs rounded-full border px-2 py-0.5 ${CAT_COLOR[item.category] ?? CAT_COLOR.OTHER}`}>
+                        {CAT_LABEL[item.category] ?? item.category}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function InventoryForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -197,6 +329,16 @@ export default function InventoryForm() {
   }
   function setMetaKey(k: string, v: unknown) {
     setMeta((m) => ({ ...m, [k]: v }));
+  }
+
+  function handleCatalogSelect(item: CatalogEntry) {
+    setForm((f) => ({
+      ...f,
+      name: item.name,
+      category: item.category,
+      unit: item.unit,
+    }));
+    setMeta((item.metadata as Meta) ?? {});
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -229,6 +371,8 @@ export default function InventoryForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <CatalogPicker onSelect={handleCatalogSelect} />
+
       <div>
         <label className="block text-sm text-brew-text mb-1.5">재료 이름 *</label>
         <input

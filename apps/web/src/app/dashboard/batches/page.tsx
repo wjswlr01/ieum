@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import DeleteBatchButton from "./delete-batch-button";
 
-type RecipeSnapshot = { name: string; brewType: string };
+type RecipeSnapshot = { name?: string; brewType?: string; freeForm?: boolean };
 
 const STATUS_LABEL: Record<string, string> = {
   PLANNED: "대기",
@@ -110,9 +110,10 @@ export default async function BatchesPage({ searchParams }: Props) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {batches.map((batch) => {
             const snapshot = batch.recipeSnapshot as unknown as RecipeSnapshot | null;
+            const isFreeForm = snapshot?.freeForm === true;
             const rawName = snapshot?.name ?? batch.recipe?.name;
             const recipeName = rawName ?? "삭제된 레시피";
-            const isDeleted = !rawName;
+            const isDeleted = !rawName && !isFreeForm;
             const brewType = snapshot?.brewType ?? (batch.recipe?.brewType as string | undefined) ?? "BEER";
             const activeNode = batch.batchNodes.find((n) => n.startedAt && !n.finishedAt);
             const completed = batch.batchNodes.filter((n) => n.finishedAt).length;
@@ -125,13 +126,20 @@ export default async function BatchesPage({ searchParams }: Props) {
                 className="block rounded-xl border border-brew-border bg-brew-surface p-5 hover:border-brew-border-hover transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                      STATUS_COLOR[batch.status] ?? STATUS_COLOR.PLANNED
-                    }`}
-                  >
-                    {STATUS_LABEL[batch.status] ?? batch.status}
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                        STATUS_COLOR[batch.status] ?? STATUS_COLOR.PLANNED
+                      }`}
+                    >
+                      {STATUS_LABEL[batch.status] ?? batch.status}
+                    </span>
+                    {isFreeForm && (
+                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium text-stone-600 bg-stone-100 border-stone-200">
+                        자유 양조
+                      </span>
+                    )}
+                  </div>
                   <span className="text-lg">{brewType === "BEER" ? "🍺" : "🍶"}</span>
                 </div>
 

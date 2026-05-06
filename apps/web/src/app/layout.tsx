@@ -26,7 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className={`${nanumMyeongjo.variable} ${dmMono.variable}`}>
+    <html lang="ko" className={`${nanumMyeongjo.variable} ${dmMono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* 테마 깜빡임 방지: 페인트 전 localStorage 읽어 dark 클래스 적용 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme')||'light';if(t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

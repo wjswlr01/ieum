@@ -26,7 +26,6 @@ export type GrainPrepParams = {
   weightKg?: number;          // legacy: 단일 중량 (하위 호환)
   riceBlend?: RiceBlendRow[]; // 품종 혼합 배열
   totalWeightKg?: number;     // 총 쌀 중량 (kg)
-  millDegree?: string;        // 7분도/9분도/12분도/백미
   washCount?: number;         // 세미 횟수
   soakingHours?: number;      // 침지 시간
   steamingMethod?: string;    // 시루/찜기/압력솥

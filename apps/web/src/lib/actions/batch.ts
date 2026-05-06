@@ -238,6 +238,91 @@ export async function deleteBatch(batchId: string) {
   redirect("/dashboard/batches");
 }
 
+// ── createFreeformBatch ──────────────────────────────────────────────────────
+
+type FreeformNode = { order: number; nodeType: string; name: string };
+
+const FREEFORM_NODE_PRESETS: Record<string, FreeformNode[]> = {
+  DANYANGJU: [
+    { order: 1, nodeType: "GRAIN_PREP",   name: "고두밥 준비" },
+    { order: 2, nodeType: "MASH",         name: "술 담기" },
+    { order: 3, nodeType: "FERMENTATION", name: "발효" },
+  ],
+  IYANGJU: [
+    { order: 1, nodeType: "GRAIN_PREP",   name: "고두밥 (1차)" },
+    { order: 2, nodeType: "MASH",         name: "밑술 담기" },
+    { order: 3, nodeType: "FERMENTATION", name: "밑술 발효" },
+    { order: 4, nodeType: "GRAIN_PREP",   name: "고두밥 (2차)" },
+    { order: 5, nodeType: "MASH",         name: "덧술 담기" },
+    { order: 6, nodeType: "FERMENTATION", name: "2차 발효" },
+  ],
+  SAMYANGJU: [
+    { order: 1, nodeType: "GRAIN_PREP",   name: "고두밥 (1차)" },
+    { order: 2, nodeType: "MASH",         name: "밑술 담기" },
+    { order: 3, nodeType: "FERMENTATION", name: "밑술 발효" },
+    { order: 4, nodeType: "GRAIN_PREP",   name: "고두밥 (2차)" },
+    { order: 5, nodeType: "MASH",         name: "1차 덧술" },
+    { order: 6, nodeType: "FERMENTATION", name: "1차 발효" },
+    { order: 7, nodeType: "GRAIN_PREP",   name: "고두밥 (3차)" },
+    { order: 8, nodeType: "MASH",         name: "2차 덧술" },
+    { order: 9, nodeType: "FERMENTATION", name: "최종 발효" },
+  ],
+  ALE: [
+    { order: 1, nodeType: "MASH_BEER",    name: "당화" },
+    { order: 2, nodeType: "BOIL",         name: "끓임" },
+    { order: 3, nodeType: "FERMENTATION", name: "발효" },
+  ],
+  IPA: [
+    { order: 1, nodeType: "MASH_BEER",    name: "당화" },
+    { order: 2, nodeType: "BOIL",         name: "끓임" },
+    { order: 3, nodeType: "CUSTOM",       name: "냉각" },
+    { order: 4, nodeType: "FERMENTATION", name: "발효" },
+    { order: 5, nodeType: "CONDITIONING", name: "드라이호핑 숙성" },
+  ],
+};
+
+export async function createFreeformBatch(input: {
+  name: string;
+  brewType: "BEER" | "MAKGEOLLI";
+  subType: string;
+  notes?: string;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const defaultNodes =
+    FREEFORM_NODE_PRESETS[input.subType] ??
+    (input.brewType === "MAKGEOLLI" ? FREEFORM_NODE_PRESETS.DANYANGJU! : FREEFORM_NODE_PRESETS.ALE!);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const count = await db.batch.count({ where: { batchNumber: { startsWith: today } } });
+  const batchNumber = `${today}-${String(count + 1).padStart(3, "0")}`;
+
+  const recipeSnapshot = {
+    freeForm: true,
+    name: input.name,
+    brewType: input.brewType,
+    subType: input.subType,
+    nodes: defaultNodes,
+  };
+
+  const batch = await db.batch.create({
+    data: {
+      tenantId: session.user.tenantId,
+      brewerId: session.user.id,
+      batchNumber,
+      status: "PLANNED",
+      recipeSnapshot,
+      ...(input.notes ? { notes: input.notes } : {}),
+      batchNodes: {
+        create: defaultNodes.map((n) => ({ order: n.order })),
+      },
+    },
+  });
+
+  return { id: batch.id };
+}
+
 // ── addMeasurement ───────────────────────────────────────────────────────────
 
 export async function addMeasurement(input: {

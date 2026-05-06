@@ -3,22 +3,12 @@ import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { NODE_TYPE_META, formatDuration } from "@/lib/recipe-templates";
 import DeleteRecipeButton from "../delete-recipe-button";
+import RecipeNodeList from "./recipe-node-list";
 
 const BREW_TYPE_LABEL: Record<string, string> = {
   BEER: "맥주",
   MAKGEOLLI: "막걸리",
-};
-
-const NODE_COLOR_CLASS: Record<string, string> = {
-  amber: "border-amber-300 bg-amber-50 text-amber-800",
-  blue: "border-blue-300 bg-blue-50 text-blue-800",
-  orange: "border-orange-300 bg-orange-50 text-orange-800",
-  cyan: "border-cyan-300 bg-cyan-50 text-cyan-800",
-  green: "border-green-300 bg-green-50 text-green-800",
-  purple: "border-purple-300 bg-purple-50 text-purple-800",
-  zinc: "border-stone-300 bg-stone-50 text-stone-700",
 };
 
 type Props = { params: { id: string } };
@@ -77,49 +67,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       {/* Process nodes */}
       <div>
         <h2 className="text-sm font-semibold text-brew-text mb-4">공정 노드</h2>
-        <div className="relative">
-          {/* Vertical connector */}
-          {recipe.nodes.length > 1 && (
-            <div className="absolute left-[19px] top-10 bottom-10 w-px bg-brew-border" />
-          )}
-
-          <div className="flex flex-col gap-4">
-            {recipe.nodes.map((node) => {
-              const meta = NODE_TYPE_META[node.nodeType];
-              const colorKey = meta?.color ?? "zinc";
-              const colorClass = NODE_COLOR_CLASS[colorKey] ?? NODE_COLOR_CLASS.zinc;
-
-              return (
-                <div key={node.id} className="flex items-start gap-4">
-                  {/* Circle */}
-                  <div
-                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 relative z-10 bg-brew-bg ${colorClass}`}
-                  >
-                    {node.order}
-                  </div>
-
-                  {/* Card */}
-                  <div className="flex-1 rounded-xl border border-brew-border bg-brew-surface p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <span className="text-xs text-brew-subtle">{meta?.label ?? node.nodeType}</span>
-                        <p className="font-medium text-brew-text mt-0.5">{node.name}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-mono text-sm font-medium text-brew-muted">
-                          {formatDuration(node.durationMin ?? 0)}
-                        </p>
-                        {node.targetTemp != null && (
-                          <p className="text-xs text-brew-subtle">{node.targetTemp}°C</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <RecipeNodeList nodes={recipe.nodes} />
       </div>
     </main>
   );

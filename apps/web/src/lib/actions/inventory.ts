@@ -96,12 +96,20 @@ export async function getEncyclopediaItems() {
   if (!session) return [];
 
   return db.inventory.findMany({
-    where: {
-      tenantId: session.user.tenantId,
-      category: { in: ["HOP", "NURUK", "YEAST", "GRAIN", "RICE"] as any[] },
-    },
-    select: { id: true, name: true, category: true, metadata: true },
+    where: { tenantId: session.user.tenantId, isCatalog: true },
+    select: { id: true, name: true, category: true, unit: true, metadata: true },
     orderBy: { name: "asc" },
+  });
+}
+
+export async function getCatalogItems() {
+  const session = await getServerSession(authOptions);
+  if (!session) return [];
+
+  return db.inventory.findMany({
+    where: { tenantId: session.user.tenantId, isCatalog: true },
+    select: { id: true, name: true, category: true, unit: true, metadata: true },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
   });
 }
 
