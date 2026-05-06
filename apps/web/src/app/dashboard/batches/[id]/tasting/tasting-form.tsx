@@ -36,7 +36,7 @@ function ScoreSlider({
             onClick={() => onChange(value === v ? 0 : v)}
             className={`w-8 h-8 rounded-lg border text-xs font-semibold transition-colors ${
               value >= v
-                ? "bg-brew-accent border-brew-accent text-brew-text"
+                ? "bg-brew-accent border-brew-accent text-white"
                 : "border-brew-border text-brew-subtle hover:border-brew-border-hover"
             }`}
           >
@@ -231,7 +231,7 @@ export default function TastingForm({
           type="button"
           onClick={handleSubmit}
           disabled={isPending}
-          className="flex-1 rounded-xl bg-brew-accent py-3 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors disabled:opacity-50"
+          className="flex-1 rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50"
         >
           {isPending ? "저장 중..." : "시음 기록 저장"}
         </button>

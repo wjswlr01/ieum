@@ -262,7 +262,7 @@ export default async function InventoryDetailPage({ params }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-brew-border text-xs text-brew-subtle">
+                <tr className="border-b border-brew-border text-xs text-brew-muted bg-[#E6DFD1]">
                   <th className="px-5 py-3 text-left font-medium">일시</th>
                   <th className="px-5 py-3 text-left font-medium">유형</th>
                   <th className="px-5 py-3 text-right font-medium">변동량</th>

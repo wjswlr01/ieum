@@ -67,7 +67,7 @@ export default async function RecipeDetailPage({ params }: Props) {
           <DeleteRecipeButton recipeId={recipe.id} recipeName={recipe.name} batchCount={recipe._count.batches} variant="text" />
           <Link
             href={`/dashboard/batches/new?recipeId=${recipe.id}`}
-            className="rounded-xl bg-brew-accent px-5 py-2.5 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors"
+            className="rounded-lg bg-brew-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors"
           >
             배치 시작하기
           </Link>

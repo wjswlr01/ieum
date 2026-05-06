@@ -477,7 +477,7 @@ export default function NewRecipePage() {
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   done
-                    ? "bg-brew-accent text-brew-text"
+                    ? "bg-brew-accent text-white"
                     : active
                     ? "bg-brew-dark text-brew-text-light"
                     : "bg-brew-border text-brew-subtle"
@@ -591,7 +591,7 @@ export default function NewRecipePage() {
           <button
             onClick={() => { set({ step: 4 }); setOpenNodeIdx(0); }}
             disabled={!state.name.trim()}
-            className="mt-8 w-full rounded-xl bg-brew-accent py-3 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-8 w-full rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             다음 — 공정 확인
           </button>
@@ -719,7 +719,7 @@ export default function NewRecipePage() {
           <button
             onClick={handleSubmit}
             disabled={isPending}
-            className="mt-8 w-full rounded-xl bg-brew-accent py-3 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-8 w-full rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? "저장 중..." : "레시피 저장하기"}
           </button>

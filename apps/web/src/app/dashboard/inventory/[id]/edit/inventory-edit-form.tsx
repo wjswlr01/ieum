@@ -350,7 +350,7 @@ export default function InventoryEditForm({ initial }: { initial: InitialData })
         <button
           type="submit"
           disabled={!form.name.trim() || isPending}
-          className="flex-1 rounded-xl bg-brew-accent py-3 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors disabled:opacity-50"
+          className="flex-1 rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50"
         >
           {isPending ? "저장 중..." : "저장"}
         </button>

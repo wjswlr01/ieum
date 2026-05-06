@@ -33,7 +33,7 @@ export function ProfileSection({ initialName, email }: { initialName: string; em
           <button
             onClick={handleSave}
             disabled={isPending || !name.trim()}
-            className="rounded-lg bg-brew-accent px-4 py-2.5 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors disabled:opacity-50"
+            className="rounded-lg bg-brew-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50"
           >
             {isPending ? "저장 중..." : "저장"}
           </button>

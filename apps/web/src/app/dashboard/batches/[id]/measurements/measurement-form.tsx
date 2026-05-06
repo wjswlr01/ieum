@@ -124,7 +124,7 @@ export default function MeasurementForm({
         <button
           type="submit"
           disabled={!value || isPending}
-          className="w-full rounded-xl bg-brew-accent py-2.5 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-brew-accent py-2.5 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? "저장 중..." : "저장"}
         </button>

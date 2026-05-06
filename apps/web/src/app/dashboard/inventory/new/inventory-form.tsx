@@ -367,7 +367,7 @@ export default function InventoryForm() {
       <button
         type="submit"
         disabled={!form.name.trim() || isPending}
-        className="w-full rounded-xl bg-brew-accent py-3 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isPending ? "등록 중..." : "재료 등록하기"}
       </button>

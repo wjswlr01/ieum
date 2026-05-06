@@ -51,7 +51,7 @@ export default async function RecipesPage({ searchParams }: Props) {
         <h1 className="font-serif text-2xl font-bold">레시피</h1>
         <Link
           href="/dashboard/recipes/new"
-          className="rounded-xl bg-brew-accent px-4 py-2 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors"
+          className="rounded-lg bg-brew-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors"
         >
           + 새 레시피 만들기
         </Link>

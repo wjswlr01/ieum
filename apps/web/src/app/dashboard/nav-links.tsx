@@ -1,0 +1,38 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const NAV = [
+  { href: "/dashboard", label: "홈", exact: true },
+  { href: "/dashboard/recipes", label: "레시피" },
+  { href: "/dashboard/batches", label: "배치" },
+  { href: "/dashboard/inventory", label: "재고" },
+];
+
+export default function NavLinks() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="hidden md:flex items-center gap-6">
+      {NAV.map((item) => {
+        const isActive = item.exact
+          ? pathname === item.href
+          : pathname.startsWith(item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`text-sm pb-px transition-colors ${
+              isActive
+                ? "text-brew-accent border-b border-brew-accent"
+                : "text-[#B0A080] hover:text-brew-text-light"
+            }`}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

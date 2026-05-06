@@ -73,7 +73,7 @@ export default async function InventoryPage({ searchParams }: Props) {
           <EncyclopediaButton />
           <Link
             href="/dashboard/inventory/new"
-            className="rounded-xl bg-brew-accent px-4 py-2 text-sm font-semibold text-brew-text hover:bg-brew-accent-hover transition-colors"
+            className="rounded-lg bg-brew-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors"
           >
             + 재료 추가
           </Link>
@@ -109,7 +109,7 @@ export default async function InventoryPage({ searchParams }: Props) {
         <div className="rounded-xl border border-brew-border bg-brew-surface overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-brew-border text-xs text-brew-subtle">
+              <tr className="border-b border-brew-border text-xs text-brew-muted bg-[#E6DFD1]">
                 <th className="px-5 py-3 text-left font-medium">재료명</th>
                 <th className="px-5 py-3 text-left font-medium">카테고리</th>
                 <th className="px-5 py-3 text-right font-medium">현재 재고</th>
