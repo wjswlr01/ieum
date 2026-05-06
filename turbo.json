@@ -2,6 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "tasks": {
+    "@ieum/db#build": {
+      "dependsOn": [],
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["generated/**"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
