@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import TastingForm from "./tasting-form";
-import { estimateABV } from "@/lib/abv-calculator";
+import { calcAbvFromMeasurements } from "@/lib/abv-calculator";
 
 type Props = { params: { id: string } };
 
@@ -11,14 +11,14 @@ export default async function TastingPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const [batch, brixMeasurements] = await Promise.all([
+  const [batch, allMeasurements] = await Promise.all([
     db.batch.findFirst({
       where: { id: params.id, tenantId: session.user.tenantId },
       include: { recipe: { select: { name: true, brewType: true } } },
     }),
     db.measurement.findMany({
       where: { batchId: params.id },
-      select: { type: true, value: true },
+      select: { type: true, value: true, takenAt: true },
       orderBy: { takenAt: "asc" },
     }),
   ]);
@@ -35,10 +35,7 @@ export default async function TastingPage({ params }: Props) {
     ? new Date(batch.finishedAt).toLocaleDateString("ko-KR")
     : null;
 
-  const brixValues = brixMeasurements
-    .filter((m) => (m.type as string) === "BRIX")
-    .map((m) => m.value);
-  const abv = estimateABV(brixValues);
+  const abv = calcAbvFromMeasurements(allMeasurements, brewType);
 
   return (
     <main className="px-6 py-10 md:px-12 max-w-2xl mx-auto w-full">
@@ -55,7 +52,10 @@ export default async function TastingPage({ params }: Props) {
             <>
               <span>·</span>
               <span className="font-mono text-brew-accent font-semibold">
-                예상 ABV {abv.estimatedABV}%
+                예상 ABV {abv.abv}%
+              </span>
+              <span className="text-brew-faint">
+                ({abv.method === "gravity" ? "비중 기반" : "Brix 기반"})
               </span>
             </>
           )}

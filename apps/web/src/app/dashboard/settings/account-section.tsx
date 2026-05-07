@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { deleteAccount } from "@/lib/actions/settings";
 import { useTheme, type Theme } from "@/components/theme-provider";
 
@@ -122,25 +122,58 @@ function ToggleSwitch({
   );
 }
 
+const NOTIF_KEY = "ieum_notification_prefs";
+
+function loadPrefs() {
+  if (typeof window === "undefined") return { lowStock: true, reminder: true };
+  try {
+    const raw = localStorage.getItem(NOTIF_KEY);
+    return raw ? JSON.parse(raw) : { lowStock: true, reminder: true };
+  } catch {
+    return { lowStock: true, reminder: true };
+  }
+}
+
 export function NotificationsSection() {
   const [lowStock, setLowStock] = useState(true);
-  const [reminder, setReminder] = useState(false);
+  const [reminder, setReminder] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const prefs = loadPrefs();
+    setLowStock(prefs.lowStock);
+    setReminder(prefs.reminder);
+    setMounted(true);
+  }, []);
+
+  function handleLowStock(v: boolean) {
+    setLowStock(v);
+    const prefs = loadPrefs();
+    localStorage.setItem(NOTIF_KEY, JSON.stringify({ ...prefs, lowStock: v }));
+  }
+
+  function handleReminder(v: boolean) {
+    setReminder(v);
+    const prefs = loadPrefs();
+    localStorage.setItem(NOTIF_KEY, JSON.stringify({ ...prefs, reminder: v }));
+  }
+
+  if (!mounted) return <div className="h-20 animate-pulse rounded-lg bg-brew-surface" />;
 
   return (
     <div className="flex flex-col gap-4">
       <ToggleSwitch
         checked={lowStock}
-        onChange={setLowStock}
+        onChange={handleLowStock}
         label="저재고 알림"
-        desc="재고가 알림 기준 미만일 때 알림"
+        desc="재고가 최소 기준 미만일 때 알림을 생성합니다"
       />
       <ToggleSwitch
         checked={reminder}
-        onChange={setReminder}
+        onChange={handleReminder}
         label="발효 측정 리마인더"
-        desc="발효 중 측정 주기 알림"
+        desc="발효 중 24시간 이상 측정값 미입력 시 알림을 생성합니다"
       />
-      <p className="text-xs text-brew-faint">실제 알림 발송은 향후 지원 예정입니다.</p>
     </div>
   );
 }

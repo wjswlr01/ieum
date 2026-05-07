@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { checkLowStockNotifications, createNotification } from "@/lib/notifications";
 
 // ── createBatch ──────────────────────────────────────────────────────────────
 
@@ -138,6 +139,11 @@ export async function activateBatch(batchId: string) {
 
   revalidatePath(`/dashboard/batches/${batchId}`);
   revalidatePath("/dashboard/inventory");
+
+  // 재료 차감 후 저재고 알림 체크
+  try {
+    await checkLowStockNotifications(session.user.tenantId, session.user.id);
+  } catch {}
 }
 
 // ── completeNode ─────────────────────────────────────────────────────────────
@@ -184,6 +190,16 @@ export async function completeNode(batchNodeId: string) {
   revalidatePath(`/dashboard/batches/${node.batchId}`);
 
   if (isLastNode) {
+    try {
+      await createNotification({
+        tenantId: node.batch.tenantId,
+        userId: session.user.id,
+        type: "BATCH_STATUS",
+        title: "배치 완료",
+        message: `배치 ${node.batch.batchNumber} 발효가 완료되었습니다! 시음 기록을 남겨보세요.`,
+        referenceId: node.batchId,
+      });
+    } catch {}
     redirect(`/dashboard/batches/${node.batchId}/tasting`);
   }
 }

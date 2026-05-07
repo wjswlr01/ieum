@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { addMeasurement } from "@/lib/actions/batch";
-import { estimateABV } from "@/lib/abv-calculator";
+import { calcAbvFromMeasurements } from "@/lib/abv-calculator";
 
 const MEASUREMENT_TYPES = [
   { value: "TEMPERATURE", label: "온도", unit: "CELSIUS", displayUnit: "°C" },
@@ -28,6 +28,7 @@ type ActiveBatch = {
   batchNumber: string;
   status: string;
   startedAt: string | null;
+  finishedAt: string | null;
   recipeName: string;
   brewType: string;
   currentNodeName: string | null;
@@ -54,14 +55,77 @@ const STATUS_LABEL: Record<string, string> = {
   FERMENTING: "발효 중",
   CONDITIONING: "숙성 중",
   PACKAGING: "패키징",
+  COMPLETED: "완료",
 };
 
 const STATUS_BADGE: Record<string, string> = {
   IN_PROGRESS: "text-blue-700 bg-[#E0EEFA] border-blue-200",
   FERMENTING: "text-blue-700 bg-[#E0EEFA] border-blue-200",
   CONDITIONING: "text-purple-700 bg-purple-50 border-purple-200",
-  PACKAGING: "text-green-700 bg-[#EBF5EC] border-green-200",
+  PACKAGING: "text-orange-700 bg-orange-50 border-orange-200",
+  COMPLETED: "text-[#2A5C35] bg-[#EBF5EC] border-green-200",
 };
+
+// ABV 수치에 따라 골드 색 강도 조절
+function abvColorClass(abv: number): string {
+  if (abv < 3) return "text-brew-accent/50";
+  if (abv < 5) return "text-brew-accent";
+  if (abv < 8) return "text-amber-600";
+  return "text-amber-800";
+}
+
+function AbvBadge({
+  measurements,
+  brewType,
+  isCompleted,
+}: {
+  measurements: Measurement[];
+  brewType: string;
+  isCompleted: boolean;
+}) {
+  const measWithDates = measurements.map((m) => ({ ...m, takenAt: new Date(m.takenAt) }));
+  const abv = calcAbvFromMeasurements(measWithDates, brewType);
+
+  if (!abv) {
+    return (
+      <div className="text-right shrink-0">
+        <p className="font-mono text-xs text-brew-faint leading-none">측정값 부족</p>
+        <p className="text-[10px] text-brew-faint/60 mt-0.5">ABV 계산 불가</p>
+      </div>
+    );
+  }
+
+  const colorClass = abvColorClass(abv.abv);
+  const methodLabel = abv.method === "gravity" ? "비중" : "Brix";
+
+  return (
+    <div className="text-right shrink-0">
+      <div className="flex items-baseline justify-end gap-1">
+        {isCompleted && (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-[#2A5C35] mb-0.5"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+        <p className={`font-mono text-2xl font-bold leading-none ${colorClass}`}>
+          {abv.abv}
+          <span className="text-base font-semibold">%</span>
+        </p>
+      </div>
+      <p className="text-[10px] text-brew-faint mt-0.5">{isCompleted ? "최종 " : "예상 "}{methodLabel} 기반</p>
+    </div>
+  );
+}
 
 function MiniChart({
   data,
@@ -159,10 +223,7 @@ function InlineMeasurementForm({ batchId, onDone }: { batchId: string; onDone: (
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-3 pt-3 border-t border-brew-border flex flex-wrap items-end gap-2"
-    >
+    <form onSubmit={handleSubmit} className="mt-3 pt-3 border-t border-brew-border flex flex-wrap items-end gap-2">
       <div>
         <label className="block text-xs text-brew-muted mb-1">항목</label>
         <select
@@ -194,51 +255,45 @@ function InlineMeasurementForm({ batchId, onDone }: { batchId: string; onDone: (
         >
           {isPending ? "저장 중..." : "저장"}
         </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="text-xs text-brew-muted hover:text-brew-text transition-colors"
-        >
+        <button type="button" onClick={onDone} className="text-xs text-brew-muted hover:text-brew-text transition-colors">
           취소
         </button>
       </div>
       {msg && (
-        <p className={`w-full text-xs ${msg === "저장되었습니다." ? "text-green-600" : "text-red-600"}`}>
-          {msg}
-        </p>
+        <p className={`w-full text-xs ${msg === "저장되었습니다." ? "text-green-600" : "text-red-600"}`}>{msg}</p>
       )}
     </form>
   );
 }
 
-function BatchCard({ batch }: { batch: ActiveBatch }) {
+function BatchCard({ batch, isCompleted = false }: { batch: ActiveBatch; isCompleted?: boolean }) {
   const [showForm, setShowForm] = useState(false);
 
   const tempData = batch.recentMeasurements.filter((m) => m.type === "TEMPERATURE");
   const phData = batch.recentMeasurements.filter((m) => m.type === "PH");
   const brixData = batch.recentMeasurements.filter((m) => m.type === "BRIX");
-
   const lastTemp = tempData.at(-1);
   const lastPh = phData.at(-1);
   const lastBrix = brixData.at(-1);
-
   const hasAnyChart = tempData.length > 0 || phData.length > 0 || brixData.length > 0;
 
   return (
-    <div className="rounded-xl border border-brew-border bg-brew-surface px-5 py-4">
-      <div className="flex items-start justify-between gap-3">
+    <div className={`rounded-xl border px-5 py-4 transition-colors ${isCompleted ? "border-green-200 bg-[#F5FAF6]" : "border-brew-border bg-brew-surface"}`}>
+      {/* 상단: 왼쪽 정보 + 오른쪽 ABV */}
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
-                STATUS_BADGE[batch.status] ?? STATUS_BADGE.IN_PROGRESS
-              }`}
-            >
+            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[batch.status] ?? STATUS_BADGE.IN_PROGRESS}`}>
               {STATUS_LABEL[batch.status] ?? batch.status}
             </span>
-            {batch.startedAt && (
+            {batch.startedAt && !isCompleted && (
               <span className="font-mono text-xs text-brew-accent font-semibold">
                 {elapsedDays(batch.startedAt)}
+              </span>
+            )}
+            {isCompleted && batch.finishedAt && (
+              <span className="text-xs text-brew-muted">
+                {new Date(batch.finishedAt).toLocaleDateString("ko-KR")} 완료
               </span>
             )}
             <span className="text-xs text-brew-muted">
@@ -252,31 +307,21 @@ function BatchCard({ batch }: { batch: ActiveBatch }) {
             {batch.recipeName}
           </Link>
           <p className="font-mono text-xs text-brew-muted">#{batch.batchNumber}</p>
-          {batch.currentNodeName && (
+          {batch.currentNodeName && !isCompleted && (
             <p className="mt-1 text-xs text-brew-subtle">현재 공정: {batch.currentNodeName}</p>
           )}
-          {(() => {
-            const brixVals = brixData.map((m) => m.value);
-            const abv = estimateABV(brixVals);
-            if (!abv) return null;
-            return (
-              <p className="mt-0.5 text-xs text-brew-faint">
-                예상{" "}
-                <span className="font-mono text-brew-accent font-semibold">~{abv.estimatedABV}%</span>
-              </p>
-            );
-          })()}
         </div>
 
-        {lastTemp && (
-          <div className="shrink-0 text-right">
-            <p className="font-mono text-lg font-bold text-brew-text">{lastTemp.value}°C</p>
-            <p className="text-[10px] text-brew-faint">{relativeTime(lastTemp.takenAt)}</p>
-          </div>
-        )}
+        {/* 우측 상단: ABV 뱃지 */}
+        <AbvBadge
+          measurements={batch.recentMeasurements}
+          brewType={batch.brewType}
+          isCompleted={isCompleted}
+        />
       </div>
 
-      {hasAnyChart && (
+      {/* 스파크라인 차트 */}
+      {hasAnyChart && !isCompleted && (
         <div className="mt-3 pt-3 border-t border-brew-border/50 flex items-end gap-5">
           <MiniChart
             data={tempData}
@@ -299,39 +344,76 @@ function BatchCard({ batch }: { batch: ActiveBatch }) {
         </div>
       )}
 
-      {showForm ? (
-        <InlineMeasurementForm batchId={batch.id} onDone={() => setShowForm(false)} />
-      ) : (
-        <button
-          onClick={() => setShowForm(true)}
-          className="mt-3 text-xs text-brew-accent hover:text-brew-accent-hover transition-colors font-medium"
-        >
-          + 측정값 입력
-        </button>
+      {/* 측정값 입력 (진행 중만) */}
+      {!isCompleted && (
+        showForm ? (
+          <InlineMeasurementForm batchId={batch.id} onDone={() => setShowForm(false)} />
+        ) : (
+          <button
+            onClick={() => setShowForm(true)}
+            className="mt-3 text-xs text-brew-accent hover:text-brew-accent-hover transition-colors font-medium"
+          >
+            + 측정값 입력
+          </button>
+        )
+      )}
+
+      {isCompleted && (
+        <div className="mt-3 pt-2.5 border-t border-green-100">
+          <Link
+            href={`/dashboard/batches/${batch.id}`}
+            className="text-xs text-[#2A5C35] hover:underline"
+          >
+            양조 리포트 보기 →
+          </Link>
+        </div>
       )}
     </div>
   );
 }
 
-export default function ActiveBatchesPanel({ batches }: { batches: ActiveBatch[] }) {
-  if (batches.length === 0) return null;
+export default function ActiveBatchesPanel({
+  batches,
+  recentlyCompleted = [],
+}: {
+  batches: ActiveBatch[];
+  recentlyCompleted?: ActiveBatch[];
+}) {
+  if (batches.length === 0 && recentlyCompleted.length === 0) return null;
 
   return (
     <div className="mb-10">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-brew-text">진행 중인 배치</h2>
-        <Link
-          href="/dashboard/batches"
-          className="text-xs text-brew-accent hover:text-brew-accent-hover transition-colors"
-        >
-          전체 보기 →
-        </Link>
-      </div>
-      <div className="flex flex-col gap-3">
-        {batches.map((b) => (
-          <BatchCard key={b.id} batch={b} />
-        ))}
-      </div>
+      {/* 진행 중 */}
+      {batches.length > 0 && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-brew-text">진행 중인 배치</h2>
+            <Link href="/dashboard/batches" className="text-xs text-brew-accent hover:text-brew-accent-hover transition-colors">
+              전체 보기 →
+            </Link>
+          </div>
+          <div className="flex flex-col gap-3">
+            {batches.map((b) => (
+              <BatchCard key={b.id} batch={b} isCompleted={false} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* 최근 완료 */}
+      {recentlyCompleted.length > 0 && (
+        <div className={batches.length > 0 ? "mt-8" : ""}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-brew-text">최근 완료된 배치</h2>
+            <span className="text-[10px] text-brew-faint">7일 이내</span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {recentlyCompleted.map((b) => (
+              <BatchCard key={b.id} batch={b} isCompleted={true} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

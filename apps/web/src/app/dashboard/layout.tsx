@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import UserMenu from "./user-menu";
 import NavLinks from "./nav-links";
+import NotificationBell from "./notification-bell";
 
 export default async function DashboardLayout({
   children,
@@ -25,10 +26,13 @@ export default async function DashboardLayout({
           </Link>
           <NavLinks />
         </div>
-        <UserMenu
-          userName={session.user.name ?? ""}
-          userEmail={session.user.email ?? ""}
-        />
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <UserMenu
+            userName={session.user.name ?? ""}
+            userEmail={session.user.email ?? ""}
+          />
+        </div>
       </header>
       <div className="flex-1">{children}</div>
     </div>

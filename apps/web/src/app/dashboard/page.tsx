@@ -9,6 +9,42 @@ import { seedCatalog } from "@/lib/seed/catalog";
 
 const ACTIVE_STATUSES = ["IN_PROGRESS", "FERMENTING", "CONDITIONING", "PACKAGING"] as const;
 
+const BATCH_INCLUDE = {
+  recipe: { select: { name: true, brewType: true } },
+  batchNodes: {
+    where: { startedAt: { not: null }, finishedAt: null },
+    orderBy: { order: "asc" },
+    take: 1,
+    include: { recipeNode: { select: { name: true } } },
+  },
+  measurements: {
+    orderBy: { takenAt: "asc" },
+    take: 50,
+    select: { id: true, type: true, value: true, unit: true, takenAt: true },
+  },
+} as const;
+
+function mapBatch(b: any) {
+  const snapshot = b.recipeSnapshot as { name?: string; brewType?: string } | null;
+  return {
+    id: b.id,
+    batchNumber: b.batchNumber,
+    status: b.status as string,
+    startedAt: b.startedAt?.toISOString() ?? null,
+    finishedAt: b.finishedAt?.toISOString() ?? null,
+    recipeName: snapshot?.name ?? b.recipe?.name ?? "삭제된 레시피",
+    brewType: (snapshot?.brewType ?? b.recipe?.brewType ?? "BEER") as string,
+    currentNodeName: b.batchNodes[0]?.recipeNode?.name ?? null,
+    recentMeasurements: b.measurements.map((m: any) => ({
+      id: m.id,
+      type: m.type as string,
+      value: m.value as number,
+      unit: m.unit as string,
+      takenAt: m.takenAt.toISOString(),
+    })),
+  };
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
@@ -18,58 +54,37 @@ export default async function DashboardPage() {
     seedCatalog(session.user.tenantId),
   ]);
 
-  const [recipeCount, activeBatchCount, inventoryCount, rawActiveBatches] = await Promise.all([
-    db.recipe.count({ where: { tenantId: session.user.tenantId } }),
-    db.batch.count({
-      where: {
-        tenantId: session.user.tenantId,
-        status: { in: ["PLANNED", "IN_PROGRESS", "FERMENTING", "CONDITIONING", "PACKAGING"] },
-      },
-    }),
-    db.inventory.count({ where: { tenantId: session.user.tenantId, isCatalog: false } }),
-    db.batch.findMany({
-      where: {
-        tenantId: session.user.tenantId,
-        status: { in: [...ACTIVE_STATUSES] },
-      },
-      orderBy: { startedAt: "asc" },
-      include: {
-        recipe: { select: { name: true, brewType: true } },
-        batchNodes: {
-          where: { startedAt: { not: null }, finishedAt: null },
-          orderBy: { order: "asc" },
-          take: 1,
-          include: { recipeNode: { select: { name: true } } },
-        },
-        measurements: {
-          orderBy: { takenAt: "asc" },
-          take: 30,
-          select: { id: true, type: true, value: true, unit: true, takenAt: true },
-        },
-      },
-    }),
-  ]);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  type RawBatch = (typeof rawActiveBatches)[number];
-  const activeBatches = rawActiveBatches.map((b: RawBatch) => {
-    const snapshot = b.recipeSnapshot as { name?: string; brewType?: string } | null;
-    return {
-      id: b.id,
-      batchNumber: b.batchNumber,
-      status: b.status,
-      startedAt: b.startedAt?.toISOString() ?? null,
-      recipeName: snapshot?.name ?? b.recipe?.name ?? "삭제된 레시피",
-      brewType: snapshot?.brewType ?? b.recipe?.brewType ?? "BEER",
-      currentNodeName: b.batchNodes[0]?.recipeNode?.name ?? null,
-      recentMeasurements: b.measurements.map((m) => ({
-        id: m.id,
-        type: m.type,
-        value: m.value,
-        unit: m.unit,
-        takenAt: m.takenAt.toISOString(),
-      })),
-    };
-  });
+  const [recipeCount, activeBatchCount, inventoryCount, rawActiveBatches, rawRecentCompleted] =
+    await Promise.all([
+      db.recipe.count({ where: { tenantId: session.user.tenantId } }),
+      db.batch.count({
+        where: {
+          tenantId: session.user.tenantId,
+          status: { in: ["PLANNED", "IN_PROGRESS", "FERMENTING", "CONDITIONING", "PACKAGING"] },
+        },
+      }),
+      db.inventory.count({ where: { tenantId: session.user.tenantId, isCatalog: false } }),
+      db.batch.findMany({
+        where: { tenantId: session.user.tenantId, status: { in: [...ACTIVE_STATUSES] } },
+        orderBy: { startedAt: "asc" },
+        include: BATCH_INCLUDE,
+      }),
+      db.batch.findMany({
+        where: {
+          tenantId: session.user.tenantId,
+          status: "COMPLETED",
+          finishedAt: { gte: sevenDaysAgo },
+        },
+        orderBy: { finishedAt: "desc" },
+        take: 3,
+        include: BATCH_INCLUDE,
+      }),
+    ]);
+
+  const activeBatches = rawActiveBatches.map(mapBatch);
+  const recentlyCompleted = rawRecentCompleted.map(mapBatch);
 
   return (
     <main className="px-6 py-10 md:px-12 max-w-5xl mx-auto w-full">
@@ -80,7 +95,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <ActiveBatchesPanel batches={activeBatches} />
+      <ActiveBatchesPanel batches={activeBatches} recentlyCompleted={recentlyCompleted} />
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10">

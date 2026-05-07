@@ -10,7 +10,8 @@
     "type-check": "turbo run type-check",
     "db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",
-    "db:migrate": "turbo run db:migrate"
+    "db:migrate": "turbo run db:migrate",
+    "seed:demo": "./packages/db/node_modules/.bin/tsx packages/db/prisma/seed-demo.ts"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
