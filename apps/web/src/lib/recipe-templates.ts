@@ -16,9 +16,10 @@ export type RecipeTemplate = {
 
 // ── 고두밥 준비 노드 extraParams ──────────────────────────────────
 export type RiceBlendRow = {
-  type: string;    // 찹쌀/멥쌀/흑미/현미/기타
+  type: string;    // 표시용 이름 (찹쌀/멥쌀/...) — 인벤토리 미연결 시에도 사용
   ratio: number;   // 비율 (%)
   weightKg: number; // 중량 (kg)
+  inventoryId?: string; // 선택 시: 차감 대상 재고 ID
 };
 
 export type GrainPrepParams = {

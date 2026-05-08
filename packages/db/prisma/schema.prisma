@@ -298,6 +298,8 @@ model BatchIngredient {
   id           String     @id @default(cuid())
   batchId      String
   batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchNodeId  String?
+  batchNode    BatchNode? @relation(fields: [batchNodeId], references: [id], onDelete: SetNull)
   ingredientId String?
   ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
   inventoryId  String?
@@ -308,6 +310,7 @@ model BatchIngredient {
   notes        String?
 
   @@index([batchId])
+  @@index([batchNodeId])
   @@index([ingredientId])
   @@index([inventoryId])
 }
@@ -360,6 +363,8 @@ model BatchNode {
   notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  batchIngredients BatchIngredient[]
 
   @@index([batchId])
   @@index([recipeNodeId])

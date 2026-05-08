@@ -24,7 +24,7 @@ const STATUS_BADGE: Record<string, string> = {
   ABORTED: "text-red-700 bg-[#FCE8E8] border-red-200",
 };
 
-const ACTUAL_PARAMS_NODE_TYPES = new Set(["GRAIN_PREP", "MASH"]);
+const ACTUAL_PARAMS_NODE_TYPES = new Set(["GRAIN_PREP", "MASH", "BOIL", "FERMENTATION"]);
 
 const PARAM_LABELS: Record<string, string> = {
   soakingHours: "침지 시간",
@@ -472,6 +472,20 @@ export default async function BatchDetailPage({ params }: Props) {
   const completedCount = batch.batchNodes.filter((n) => n.finishedAt).length;
   const totalCount = batch.batchNodes.length;
 
+  // 노드별로 차감된 BatchIngredient 그룹화 (NodeActualForm "이미 차감됨" 표시용)
+  const deductionsByNode = new Map<string, { inventoryId: string; inventoryName: string; plannedAmt: number; unit: string }[]>();
+  for (const bi of batch.batchIngredients) {
+    if (!bi.batchNodeId || !bi.inventoryId) continue;
+    const arr = deductionsByNode.get(bi.batchNodeId) ?? [];
+    arr.push({
+      inventoryId: bi.inventoryId,
+      inventoryName: bi.inventory?.name ?? "?",
+      plannedAmt: bi.plannedAmt,
+      unit: bi.unit,
+    });
+    deductionsByNode.set(bi.batchNodeId, arr);
+  }
+
   // 배치 전체 ABV (진행 중 or 완료)
   const batchAbv = batch.status !== "PLANNED"
     ? calcAbvFromMeasurements(batch.measurements as MeasRow[], brewType)
@@ -627,6 +641,7 @@ export default async function BatchDetailPage({ params }: Props) {
                         plannedTargetTemp={plannedTargetTemp}
                         plannedDurationMin={node.recipeNode?.durationMin ?? null}
                         savedActualParams={actualParams}
+                        savedDeductions={deductionsByNode.get(node.id) ?? []}
                       />
                     )}
 

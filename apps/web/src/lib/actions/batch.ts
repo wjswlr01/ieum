@@ -270,24 +270,103 @@ export async function completeNode(batchNodeId: string) {
 
 export async function saveActualParams(
   batchNodeId: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  ingredients?: BatchIngredientInput[]
 ) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
   const node = await db.batchNode.findFirst({
     where: { id: batchNodeId },
-    include: { batch: { select: { tenantId: true, id: true } } },
+    include: {
+      batch: { select: { tenantId: true, id: true, batchNumber: true } },
+    },
   });
   if (!node || node.batch.tenantId !== session.user.tenantId)
     throw new Error("노드를 찾을 수 없습니다.");
 
-  await db.batchNode.update({
-    where: { id: batchNodeId },
-    data: { actualParams: params as any },
+  // 이미 이 노드에서 차감된 (inventoryId) 집합 — 이중 차감 방지
+  const existing = await db.batchIngredient.findMany({
+    where: { batchNodeId, inventoryId: { not: null } },
+    select: { inventoryId: true },
+  });
+  const alreadyDeducted = new Set(existing.map((b) => b.inventoryId!));
+  const toDeduct = (ingredients ?? []).filter(
+    (ing) => ing.inventoryId && ing.plannedAmt > 0 && !alreadyDeducted.has(ing.inventoryId)
+  );
+
+  await db.$transaction(async (tx) => {
+    await tx.batchNode.update({
+      where: { id: batchNodeId },
+      data: { actualParams: params as any },
+    });
+
+    if (toDeduct.length === 0) return;
+
+    const ids = toDeduct.map((i) => i.inventoryId);
+    await tx.$queryRaw`SELECT id FROM "Inventory" WHERE id = ANY(${ids}::text[]) FOR UPDATE`;
+
+    const fresh = await tx.inventory.findMany({
+      where: { id: { in: ids }, tenantId: session.user.tenantId },
+      select: { id: true, name: true, quantity: true, unit: true },
+    });
+    const freshMap = new Map(fresh.map((i) => [i.id, i]));
+
+    // 검증
+    for (const ing of toDeduct) {
+      const inv = freshMap.get(ing.inventoryId);
+      if (!inv) {
+        throw new Error(`재고를 찾을 수 없습니다 (id=${ing.inventoryId}).`);
+      }
+      if (!compatible(inv.unit as ConvUnit, ing.unit as ConvUnit)) {
+        throw new Error(`[${inv.name}] 단위 불일치: 재고 ${inv.unit} vs 사용 ${ing.unit}.`);
+      }
+      if (!hasSufficient(inv.quantity, inv.unit as ConvUnit, ing.plannedAmt, ing.unit as ConvUnit)) {
+        throw new Error(
+          `[${inv.name}] 재고 부족: 보유 ${inv.quantity}${inv.unit} / 필요 ${ing.plannedAmt}${ing.unit}.`
+        );
+      }
+    }
+
+    // 차감 + 기록 (재고 단위로 환산해서 일관 유지)
+    for (const ing of toDeduct) {
+      const inv = freshMap.get(ing.inventoryId)!;
+      const decInStockUnit = fromBase(
+        toBase(ing.plannedAmt, ing.unit as ConvUnit),
+        inv.unit as ConvUnit
+      );
+      await tx.batchIngredient.create({
+        data: {
+          batchId: node.batch.id,
+          batchNodeId,
+          inventoryId: ing.inventoryId,
+          plannedAmt: ing.plannedAmt,
+          unit: ing.unit as any,
+        },
+      });
+      await tx.inventoryTransaction.create({
+        data: {
+          inventoryId: ing.inventoryId,
+          batchId: node.batch.id,
+          type: "BATCH_DEDUCT",
+          quantity: decInStockUnit,
+          notes: `배치 ${node.batch.batchNumber} 노드 투입`,
+        },
+      });
+      await tx.inventory.update({
+        where: { id: ing.inventoryId },
+        data: { quantity: { decrement: decInStockUnit } },
+      });
+    }
   });
 
   revalidatePath(`/dashboard/batches/${node.batch.id}`);
+  if (toDeduct.length > 0) {
+    revalidatePath("/dashboard/inventory");
+    try {
+      await checkLowStockNotifications(session.user.tenantId, session.user.id);
+    } catch {}
+  }
 }
 
 // ── deleteBatch ──────────────────────────────────────────────────────────────
