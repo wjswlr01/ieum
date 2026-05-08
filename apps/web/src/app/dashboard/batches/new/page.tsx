@@ -17,10 +17,23 @@ export default async function NewBatchPage({ searchParams }: Props) {
 
   // recipeId가 있으면 바로 확인 화면
   if (recipeId) {
-    const recipe = await db.recipe.findFirst({
-      where: { id: recipeId, tenantId: session.user.tenantId },
-      select: { id: true, name: true, brewType: true, targetVolume: true },
-    });
+    const [recipe, inventory] = await Promise.all([
+      db.recipe.findFirst({
+        where: { id: recipeId, tenantId: session.user.tenantId },
+        select: {
+          id: true,
+          name: true,
+          brewType: true,
+          targetVolume: true,
+          ingredients: { select: { id: true, name: true, amount: true, unit: true } },
+        },
+      }),
+      db.inventory.findMany({
+        where: { tenantId: session.user.tenantId, isCatalog: false },
+        orderBy: [{ category: "asc" }, { name: "asc" }],
+        select: { id: true, name: true, category: true, unit: true, quantity: true },
+      }),
+    ]);
 
     if (!recipe) redirect("/dashboard/batches/new");
 
@@ -34,7 +47,7 @@ export default async function NewBatchPage({ searchParams }: Props) {
         </Link>
         <h1 className="font-serif text-xl md:text-2xl font-bold mt-2 mb-2">배치 시작</h1>
         <p className="text-sm text-brew-muted mb-8">아래 레시피로 새 배치를 생성합니다.</p>
-        <DirectBatchStarter recipe={recipe} />
+        <DirectBatchStarter recipe={recipe} inventory={inventory} />
       </main>
     );
   }

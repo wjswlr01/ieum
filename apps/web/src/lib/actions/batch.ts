@@ -6,10 +6,20 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkLowStockNotifications, createNotification } from "@/lib/notifications";
+import { compatible, hasSufficient, toBase, fromBase, type Unit as ConvUnit } from "@ieum/brewing-logic";
+
+export type BatchIngredientInput = {
+  inventoryId: string;
+  plannedAmt: number;
+  unit: string;
+};
 
 // ── createBatch ──────────────────────────────────────────────────────────────
 
-export async function createBatch(recipeId: string) {
+export async function createBatch(
+  recipeId: string,
+  ingredients?: BatchIngredientInput[]
+) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
@@ -22,13 +32,12 @@ export async function createBatch(recipeId: string) {
       },
     }),
     db.inventory.findMany({
-      where: { tenantId: session.user.tenantId },
+      where: { tenantId: session.user.tenantId, isCatalog: false },
       select: { id: true, name: true },
     }),
   ]);
   if (!recipe) throw new Error("레시피를 찾을 수 없습니다.");
 
-  // Name-based auto-link: match recipe ingredient names to inventory items
   const inventoryByName = new Map(
     inventoryItems.map((i) => [i.name.toLowerCase().trim(), i.id])
   );
@@ -61,6 +70,20 @@ export async function createBatch(recipeId: string) {
     })),
   };
 
+  const batchIngredientsData =
+    ingredients && ingredients.length > 0
+      ? ingredients.map((ing) => ({
+          inventoryId: ing.inventoryId,
+          plannedAmt: ing.plannedAmt,
+          unit: ing.unit as any,
+        }))
+      : recipe.ingredients.map((ing) => ({
+          ingredientId: ing.id,
+          plannedAmt: ing.amount,
+          unit: ing.unit,
+          inventoryId: inventoryByName.get(ing.name.toLowerCase().trim()) ?? null,
+        }));
+
   const batch = await db.batch.create({
     data: {
       tenantId: session.user.tenantId,
@@ -76,12 +99,7 @@ export async function createBatch(recipeId: string) {
         })),
       },
       batchIngredients: {
-        create: recipe.ingredients.map((ing) => ({
-          ingredientId: ing.id,
-          plannedAmt: ing.amount,
-          unit: ing.unit,
-          inventoryId: inventoryByName.get(ing.name.toLowerCase().trim()) ?? null,
-        })),
+        create: batchIngredientsData,
       },
     },
   });
@@ -104,14 +122,48 @@ export async function activateBatch(batchId: string) {
   });
   if (!batch) throw new Error("배치를 찾을 수 없거나 이미 시작되었습니다.");
 
+  const inventoryIds = batch.batchIngredients
+    .map((bi) => bi.inventoryId)
+    .filter((x): x is string => !!x);
+
   await db.$transaction(async (tx) => {
-    // 1. 배치 상태 전환
+    // 1. 차감 대상 재고를 SELECT FOR UPDATE로 잠금 (동시성 방어)
+    if (inventoryIds.length > 0) {
+      await tx.$queryRaw`SELECT id, quantity, unit FROM "Inventory" WHERE id = ANY(${inventoryIds}::text[]) FOR UPDATE`;
+
+      // 2. 차감 전 재고 재확인 (단위 변환 후 base unit으로 비교)
+      const fresh = await tx.inventory.findMany({
+        where: { id: { in: inventoryIds } },
+        select: { id: true, name: true, quantity: true, unit: true },
+      });
+      const stockMap = new Map(fresh.map((i) => [i.id, i]));
+
+      for (const bi of batch.batchIngredients) {
+        if (!bi.inventoryId) continue;
+        const inv = stockMap.get(bi.inventoryId);
+        if (!inv) {
+          throw new Error(`재고를 찾을 수 없습니다 (id=${bi.inventoryId}).`);
+        }
+        if (!compatible(inv.unit as ConvUnit, bi.unit as ConvUnit)) {
+          throw new Error(
+            `[${inv.name}] 단위 불일치: 재고 ${inv.unit} vs 사용 ${bi.unit}.`
+          );
+        }
+        if (!hasSufficient(inv.quantity, inv.unit as ConvUnit, bi.plannedAmt, bi.unit as ConvUnit)) {
+          throw new Error(
+            `[${inv.name}] 재고 부족: 보유 ${inv.quantity}${inv.unit} / 필요 ${bi.plannedAmt}${bi.unit}.`
+          );
+        }
+      }
+    }
+
+    // 3. 배치 상태 전환
     await tx.batch.update({
       where: { id: batchId },
       data: { status: "IN_PROGRESS", startedAt: new Date() },
     });
 
-    // 2. 첫 노드 시작
+    // 4. 첫 노드 시작
     if (batch.batchNodes[0]) {
       await tx.batchNode.update({
         where: { id: batch.batchNodes[0].id },
@@ -119,20 +171,30 @@ export async function activateBatch(batchId: string) {
       });
     }
 
-    // 3. 연결된 재고 자동 차감
+    // 5. 차감 + InventoryTransaction(BATCH_DEDUCT) 생성
     for (const bi of batch.batchIngredients) {
       if (!bi.inventoryId) continue;
+      const inv = await tx.inventory.findUnique({
+        where: { id: bi.inventoryId },
+        select: { unit: true },
+      });
+      if (!inv) continue;
+      // 재고 단위로 변환된 차감량 (단위가 다를 수 있음: 사용 g → 재고 kg)
+      const baseAmount = toBase(bi.plannedAmt, bi.unit as ConvUnit);
+      const decrementInStockUnit = fromBase(baseAmount, inv.unit as ConvUnit);
+
       await tx.inventoryTransaction.create({
         data: {
           inventoryId: bi.inventoryId,
+          batchId,
           type: "BATCH_DEDUCT",
-          quantity: bi.plannedAmt,
+          quantity: decrementInStockUnit,
           notes: `배치 ${batch.batchNumber} 투입`,
         },
       });
       await tx.inventory.update({
         where: { id: bi.inventoryId },
-        data: { quantity: { decrement: bi.plannedAmt } },
+        data: { quantity: { decrement: decrementInStockUnit } },
       });
     }
   });
@@ -230,28 +292,99 @@ export async function saveActualParams(
 
 // ── deleteBatch ──────────────────────────────────────────────────────────────
 
+async function restoreBatchInventory(
+  tx: Parameters<Parameters<typeof db.$transaction>[0]>[0],
+  batchId: string,
+  batchNumber: string
+) {
+  const dedicated = await tx.inventoryTransaction.findMany({
+    where: { batchId, type: "BATCH_DEDUCT", restoredAt: null },
+    select: { id: true, inventoryId: true, quantity: true },
+  });
+  if (dedicated.length === 0) return;
+
+  const ids = dedicated.map((t) => t.inventoryId);
+  // 동시성 방어: 복원 대상 재고 잠금
+  await tx.$queryRaw`SELECT id FROM "Inventory" WHERE id = ANY(${ids}::text[]) FOR UPDATE`;
+
+  for (const t of dedicated) {
+    await tx.inventoryTransaction.create({
+      data: {
+        inventoryId: t.inventoryId,
+        batchId,
+        type: "RESTORE",
+        quantity: t.quantity,
+        notes: `배치 ${batchNumber} 취소/삭제로 복원`,
+      },
+    });
+    await tx.inventory.update({
+      where: { id: t.inventoryId },
+      data: { quantity: { increment: t.quantity } },
+    });
+  }
+
+  // 원본 BATCH_DEDUCT를 복원 처리(이중 복원 방지)
+  await tx.inventoryTransaction.updateMany({
+    where: { id: { in: dedicated.map((t) => t.id) } },
+    data: { restoredAt: new Date() },
+  });
+}
+
 export async function deleteBatch(batchId: string) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
   const batch = await db.batch.findFirst({
     where: { id: batchId, tenantId: session.user.tenantId },
-    select: { id: true },
+    select: { id: true, batchNumber: true },
   });
   if (!batch) throw new Error("배치를 찾을 수 없습니다.");
 
-  // Explicit ordered deletion — DB cascade would handle this too,
-  // but explicit order makes transaction intent clear.
-  // InventoryTransaction has no batchId FK; ledger rows are preserved as-is.
-  await db.$transaction([
-    db.tastingNote.deleteMany({ where: { batchId } }),
-    db.measurement.deleteMany({ where: { batchId } }),
-    db.batchNode.deleteMany({ where: { batchId } }),
-    db.batchIngredient.deleteMany({ where: { batchId } }),
-    db.batch.delete({ where: { id: batchId } }),
-  ]);
+  await db.$transaction(async (tx) => {
+    // 차감되었던 재고 복원 (RESTORE 트랜잭션 + restoredAt 마킹)
+    await restoreBatchInventory(tx, batchId, batch.batchNumber);
 
+    // batchId FK는 onDelete: SetNull 이므로 InventoryTransaction은 보존됨(이력 유지)
+    await tx.tastingNote.deleteMany({ where: { batchId } });
+    await tx.measurement.deleteMany({ where: { batchId } });
+    await tx.batchNode.deleteMany({ where: { batchId } });
+    await tx.batchIngredient.deleteMany({ where: { batchId } });
+    await tx.batch.delete({ where: { id: batchId } });
+  });
+
+  revalidatePath("/dashboard/inventory");
   redirect("/dashboard/batches");
+}
+
+// ── abortBatch — 배치를 ABORTED로 표시하고 재고 복원 ─────────────────────────
+
+export async function abortBatch(batchId: string, reason?: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const batch = await db.batch.findFirst({
+    where: { id: batchId, tenantId: session.user.tenantId },
+    select: { id: true, batchNumber: true, status: true },
+  });
+  if (!batch) throw new Error("배치를 찾을 수 없습니다.");
+  if (batch.status === "ABORTED" || batch.status === "COMPLETED") {
+    throw new Error("이미 종료된 배치입니다.");
+  }
+
+  await db.$transaction(async (tx) => {
+    await restoreBatchInventory(tx, batchId, batch.batchNumber);
+    await tx.batch.update({
+      where: { id: batchId },
+      data: {
+        status: "ABORTED",
+        finishedAt: new Date(),
+        ...(reason ? { notes: reason } : {}),
+      },
+    });
+  });
+
+  revalidatePath(`/dashboard/batches/${batchId}`);
+  revalidatePath("/dashboard/inventory");
 }
 
 // ── createFreeformBatch ──────────────────────────────────────────────────────

@@ -278,13 +278,17 @@ model InventoryTransaction {
   id          String          @id @default(cuid())
   inventoryId String
   inventory   Inventory       @relation(fields: [inventoryId], references: [id])
+  batchId     String?
+  batch       Batch?          @relation(fields: [batchId], references: [id], onDelete: SetNull)
   type        TransactionType
   quantity    Float
   notes       String?
   occurredAt  DateTime        @default(now())
+  restoredAt  DateTime?
 
   @@index([inventoryId])
   @@index([inventoryId, occurredAt])
+  @@index([batchId])
 }
 
 // ─── 배치 (실제 양조 기록) ────────────────────────────────────
@@ -328,10 +332,11 @@ model Batch {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  batchNodes       BatchNode[]
-  measurements     Measurement[]
-  batchIngredients BatchIngredient[]
-  tastingNotes     TastingNote[]
+  batchNodes            BatchNode[]
+  measurements          Measurement[]
+  batchIngredients      BatchIngredient[]
+  tastingNotes          TastingNote[]
+  inventoryTransactions InventoryTransaction[]
 
   @@index([tenantId])
   @@index([recipeId])

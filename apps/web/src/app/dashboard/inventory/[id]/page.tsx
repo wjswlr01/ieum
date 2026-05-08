@@ -29,7 +29,7 @@ const TX_META: Record<string, { label: string; color: string; sign: string }> = 
   IN: { label: "입고", color: "text-green-700", sign: "+" },
   BATCH_DEDUCT: { label: "배치 차감", color: "text-red-600", sign: "−" },
   OUT: { label: "출고", color: "text-red-600", sign: "−" },
-  RESTORE: { label: "복원", color: "text-blue-700", sign: "±" },
+  RESTORE: { label: "복원", color: "text-blue-700", sign: "+" },
   ADJUST: { label: "조정", color: "text-blue-700", sign: "±" },
 };
 
@@ -136,7 +136,12 @@ export default async function InventoryDetailPage({ params }: Props) {
 
   const item = await db.inventory.findFirst({
     where: { id: params.id, tenantId: session.user.tenantId },
-    include: { transactions: { orderBy: { occurredAt: "desc" } } },
+    include: {
+      transactions: {
+        orderBy: { occurredAt: "desc" },
+        include: { batch: { select: { id: true, batchNumber: true } } },
+      },
+    },
   });
   if (!item) notFound();
 
@@ -150,7 +155,7 @@ export default async function InventoryDetailPage({ params }: Props) {
   >((acc, tx) => {
     const prev = acc[acc.length - 1]?.balance ?? 0;
     const delta =
-      tx.type === "PURCHASE" || tx.type === "IN" ? tx.quantity
+      tx.type === "PURCHASE" || tx.type === "IN" || tx.type === "RESTORE" ? tx.quantity
       : tx.type === "BATCH_DEDUCT" || tx.type === "OUT" ? -tx.quantity
       : tx.quantity;
     acc.push({ tx, balance: parseFloat((prev + delta).toFixed(4)) });
@@ -289,7 +294,21 @@ export default async function InventoryDetailPage({ params }: Props) {
                         {balance}
                         <span className="ml-1 text-xs text-brew-subtle">{unitLabel}</span>
                       </td>
-                      <td className="px-5 py-3 text-brew-subtle max-w-[200px] truncate text-xs">{tx.notes ?? "—"}</td>
+                      <td className="px-5 py-3 text-brew-subtle max-w-[240px] text-xs">
+                        {tx.batch ? (
+                          <Link
+                            href={`/dashboard/batches/${tx.batch.id}`}
+                            className="font-mono text-brew-accent hover:text-brew-accent-hover"
+                          >
+                            #{tx.batch.batchNumber}
+                          </Link>
+                        ) : null}
+                        {tx.batch && tx.notes ? " · " : ""}
+                        <span className="truncate">{tx.notes ?? (tx.batch ? "" : "—")}</span>
+                        {tx.restoredAt && (
+                          <span className="ml-1 text-[10px] text-amber-700">[복원됨]</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

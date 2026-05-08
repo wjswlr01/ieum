@@ -447,6 +447,16 @@ export default async function BatchDetailPage({ params }: Props) {
         orderBy: { createdAt: "asc" },
         include: { taster: { select: { name: true } } },
       },
+      batchIngredients: {
+        include: {
+          inventory: { select: { id: true, name: true, unit: true } },
+          ingredient: { select: { name: true } },
+        },
+      },
+      inventoryTransactions: {
+        orderBy: { occurredAt: "asc" },
+        include: { inventory: { select: { id: true, name: true } } },
+      },
     },
   });
   if (!batch) notFound();
@@ -667,6 +677,62 @@ export default async function BatchDetailPage({ params }: Props) {
           brewType={brewType}
           tastingNotes={batch.tastingNotes}
         />
+      )}
+
+      {/* 투입 재료 */}
+      {batch.batchIngredients.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-sm font-semibold text-brew-text mb-4">투입 재료</h2>
+          <div className="rounded-xl border border-brew-border bg-brew-surface overflow-x-auto">
+            <table className="w-full text-sm min-w-[480px]">
+              <thead className="bg-brew-surface-dark">
+                <tr className="text-left text-brew-subtle">
+                  <th className="px-4 py-3 font-medium">재료</th>
+                  <th className="px-4 py-3 font-medium text-right">사용량</th>
+                  <th className="px-4 py-3 font-medium">차감 일시</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batch.batchIngredients.map((bi) => {
+                  const tx = batch.inventoryTransactions.find(
+                    (t) => t.inventoryId === bi.inventoryId && t.type === "BATCH_DEDUCT"
+                  );
+                  const restored = !!tx?.restoredAt;
+                  const name = bi.inventory?.name ?? bi.ingredient?.name ?? "—";
+                  return (
+                    <tr key={bi.id} className="border-t border-brew-border">
+                      <td className="px-4 py-3 text-brew-text">
+                        {bi.inventory ? (
+                          <Link
+                            href={`/dashboard/inventory/${bi.inventory.id}`}
+                            className="hover:text-brew-accent transition-colors"
+                          >
+                            {name}
+                          </Link>
+                        ) : (
+                          <span className="text-brew-subtle">{name}</span>
+                        )}
+                        {restored && (
+                          <span className="ml-2 text-[10px] text-amber-700">복원됨</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono text-brew-text">
+                        {bi.plannedAmt}
+                        <span className="ml-1 text-xs text-brew-muted">{bi.unit}</span>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-brew-muted">
+                        {tx ? new Date(tx.occurredAt).toLocaleString("ko-KR") : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-[11px] text-brew-muted">
+            <Link href="/dashboard/inventory" className="hover:text-brew-text">→ 재고 관리</Link>
+          </p>
+        </div>
       )}
 
       {/* 시음 기록 */}
