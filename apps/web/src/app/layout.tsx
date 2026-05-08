@@ -28,6 +28,8 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${nanumMyeongjo.variable} ${dmMono.variable}`} suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
         {/* 테마 깜빡임 방지: 페인트 전 localStorage 읽어 dark 클래스 적용 */}
         <script
           dangerouslySetInnerHTML={{
