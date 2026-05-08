@@ -6,12 +6,14 @@ declare module "next-auth" {
       id: string;
       tenantId: string;
       role: string;
+      isAdmin: boolean;
     } & DefaultSession["user"];
   }
   interface User {
     id: string;
     tenantId: string;
     role: string;
+    isAdmin: boolean;
   }
 }
 
@@ -20,5 +22,6 @@ declare module "next-auth/jwt" {
     id: string;
     tenantId: string;
     role: string;
+    isAdmin: boolean;
   }
 }

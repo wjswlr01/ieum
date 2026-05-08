@@ -31,6 +31,7 @@ export default async function DashboardLayout({
           <UserMenu
             userName={session.user.name ?? ""}
             userEmail={session.user.email ?? ""}
+            isAdmin={session.user.isAdmin}
           />
         </div>
       </header>

@@ -8,9 +8,11 @@ import { useTheme } from "@/components/theme-provider";
 export default function UserMenu({
   userName,
   userEmail,
+  isAdmin = false,
 }: {
   userName: string;
   userEmail: string;
+  isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -63,6 +65,18 @@ export default function UserMenu({
               >
                 계정 설정
               </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between px-4 py-2.5 text-sm text-[#B0A080] hover:text-brew-text-light hover:bg-white/5 transition-colors"
+                >
+                  관리자 페이지
+                  <span className="rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                    ADMIN
+                  </span>
+                </Link>
+              )}
             </div>
             <div className="border-t border-brew-dark-border py-1">
               <button
