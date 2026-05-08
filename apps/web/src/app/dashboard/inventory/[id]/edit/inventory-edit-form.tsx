@@ -300,7 +300,7 @@ export default function InventoryEditForm({ initial }: { initial: InitialData })
       </div>
 
       {/* SKU + Reorder side by side */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm text-brew-text mb-1.5">SKU (선택)</label>
           <input type="text" value={form.sku} onChange={(e) => set({ sku: e.target.value })} className={INPUT_CLS} />

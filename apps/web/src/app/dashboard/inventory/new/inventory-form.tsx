@@ -436,7 +436,7 @@ export default function InventoryForm() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm text-brew-text mb-1.5">초기 재고</label>
           <div className="flex items-center gap-2">
@@ -447,7 +447,7 @@ export default function InventoryForm() {
               value={form.initialQuantity}
               onChange={(e) => set({ initialQuantity: e.target.value })}
               placeholder="0"
-              className="flex-1 rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm focus:border-brew-accent focus:outline-none"
+              className="w-full min-w-0 flex-1 rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm focus:border-brew-accent focus:outline-none"
             />
             <span className="text-xs text-brew-subtle shrink-0">{unitLabel}</span>
           </div>
@@ -462,7 +462,7 @@ export default function InventoryForm() {
               value={form.reorderLevel}
               onChange={(e) => set({ reorderLevel: e.target.value })}
               placeholder="예: 1"
-              className="flex-1 rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm focus:border-brew-accent focus:outline-none"
+              className="w-full min-w-0 flex-1 rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm focus:border-brew-accent focus:outline-none"
             />
             <span className="text-xs text-brew-subtle shrink-0">{unitLabel}</span>
           </div>
