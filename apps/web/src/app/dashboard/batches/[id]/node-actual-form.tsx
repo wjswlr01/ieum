@@ -95,6 +95,46 @@ function ModeToggle({
   );
 }
 
+// ── 입력 + 단위 suffix 그룹 (절대 줄바꿈 안 됨) ──────────────────
+
+function SuffixedNumber({
+  value,
+  onChange,
+  suffix,
+  placeholder,
+  width,
+  step = "0.01",
+  min = "0",
+  max,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  suffix: string;
+  placeholder?: string;
+  width: string; // tailwind width class for input
+  step?: string;
+  min?: string;
+  max?: string;
+}) {
+  return (
+    <div className="inline-flex items-stretch overflow-hidden rounded border border-brew-border bg-white shrink-0 focus-within:border-brew-accent">
+      <input
+        type="number"
+        step={step}
+        min={min}
+        {...(max ? { max } : {})}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`${width} px-2 py-1 text-xs font-mono text-right text-brew-text placeholder-brew-faint outline-none bg-transparent`}
+      />
+      <span className="px-2 py-1 bg-[#FAF7F2] text-brew-muted text-[11px] border-l border-brew-border whitespace-nowrap select-none">
+        {suffix}
+      </span>
+    </div>
+  );
+}
+
 // ── 필드 정의 ─────────────────────────────────────────────────────
 
 type FieldDef = {
@@ -144,35 +184,6 @@ const FIELDS_BY_TYPE: Record<string, FieldDef[]> = {
 
 const NURUK_DIRECT_OPTIONS = ["개량누룩", "전통누룩", "입국", "조효소제"];
 
-const NODE_TO_CATEGORIES: Record<string, string[]> = {
-  GRAIN_PREP: ["RICE", "GRAIN"],
-  MASH: ["NURUK"],
-  MASH_BEER: ["GRAIN"],
-  BOIL: ["HOP"],
-  FERMENTATION: ["YEAST"],
-  CONDITIONING: ["HOP", "YEAST"],
-  CUSTOM: ["GRAIN", "RICE", "NURUK", "HOP", "YEAST", "OTHER"],
-  PACKAGING: ["OTHER"],
-};
-
-const CATEGORY_LABEL: Record<string, string> = {
-  GRAIN: "곡물", HOP: "홉", YEAST: "효모",
-  NURUK: "누룩", RICE: "쌀", OTHER: "기타",
-};
-
-type ExtraIng = {
-  key: string;
-  mode: Mode;
-  inventoryId: string; // inventory 모드
-  amount: string;
-  unit: string;
-  manualName: string; // manual 모드
-};
-
-function makeKey() {
-  return Math.random().toString(36).slice(2, 9);
-}
-
 function rowMode(r: RiceBlendRow): Mode {
   return r.mode ?? (r.inventoryId ? "inventory" : "manual");
 }
@@ -181,6 +192,10 @@ function normalizeBlend(p: GrainPrepParams): RiceBlendRow[] {
   if (p.riceBlend && p.riceBlend.length > 0) return p.riceBlend;
   if (p.riceType) return [{ type: p.riceType, ratio: 100, weightKg: p.weightKg ?? 0, mode: "manual" }];
   return [];
+}
+
+function round2(n: number): number {
+  return parseFloat(n.toFixed(2));
 }
 
 // ── RiceBlend 통합 섹션 ──────────────────────────────────────────
@@ -204,6 +219,7 @@ function RiceBlendSection({
     (actual.riceBlend as RiceBlendRow[] | undefined) ??
     plannedBlend.map((r) => ({ ...r, mode: r.mode ?? "manual" }));
   const actualTotal: string = actual.totalWeightKg != null ? String(actual.totalWeightKg) : "";
+  const totalNum = actual.totalWeightKg != null ? Number(actual.totalWeightKg) : null;
 
   const totalRatio = actualBlend.reduce((s, r) => s + (r.ratio || 0), 0);
   const ratioOk = actualBlend.length === 0 || Math.abs(totalRatio - 100) < 0.01;
@@ -215,22 +231,36 @@ function RiceBlendSection({
   function handleActualTotal(kg: number | undefined) {
     onActualChange("totalWeightKg", kg);
     if (kg !== undefined && kg > 0) {
-      updateBlend(actualBlend.map((r) => ({
-        ...r,
-        weightKg: parseFloat(((r.ratio / 100) * kg).toFixed(2)),
-      })));
+      // 총 중량 변경 시 각 행의 비율로부터 중량 재계산
+      updateBlend(
+        actualBlend.map((r) => ({
+          ...r,
+          weightKg: round2(((r.ratio || 0) / 100) * kg),
+        }))
+      );
     }
   }
 
-  function patchRow(i: number, patch: Partial<RiceBlendRow>) {
+  function setRatio(i: number, ratio: number) {
     const newBlend = actualBlend.map((r, idx) => {
       if (idx !== i) return r;
-      const updated: RiceBlendRow = { ...r, ...patch };
-      const total = actual.totalWeightKg != null ? Number(actual.totalWeightKg) : undefined;
-      if (patch.ratio !== undefined && total) {
-        updated.weightKg = parseFloat(((updated.ratio / 100) * total).toFixed(2));
+      const next: RiceBlendRow = { ...r, ratio };
+      if (totalNum != null && totalNum > 0) {
+        next.weightKg = round2((ratio / 100) * totalNum);
       }
-      return updated;
+      return next;
+    });
+    updateBlend(newBlend);
+  }
+
+  function setWeight(i: number, weightKg: number) {
+    const newBlend = actualBlend.map((r, idx) => {
+      if (idx !== i) return r;
+      const next: RiceBlendRow = { ...r, weightKg };
+      if (totalNum != null && totalNum > 0) {
+        next.ratio = round2((weightKg * 100) / totalNum);
+      }
+      return next;
     });
     updateBlend(newBlend);
   }
@@ -260,6 +290,13 @@ function RiceBlendSection({
       }
       return next;
     });
+    updateBlend(newBlend);
+  }
+
+  function setManualName(i: number, name: string) {
+    const newBlend = actualBlend.map((r, idx) =>
+      idx === i ? { ...r, type: name } : r
+    );
     updateBlend(newBlend);
   }
 
@@ -333,6 +370,12 @@ function RiceBlendSection({
             </p>
           )}
 
+          {totalNum == null && actualBlend.length > 0 && (
+            <p className="text-[11px] text-brew-muted mb-2">
+              💡 총 중량을 입력하면 비율↔중량이 자동 계산됩니다.
+            </p>
+          )}
+
           {actualBlend.length > 0 && (
             <div className="flex flex-col gap-1.5 mb-2">
               {actualBlend.map((row, i) => {
@@ -349,12 +392,9 @@ function RiceBlendSection({
                       insufficient ? "border-red-300 bg-red-50/50" : "border-brew-border"
                     }`}
                   >
+                    {/* 1줄: 모드 토글 + 삭제 */}
                     <div className="flex items-center justify-between mb-1.5">
-                      <ModeToggle
-                        mode={mode}
-                        onChange={(m) => setRowMode(i, m)}
-                        size="xs"
-                      />
+                      <ModeToggle mode={mode} onChange={(m) => setRowMode(i, m)} size="xs" />
                       <button
                         type="button"
                         onClick={() => removeRow(i)}
@@ -364,67 +404,65 @@ function RiceBlendSection({
                       </button>
                     </div>
 
+                    {/* 2줄: 품종 (드롭다운/이름) */}
                     {mode === "inventory" ? (
-                      <>
-                        {riceInventory.length === 0 ? (
-                          <p className="text-[11px] text-amber-700">
-                            ⚠ 재고에 등록된 쌀이 없습니다.{" "}
-                            <Link href="/dashboard/inventory/new" className="underline">재료 등록</Link>
-                          </p>
-                        ) : (
-                          <div className="flex flex-col sm:flex-row gap-1.5">
-                            <select
-                              value={row.inventoryId ?? ""}
-                              onChange={(e) => selectInventory(i, e.target.value)}
-                              className={`${inputCls} flex-1`}
-                            >
-                              <option value="">— 재고 선택 —</option>
-                              {riceInventory.map((x) => (
-                                <option key={x.id} value={x.id}>
-                                  {x.name} (보유: {x.quantity}{x.unit})
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              type="number" step="0.01" min="0"
-                              value={row.weightKg || ""}
-                              onChange={(e) => patchRow(i, { weightKg: parseFloat(e.target.value) || 0, ratio: row.ratio })}
-                              placeholder="사용량"
-                              className={`${inputCls} sm:w-28 text-right font-mono`}
-                            />
-                            <span className="text-[11px] text-brew-muted self-center w-6 shrink-0">kg</span>
-                          </div>
-                        )}
-                        {insufficient && (
-                          <p className="mt-1.5 text-[11px] text-red-600 font-medium">
-                            ⚠ 재고 부족 — 보유 {inv?.quantity}{inv?.unit} / 필요 {row.weightKg}kg
-                          </p>
-                        )}
-                      </>
+                      riceInventory.length === 0 ? (
+                        <p className="text-[11px] text-amber-700">
+                          ⚠ 재고에 등록된 쌀이 없습니다.{" "}
+                          <Link href="/dashboard/inventory/new" className="underline">재료 등록</Link>
+                        </p>
+                      ) : (
+                        <select
+                          value={row.inventoryId ?? ""}
+                          onChange={(e) => selectInventory(i, e.target.value)}
+                          className={inputCls}
+                        >
+                          <option value="">— 재고에서 선택 —</option>
+                          {riceInventory.map((x) => (
+                            <option key={x.id} value={x.id}>
+                              {x.name} (보유: {x.quantity}{x.unit})
+                            </option>
+                          ))}
+                        </select>
+                      )
                     ) : (
-                      <div className="flex flex-col sm:flex-row gap-1.5">
-                        <input
-                          type="text"
-                          value={row.type}
-                          onChange={(e) => patchRow(i, { type: e.target.value })}
-                          placeholder="품종명 (예: 찹쌀)"
-                          className={`${inputCls} flex-1`}
-                        />
-                        <input
-                          type="number" step="0.1" min="0" max="100"
-                          value={row.ratio || ""}
-                          onChange={(e) => patchRow(i, { ratio: parseFloat(e.target.value) || 0 })}
-                          placeholder="비율%"
-                          className={`${inputCls} sm:w-20 text-right font-mono`}
-                        />
-                        <input
-                          type="number" step="0.01" min="0"
-                          value={row.weightKg || ""}
-                          onChange={(e) => patchRow(i, { weightKg: parseFloat(e.target.value) || 0 })}
-                          placeholder="kg"
-                          className={`${inputCls} sm:w-24 text-right font-mono`}
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        value={row.type}
+                        onChange={(e) => setManualName(i, e.target.value)}
+                        placeholder="품종명 (예: 찹쌀)"
+                        className={inputCls}
+                      />
+                    )}
+
+                    {/* 3줄: 비율% + 중량kg (절대 줄바꿈 안 됨) */}
+                    <div className="mt-1.5 flex flex-nowrap items-center gap-1.5">
+                      <SuffixedNumber
+                        value={row.ratio ? String(row.ratio) : ""}
+                        onChange={(v) => setRatio(i, parseFloat(v) || 0)}
+                        suffix="%"
+                        placeholder="비율"
+                        width="w-14"
+                        step="0.1"
+                        max="100"
+                      />
+                      <SuffixedNumber
+                        value={row.weightKg ? String(row.weightKg) : ""}
+                        onChange={(v) => setWeight(i, parseFloat(v) || 0)}
+                        suffix="kg"
+                        placeholder="중량"
+                        width="w-16"
+                        step="0.01"
+                      />
+                      {totalNum != null && totalNum > 0 && (
+                        <span className="text-[10px] text-brew-faint">자동계산</span>
+                      )}
+                    </div>
+
+                    {insufficient && (
+                      <p className="mt-1.5 text-[11px] text-red-600 font-medium">
+                        ⚠ 재고 부족 — 보유 {inv?.quantity}{inv?.unit} / 필요 {row.weightKg}kg
+                      </p>
                     )}
                   </div>
                 );
@@ -446,7 +484,6 @@ export default function NodeActualForm({
   plannedTargetTemp,
   plannedDurationMin,
   savedActualParams,
-  savedDeductions = [],
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -467,23 +504,18 @@ export default function NodeActualForm({
     };
   }, []);
 
-  // 인벤토리 로드
-  const categories = NODE_TO_CATEGORIES[nodeType] ?? ["OTHER"];
+  // 인벤토리 로드 (쌀/누룩 dropdown 용)
   const [inventory, setInventory] = useState<InventoryLite[]>([]);
-  const [loadingInv, setLoadingInv] = useState(true);
 
   useEffect(() => {
-    setLoadingInv(true);
     fetch("/api/inventory")
       .then((r) => r.json())
       .then((data) => setInventory(data.items ?? []))
-      .catch(() => {})
-      .finally(() => setLoadingInv(false));
+      .catch(() => {});
   }, []);
 
   const riceInventory = inventory.filter((i) => i.category === "RICE" || i.category === "GRAIN");
   const nurukInventory = inventory.filter((i) => i.category === "NURUK");
-  const extraInventory = inventory.filter((i) => categories.includes(i.category));
 
   // ── MASH 누룩 모드 ─────────────────────────────────────────
   const mashP = (actual ?? {}) as MashParams & {
@@ -512,44 +544,12 @@ export default function NodeActualForm({
       if (mode === "manual") {
         delete (next as any).nurukInventoryId;
         delete (next as any).nurukAmountKg;
-      } else {
-        // 직접 모드에서 들어온 값은 유지하되 인벤토리 모드로 보강
       }
       return next;
     });
   }
 
-  // ── extras (홉/효모/기타) ──────────────────────────────────
-  const initialExtras: ExtraIng[] = (() => {
-    const fromActual = (actual.extraIngredients as ExtraIng[] | undefined) ?? [];
-    return fromActual.length > 0 ? fromActual.map((e) => ({ ...e, key: e.key ?? makeKey() })) : [];
-  })();
-  const [extras, setExtras] = useState<ExtraIng[]>(initialExtras);
-  function persistExtras(next: ExtraIng[]) {
-    setExtras(next);
-    setActualField("extraIngredients", next.length > 0 ? next : undefined);
-  }
-  function addExtra() {
-    persistExtras([
-      ...extras,
-      {
-        key: makeKey(),
-        mode: extraInventory.length > 0 ? "inventory" : "manual",
-        inventoryId: "",
-        amount: "",
-        unit: "",
-        manualName: "",
-      },
-    ]);
-  }
-  function patchExtra(i: number, patch: Partial<ExtraIng>) {
-    persistExtras(extras.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
-  }
-  function removeExtra(i: number) {
-    persistExtras(extras.filter((_, idx) => idx !== i));
-  }
-
-  // ── 일반 필드 핸들링 ───────────────────────────────────────
+  // ── 일반 필드 ───────────────────────────────────────────────
   function getPlanned(key: string): unknown {
     if (key === "_targetTemp") return plannedTargetTemp;
     if (key === "durationDays" && plannedDurationMin != null)
@@ -575,34 +575,21 @@ export default function NodeActualForm({
     return field.diffFn(a, p);
   }
 
-  // ── 저장 ───────────────────────────────────────────────────
-  const deductedIds = new Set(savedDeductions.map((d) => d.inventoryId));
-
+  // ── 차감 ingredients 빌드 ─────────────────────────────────
   function buildIngredients(): BatchIngredientInput[] {
     const list: BatchIngredientInput[] = [];
 
-    // 1) RiceBlend (inventory mode only)
+    // 1) RiceBlend (inventory 모드만)
     const blend = (actual.riceBlend as RiceBlendRow[] | undefined) ?? [];
     for (const row of blend) {
-      if (rowMode(row) === "inventory" && row.inventoryId && row.weightKg > 0 && !deductedIds.has(row.inventoryId)) {
+      if (rowMode(row) === "inventory" && row.inventoryId && row.weightKg > 0) {
         list.push({ inventoryId: row.inventoryId, plannedAmt: row.weightKg, unit: "KG" });
       }
     }
 
-    // 2) MASH 누룩 (inventory mode only)
+    // 2) MASH 누룩 (inventory 모드만)
     if (nodeType === "MASH" && nurukMode === "inventory" && mashP.nurukInventoryId && (mashP.nurukAmountKg ?? 0) > 0) {
-      if (!deductedIds.has(mashP.nurukInventoryId)) {
-        list.push({ inventoryId: mashP.nurukInventoryId, plannedAmt: mashP.nurukAmountKg!, unit: "KG" });
-      }
-    }
-
-    // 3) extras (inventory mode only)
-    for (const e of extras) {
-      if (e.mode !== "inventory") continue;
-      const amt = parseFloat(e.amount);
-      if (e.inventoryId && Number.isFinite(amt) && amt > 0 && !deductedIds.has(e.inventoryId)) {
-        list.push({ inventoryId: e.inventoryId, plannedAmt: amt, unit: e.unit });
-      }
+      list.push({ inventoryId: mashP.nurukInventoryId, plannedAmt: mashP.nurukAmountKg!, unit: "KG" });
     }
 
     return list;
@@ -612,7 +599,6 @@ export default function NodeActualForm({
     setError("");
     const ingredients = buildIngredients();
 
-    // 클라이언트 사전 검증
     for (const ing of ingredients) {
       const inv = inventory.find((i) => i.id === ing.inventoryId);
       if (!inv) continue;
@@ -705,32 +691,32 @@ export default function NodeActualForm({
                             : false;
                           return (
                             <div className={`rounded-md border bg-white p-2 ${insufficient ? "border-red-300 bg-red-50/50" : "border-brew-border"}`}>
-                              <div className="flex flex-col sm:flex-row gap-1.5">
-                                <select
-                                  value={mashP.nurukInventoryId ?? ""}
-                                  onChange={(e) => {
-                                    const id = e.target.value;
-                                    const sel = nurukInventory.find((x) => x.id === id);
-                                    setActualField("nurukInventoryId", id || undefined);
-                                    if (sel) setActualField("nurukType", sel.name);
-                                  }}
-                                  className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
-                                >
-                                  <option value="">— 재고 선택 —</option>
-                                  {nurukInventory.map((x) => (
-                                    <option key={x.id} value={x.id}>
-                                      {x.name} (보유: {x.quantity}{x.unit})
-                                    </option>
-                                  ))}
-                                </select>
-                                <input
-                                  type="number" step="0.01" min="0"
-                                  value={mashP.nurukAmountKg ?? ""}
-                                  onChange={(e) => setActualField("nurukAmountKg", parseFloat(e.target.value) || undefined)}
+                              <select
+                                value={mashP.nurukInventoryId ?? ""}
+                                onChange={(e) => {
+                                  const id = e.target.value;
+                                  const sel = nurukInventory.find((x) => x.id === id);
+                                  setActualField("nurukInventoryId", id || undefined);
+                                  if (sel) setActualField("nurukType", sel.name);
+                                }}
+                                className="w-full rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none mb-1.5"
+                              >
+                                <option value="">— 재고에서 선택 —</option>
+                                {nurukInventory.map((x) => (
+                                  <option key={x.id} value={x.id}>
+                                    {x.name} (보유: {x.quantity}{x.unit})
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="flex flex-nowrap items-center gap-1.5">
+                                <SuffixedNumber
+                                  value={mashP.nurukAmountKg != null ? String(mashP.nurukAmountKg) : ""}
+                                  onChange={(v) => setActualField("nurukAmountKg", parseFloat(v) || undefined)}
+                                  suffix="kg"
                                   placeholder="사용량"
-                                  className="sm:w-28 rounded border border-brew-border bg-white px-2 py-1 text-xs font-mono text-right focus:border-brew-accent focus:outline-none"
+                                  width="w-20"
+                                  step="0.01"
                                 />
-                                <span className="text-[11px] text-brew-muted self-center w-6 shrink-0">kg</span>
                               </div>
                               {insufficient && (
                                 <p className="mt-1.5 text-[11px] text-red-600 font-medium">
@@ -832,170 +818,6 @@ export default function NodeActualForm({
         </div>
       )}
 
-      {/* 추가 재료 */}
-      <div className="px-4 py-3 border-t border-brew-border bg-[#FBF9F5]">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-brew-text">
-            재료 투입{" "}
-            <span className="text-[10px] font-normal text-brew-muted">
-              (재고 모드만 자동 차감)
-            </span>
-          </p>
-          <button
-            type="button"
-            onClick={addExtra}
-            className="text-xs text-brew-accent hover:text-brew-accent-hover transition-colors"
-          >
-            + 행 추가
-          </button>
-        </div>
-
-        {savedDeductions.length > 0 && (
-          <div className="mb-2 rounded-md border border-brew-border bg-brew-surface px-2.5 py-1.5">
-            <p className="text-[10px] text-brew-muted mb-0.5">이미 차감됨:</p>
-            <ul className="text-[11px] text-brew-text space-y-0.5">
-              {savedDeductions.map((d) => (
-                <li key={d.inventoryId} className="flex justify-between">
-                  <span>{d.inventoryName}</span>
-                  <span className="font-mono">
-                    {d.plannedAmt}{d.unit}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {loadingInv && extras.length === 0 ? (
-          <p className="text-[11px] text-brew-muted">불러오는 중...</p>
-        ) : extras.length === 0 ? (
-          <p className="text-[11px] text-brew-muted">
-            추가 재료가 없습니다. "+ 행 추가"를 눌러 입력하세요.
-            {extraInventory.length === 0 && categories.length > 0 && (
-              <>
-                {" "}관련 재고({categories.map((c) => CATEGORY_LABEL[c] ?? c).join(", ")})가 없으면{" "}
-                <Link href="/dashboard/inventory/new" className="underline">재료를 먼저 등록</Link>하세요.
-              </>
-            )}
-          </p>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            {extras.map((e, i) => {
-              const inv = e.mode === "inventory" && e.inventoryId
-                ? inventory.find((x) => x.id === e.inventoryId)
-                : null;
-              const amt = parseFloat(e.amount);
-              const insufficient =
-                e.mode === "inventory" && inv && Number.isFinite(amt) && amt > 0
-                  ? !hasSufficient(inv.quantity, inv.unit as ConvUnit, amt, e.unit as ConvUnit)
-                  : false;
-              return (
-                <div
-                  key={e.key}
-                  className={`rounded-md border bg-white p-2 transition-colors ${
-                    insufficient ? "border-red-300 bg-red-50/50" : "border-brew-border"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <ModeToggle
-                      mode={e.mode}
-                      onChange={(m) => {
-                        if (m === "inventory") {
-                          patchExtra(i, { mode: m });
-                        } else {
-                          patchExtra(i, { mode: m, inventoryId: "", unit: "" });
-                        }
-                      }}
-                      size="xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeExtra(i)}
-                      className="text-brew-muted hover:text-red-500 transition-colors text-xs px-1"
-                    >
-                      ✕ 삭제
-                    </button>
-                  </div>
-
-                  {e.mode === "inventory" ? (
-                    extraInventory.length === 0 ? (
-                      <p className="text-[11px] text-amber-700">
-                        ⚠ 관련 카테고리({categories.map((c) => CATEGORY_LABEL[c] ?? c).join(", ")})의 재고가 없습니다.{" "}
-                        <Link href="/dashboard/inventory/new" className="underline">재료 등록</Link>
-                      </p>
-                    ) : (
-                      <>
-                        <div className="flex flex-col sm:flex-row gap-1.5">
-                          <select
-                            value={e.inventoryId}
-                            onChange={(ev) => {
-                              const id = ev.target.value;
-                              const item = inventory.find((x) => x.id === id);
-                              patchExtra(i, { inventoryId: id, unit: item?.unit ?? "" });
-                            }}
-                            className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
-                          >
-                            <option value="">— 재고 선택 —</option>
-                            {extraInventory.map((x) => (
-                              <option key={x.id} value={x.id}>
-                                {x.name} (보유: {x.quantity}{x.unit})
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            type="number"
-                            step="0.001"
-                            min="0"
-                            value={e.amount}
-                            onChange={(ev) => patchExtra(i, { amount: ev.target.value })}
-                            placeholder="사용량"
-                            className="sm:w-24 rounded border border-brew-border bg-white px-2 py-1 text-xs font-mono text-right focus:border-brew-accent focus:outline-none"
-                          />
-                          <span className="text-[11px] text-brew-muted self-center w-8 shrink-0">
-                            {e.unit || "—"}
-                          </span>
-                        </div>
-                        {insufficient && (
-                          <p className="mt-1.5 text-[11px] text-red-600 font-medium">
-                            ⚠ 재고 부족 — 보유 {inv?.quantity}{inv?.unit} / 필요 {amt}{e.unit}
-                          </p>
-                        )}
-                      </>
-                    )
-                  ) : (
-                    <div className="flex flex-col sm:flex-row gap-1.5">
-                      <input
-                        type="text"
-                        value={e.manualName}
-                        onChange={(ev) => patchExtra(i, { manualName: ev.target.value })}
-                        placeholder="재료명"
-                        className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
-                      />
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        value={e.amount}
-                        onChange={(ev) => patchExtra(i, { amount: ev.target.value })}
-                        placeholder="사용량"
-                        className="sm:w-24 rounded border border-brew-border bg-white px-2 py-1 text-xs font-mono text-right focus:border-brew-accent focus:outline-none"
-                      />
-                      <input
-                        type="text"
-                        value={e.unit}
-                        onChange={(ev) => patchExtra(i, { unit: ev.target.value })}
-                        placeholder="단위"
-                        className="sm:w-16 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
       {error && !toast && (
         <div className="px-4 py-2 border-t border-brew-border bg-red-50">
           <p className="text-xs text-red-700">{error}</p>
@@ -1013,15 +835,12 @@ export default function NodeActualForm({
         </button>
       </div>
 
-      {/* 토스트 */}
       {toast && (
         <div
           role="status"
           aria-live="polite"
-          className={`absolute bottom-3 right-3 rounded-lg px-3 py-2 text-xs font-medium shadow-lg transition-opacity ${
-            toast.kind === "success"
-              ? "bg-[#2A5C35] text-white"
-              : "bg-red-700 text-white"
+          className={`absolute bottom-3 right-3 rounded-lg px-3 py-2 text-xs font-medium shadow-lg ${
+            toast.kind === "success" ? "bg-[#2A5C35] text-white" : "bg-red-700 text-white"
           }`}
         >
           {toast.msg}
