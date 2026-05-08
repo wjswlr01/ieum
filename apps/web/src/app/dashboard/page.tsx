@@ -95,7 +95,9 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <ActiveBatchesPanel batches={activeBatches} recentlyCompleted={recentlyCompleted} />
+      <div data-onboarding-step="5">
+        <ActiveBatchesPanel batches={activeBatches} recentlyCompleted={recentlyCompleted} />
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10">

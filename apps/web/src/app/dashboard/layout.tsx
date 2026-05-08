@@ -6,6 +6,8 @@ import UserMenu from "./user-menu";
 import NavLinks from "./nav-links";
 import NotificationBell from "./notification-bell";
 import MobileBottomNav from "./mobile-bottom-nav";
+import { db } from "@/lib/db";
+import OnboardingProvider from "@/components/onboarding/onboarding-provider";
 
 export default async function DashboardLayout({
   children,
@@ -14,6 +16,12 @@ export default async function DashboardLayout({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+
+  const userRow = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { hasCompletedOnboarding: true },
+  });
+  const showOnboarding = !userRow?.hasCompletedOnboarding;
 
   return (
     <div className="min-h-screen bg-brew-bg text-brew-text flex flex-col">
@@ -38,6 +46,7 @@ export default async function DashboardLayout({
       </header>
       <div className="flex-1 pb-16 md:pb-0">{children}</div>
       <MobileBottomNav isAdmin={session.user.isAdmin} />
+      <OnboardingProvider initialOpen={showOnboarding} />
     </div>
   );
 }
