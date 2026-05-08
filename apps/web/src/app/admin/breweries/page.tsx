@@ -20,7 +20,7 @@ export default async function AdminBreweriesPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-serif text-2xl font-bold">양조장 관리</h1>
+        <h1 className="font-serif text-xl md:text-2xl font-bold">양조장 관리</h1>
         <p className="mt-1 text-sm text-brew-muted">
           전체 양조장 {tenants.length}곳의 사용량을 확인합니다.
         </p>

@@ -87,9 +87,9 @@ export default async function DashboardPage() {
   const recentlyCompleted = rawRecentCompleted.map(mapBatch);
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-5xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-5xl mx-auto w-full">
       <div className="mb-10">
-        <h1 className="font-serif text-2xl font-bold">안녕하세요, {session.user.name}님</h1>
+        <h1 className="font-serif text-xl md:text-2xl font-bold">안녕하세요, {session.user.name}님</h1>
         <p className="mt-1 text-sm text-brew-muted">
           이음 양조 공정 관리 플랫폼에 오신 것을 환영합니다.
         </p>

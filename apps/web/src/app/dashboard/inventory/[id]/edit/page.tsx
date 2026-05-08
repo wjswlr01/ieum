@@ -17,7 +17,7 @@ export default async function InventoryEditPage({ params }: Props) {
   if (!item) notFound();
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-2xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-2xl mx-auto w-full">
       <nav className="flex items-center gap-2 text-sm text-brew-subtle mb-8">
         <Link href="/dashboard/inventory" className="hover:text-brew-text transition-colors">재고/도감</Link>
         <span>/</span>
@@ -26,7 +26,7 @@ export default async function InventoryEditPage({ params }: Props) {
         <span className="text-brew-text">편집</span>
       </nav>
 
-      <h1 className="font-serif text-2xl font-bold mb-8">재료 편집</h1>
+      <h1 className="font-serif text-xl md:text-2xl font-bold mb-8">재료 편집</h1>
       <InventoryEditForm
         initial={{
           id: item.id,

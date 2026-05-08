@@ -63,7 +63,7 @@ export default async function MeasurementsPage({ params }: Props) {
     }));
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-4xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-4xl mx-auto w-full">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-brew-subtle mb-8">
         <Link href="/dashboard/batches" className="hover:text-brew-text transition-colors">
@@ -81,7 +81,7 @@ export default async function MeasurementsPage({ params }: Props) {
       </nav>
 
       <div className="mb-8">
-        <h1 className="font-serif text-2xl font-bold">측정값 입력</h1>
+        <h1 className="font-serif text-xl md:text-2xl font-bold">측정값 입력</h1>
         <p className="mt-1 text-sm text-brew-muted">
           {brewType === "BEER"
             ? "발효 중 비중·온도·pH를 기록하세요."

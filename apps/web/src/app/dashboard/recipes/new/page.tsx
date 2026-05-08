@@ -443,7 +443,7 @@ export default function NewRecipePage() {
   const HAS_EXTRA_PARAMS = new Set(["GRAIN_PREP", "MASH", "FERMENTATION"]);
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-2xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-2xl mx-auto w-full">
       {/* Back */}
       <button
         onClick={() =>
@@ -487,7 +487,7 @@ export default function NewRecipePage() {
       {/* ── STEP 1 ─────────────────────────────────────────── */}
       {state.step === 1 && (
         <section>
-          <h1 className="font-serif text-2xl font-bold mb-2">주종을 선택하세요</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold mb-2">주종을 선택하세요</h1>
           <p className="text-sm text-brew-muted mb-8">만들 술의 종류를 고르면 맞춤 템플릿을 제공합니다.</p>
           <div className="grid grid-cols-2 gap-4">
             {(
@@ -513,7 +513,7 @@ export default function NewRecipePage() {
       {/* ── STEP 2 ─────────────────────────────────────────── */}
       {state.step === 2 && state.brewType && (
         <section>
-          <h1 className="font-serif text-2xl font-bold mb-2">템플릿을 선택하세요</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold mb-2">템플릿을 선택하세요</h1>
           <p className="text-sm text-brew-muted mb-8">공정 노드가 자동으로 채워집니다.</p>
           <div className="flex flex-col gap-4">
             {(state.brewType === "BEER" ? BEER_TEMPLATES : MAKGEOLLI_TEMPLATES).map((tpl) => (
@@ -540,7 +540,7 @@ export default function NewRecipePage() {
       {/* ── STEP 3 ─────────────────────────────────────────── */}
       {state.step === 3 && (
         <section>
-          <h1 className="font-serif text-2xl font-bold mb-2">기본 정보 입력</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold mb-2">기본 정보 입력</h1>
           <p className="text-sm text-brew-muted mb-8">레시피의 이름과 목표 생산량을 입력하세요.</p>
           <div className="flex flex-col gap-5">
             <div>
@@ -589,7 +589,7 @@ export default function NewRecipePage() {
       {/* ── STEP 4: 아코디언 노드 입력 ──────────────────────── */}
       {state.step === 4 && (
         <section>
-          <h1 className="font-serif text-2xl font-bold mb-2">공정 노드 확인</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold mb-2">공정 노드 확인</h1>
           <p className="text-sm text-brew-muted mb-6">
             각 노드를 클릭해 세부 정보를 입력하세요. <span className="text-brew-faint">(모두 선택 사항)</span>
           </p>

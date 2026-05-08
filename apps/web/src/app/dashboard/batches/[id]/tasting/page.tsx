@@ -38,10 +38,10 @@ export default async function TastingPage({ params }: Props) {
   const abv = calcAbvFromMeasurements(allMeasurements, brewType);
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-2xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-2xl mx-auto w-full">
       <div className="mb-8">
         <p className="text-xs text-brew-subtle mb-1">시음 기록</p>
-        <h1 className="font-serif text-2xl font-bold text-brew-text">{recipeName}</h1>
+        <h1 className="font-serif text-xl md:text-2xl font-bold text-brew-text">{recipeName}</h1>
         <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs text-brew-muted">
           <span className="font-mono">{batch.batchNumber}</span>
           {startDate && <span>·</span>}

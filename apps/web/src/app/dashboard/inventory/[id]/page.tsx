@@ -158,7 +158,7 @@ export default async function InventoryDetailPage({ params }: Props) {
   }, []).reverse();
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-4xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-4xl mx-auto w-full">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-brew-subtle mb-8">
         <Link href="/dashboard/inventory" className="hover:text-brew-text transition-colors">재고/도감</Link>
@@ -175,7 +175,7 @@ export default async function InventoryDetailPage({ params }: Props) {
             </span>
             {item.sku && <span className="text-xs text-brew-subtle">SKU: {item.sku}</span>}
           </div>
-          <h1 className="font-serif text-2xl font-bold">{item.name}</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold">{item.name}</h1>
           {item.notes && <p className="mt-1 text-sm text-brew-muted">{item.notes}</p>}
         </div>
 

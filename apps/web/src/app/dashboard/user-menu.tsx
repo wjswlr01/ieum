@@ -30,13 +30,15 @@ export default function UserMenu({
     setTheme(theme === "dark" ? "light" : "dark");
   }
 
+  const initial = (userName || userEmail || "?").trim().charAt(0).toUpperCase();
+
   return (
-    <div className="flex items-center gap-3" ref={ref}>
+    <div className="flex items-center gap-1 md:gap-3" ref={ref}>
       {/* 빠른 테마 토글 */}
       <button
         onClick={toggleTheme}
         title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
-        className="text-[#B0A080] hover:text-brew-text-light transition-colors text-base leading-none"
+        className="text-[#B0A080] hover:text-brew-text-light transition-colors text-base leading-none px-1"
       >
         {theme === "dark" ? "☀️" : "🌙"}
       </button>
@@ -45,10 +47,21 @@ export default function UserMenu({
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-sm text-[#B0A080] hover:text-brew-text-light transition-colors"
+          className="flex items-center gap-1.5 text-sm text-[#B0A080] hover:text-brew-text-light transition-colors max-w-[12rem]"
         >
-          <span className="hidden sm:block">{userName}</span>
-          <span className="text-[10px] opacity-70">▾</span>
+          <span
+            aria-hidden="true"
+            className="md:hidden flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brew-accent/20 text-xs font-semibold text-brew-accent"
+          >
+            {initial}
+          </span>
+          <span className="hidden md:block lg:hidden truncate max-w-[6ch]">
+            {userName}
+          </span>
+          <span className="hidden lg:block truncate max-w-[10rem]">
+            {userName}
+          </span>
+          <span className="hidden md:block text-[10px] opacity-70">▾</span>
         </button>
 
         {open && (

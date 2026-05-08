@@ -468,7 +468,7 @@ export default async function BatchDetailPage({ params }: Props) {
     : null;
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-3xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-3xl mx-auto w-full">
       <nav className="flex items-center gap-2 text-sm text-brew-subtle mb-8">
         <Link href="/dashboard/batches" className="hover:text-brew-text transition-colors">배치</Link>
         <span>/</span>

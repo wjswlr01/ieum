@@ -49,7 +49,7 @@ export default async function BreweryDetailPage({
         </Link>
       </div>
       <div className="mb-6">
-        <h1 className="font-serif text-2xl font-bold">{tenant.name}</h1>
+        <h1 className="font-serif text-xl md:text-2xl font-bold">{tenant.name}</h1>
         <p className="mt-1 font-mono text-xs text-brew-muted">
           {tenant.slug} · {tenant.createdAt.toISOString().slice(0, 10)}
         </p>

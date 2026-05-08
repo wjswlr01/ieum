@@ -58,7 +58,7 @@ export default function SignupPage() {
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <h1 className="font-serif text-2xl font-bold mb-1">회원가입</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold mb-1">회원가입</h1>
           <p className="text-sm text-brew-muted mb-8">양조장을 개설하고 시작하세요.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

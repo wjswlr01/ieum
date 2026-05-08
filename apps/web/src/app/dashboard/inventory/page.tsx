@@ -59,11 +59,11 @@ export default async function InventoryPage({ searchParams }: Props) {
   ];
 
   return (
-    <main className="px-6 py-10 md:px-12 max-w-5xl mx-auto w-full">
+    <main className="px-4 py-6 md:px-12 md:py-10 max-w-5xl mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-serif text-2xl font-bold">재고</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold">재고</h1>
           {lowStockCount > 0 && (
             <p className="text-xs text-red-600 mt-1">
               ⚠ 저재고 {lowStockCount}개 항목
@@ -107,8 +107,8 @@ export default async function InventoryPage({ searchParams }: Props) {
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-brew-border bg-brew-surface overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-brew-border bg-brew-surface overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-brew-border text-xs text-brew-muted bg-[#E6DFD1]">
                 <th className="px-5 py-3 text-left font-medium">재료명</th>

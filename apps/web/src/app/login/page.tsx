@@ -43,7 +43,7 @@ export default function LoginPage() {
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <h1 className="font-serif text-2xl font-bold mb-1">로그인</h1>
+          <h1 className="font-serif text-xl md:text-2xl font-bold mb-1">로그인</h1>
           <p className="text-sm text-brew-muted mb-8">계속하려면 로그인하세요.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
