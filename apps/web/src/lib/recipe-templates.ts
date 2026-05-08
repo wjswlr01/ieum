@@ -20,6 +20,7 @@ export type RiceBlendRow = {
   ratio: number;   // 비율 (%)
   weightKg: number; // 중량 (kg)
   inventoryId?: string; // 선택 시: 차감 대상 재고 ID
+  mode?: "inventory" | "manual"; // UX 모드 — 미설정 시 inventoryId 유무로 추론
 };
 
 export type GrainPrepParams = {
