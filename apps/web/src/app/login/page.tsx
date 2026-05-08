@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import EmailInput from "@/components/EmailInput";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,15 +51,12 @@ export default function LoginPage() {
               <label className="block text-sm text-brew-text mb-1.5" htmlFor="email">
                 이메일
               </label>
-              <input
+              <EmailInput
                 id="email"
-                type="email"
-                autoComplete="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={setEmail}
+                required
                 className="w-full rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none focus:ring-1 focus:ring-brew-accent"
-                placeholder="you@example.com"
               />
             </div>
 
@@ -92,6 +90,15 @@ export default function LoginPage() {
               {loading ? "로그인 중..." : "로그인"}
             </button>
           </form>
+
+          <p className="mt-4 text-center text-sm">
+            <Link
+              href="/reset-password"
+              className="text-brew-muted hover:text-brew-text transition-colors"
+            >
+              비밀번호를 잊으셨나요?
+            </Link>
+          </p>
 
           <p className="mt-6 text-center text-sm text-brew-muted">
             계정이 없으신가요?{" "}

@@ -124,15 +124,17 @@ model Tenant {
 
 // 2. users
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String?
-  role      UserRole @default(BREWER)
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String?
+  role          UserRole  @default(BREWER)
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  resetToken    String?   @unique
+  resetTokenExp DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   batches        Batch[]
   recipeShares   RecipeShare[]
