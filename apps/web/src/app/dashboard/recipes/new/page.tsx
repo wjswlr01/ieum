@@ -6,7 +6,11 @@ import {
   BEER_TEMPLATES,
   MAKGEOLLI_TEMPLATES,
   NODE_TYPE_META,
-  formatDuration,
+  formatNodeDuration,
+  durationUnitLabel,
+  minutesToDisplay,
+  displayToMinutes,
+  isLongDurationNode,
   type NodeDraft,
   type RecipeTemplate,
   type GrainPrepParams,
@@ -720,7 +724,7 @@ export default function NewRecipePage() {
                       <p className="text-sm font-medium text-brew-text truncate">{node.name}</p>
                     </div>
                     <span className="font-mono text-xs text-brew-subtle shrink-0">
-                      {formatDuration(node.durationMin)}
+                      {formatNodeDuration(node.durationMin, node.nodeType)}
                     </span>
                     <span className={`text-brew-subtle text-xs shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}>
                       ▾
@@ -743,16 +747,24 @@ export default function NewRecipePage() {
                         </div>
                         <div>
                           <label className="block text-xs text-brew-subtle mb-1">
-                            소요 시간 ({formatDuration(node.durationMin)})
+                            소요 시간 ({durationUnitLabel(node.nodeType)})
                           </label>
                           <input
                             type="number"
-                            min={1}
-                            value={node.durationMin}
-                            onChange={(e) => updateNode(i, { durationMin: parseInt(e.target.value) || 0 })}
+                            min={isLongDurationNode(node.nodeType) ? 1 : 0.5}
+                            step={isLongDurationNode(node.nodeType) ? 1 : 0.5}
+                            value={minutesToDisplay(node.durationMin, node.nodeType)}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value);
+                              updateNode(i, {
+                                durationMin: Number.isFinite(v) && v > 0
+                                  ? displayToMinutes(v, node.nodeType)
+                                  : 0,
+                              });
+                            }}
                             className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
                           />
-                          <span className="text-xs text-brew-faint">분 단위</span>
+                          <span className="text-xs text-brew-faint">{durationUnitLabel(node.nodeType)} 단위</span>
                         </div>
                         {node.targetTemp !== undefined && (
                           <div>

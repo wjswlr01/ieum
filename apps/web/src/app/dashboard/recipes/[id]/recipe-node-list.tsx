@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { NODE_TYPE_META, formatDuration } from "@/lib/recipe-templates";
+import { NODE_TYPE_META, formatNodeDuration } from "@/lib/recipe-templates";
 
 type RecipeNode = {
   id: string;
@@ -173,7 +173,7 @@ function NodeCard({
           <div className="flex items-center gap-3 shrink-0">
             <div className="text-right">
               <p className="font-mono text-sm font-medium text-brew-muted">
-                {formatDuration(node.durationMin ?? 0)}
+                {formatNodeDuration(node.durationMin, node.nodeType)}
               </p>
               {node.targetTemp != null && (
                 <p className="text-xs text-brew-subtle">{node.targetTemp}°C</p>

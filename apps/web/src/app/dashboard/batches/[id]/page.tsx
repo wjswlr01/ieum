@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { NODE_TYPE_META, formatDuration } from "@/lib/recipe-templates";
+import { NODE_TYPE_META, formatNodeDuration } from "@/lib/recipe-templates";
 import BatchStartButton from "./batch-start-button";
 import NodeActions from "./node-actions";
 import NodeActualForm from "./node-actual-form";
@@ -641,7 +641,7 @@ export default async function BatchDetailPage({ params }: Props) {
                         <p className={`font-medium ${node.recipeNode ? "text-brew-text" : "text-brew-subtle italic"}`}>{nodeName}</p>
                         {node.recipeNode?.durationMin && (
                           <p className="text-xs text-brew-subtle mt-0.5">
-                            예상 {formatDuration(node.recipeNode.durationMin)}
+                            예상 {formatNodeDuration(node.recipeNode.durationMin, nodeType)}
                             {node.recipeNode.targetTemp != null && ` · ${node.recipeNode.targetTemp}°C`}
                           </p>
                         )}

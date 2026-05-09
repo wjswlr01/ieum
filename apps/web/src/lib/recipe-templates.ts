@@ -151,3 +151,37 @@ export function formatDuration(minutes: number): string {
   if (minutes < 1440) return `${Math.round(minutes / 60)}시간`;
   return `${Math.round(minutes / 1440)}일`;
 }
+
+// ── 노드 타입별 소요 시간 단위 ───────────────────────────────────
+// 발효/숙성 노드는 일 단위, 그 외(고두밥/밑술/덧술/당화/끓이기 등)는 시간 단위.
+// DB에는 항상 분 단위로 저장.
+
+export function isLongDurationNode(nodeType: string): boolean {
+  return nodeType === "FERMENTATION" || nodeType === "CONDITIONING";
+}
+
+export function durationUnitLabel(nodeType: string): "일" | "시간" {
+  return isLongDurationNode(nodeType) ? "일" : "시간";
+}
+
+export function minutesToDisplay(minutes: number, nodeType: string): number {
+  const divisor = isLongDurationNode(nodeType) ? 1440 : 60;
+  return parseFloat((minutes / divisor).toFixed(2));
+}
+
+export function displayToMinutes(value: number, nodeType: string): number {
+  const factor = isLongDurationNode(nodeType) ? 1440 : 60;
+  return Math.round(value * factor);
+}
+
+export function formatNodeDuration(
+  minutes: number | null | undefined,
+  nodeType: string
+): string {
+  if (minutes == null || !Number.isFinite(minutes)) return "—";
+  const unit = durationUnitLabel(nodeType);
+  const v = minutesToDisplay(minutes, nodeType);
+  // 정수면 정수, 아니면 최대 소수점 1자리로 보기 좋게
+  const display = Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, "");
+  return `${display}${unit}`;
+}
