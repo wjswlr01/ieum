@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import LoginButtons from "./login-buttons";
+import EmailLoginForm from "./email-login-form";
 
 // 빌드 타임이 아니라 요청 시점의 process.env를 읽도록 강제
 export const dynamic = "force-dynamic";
@@ -41,7 +42,22 @@ export default function LoginPage() {
 
           <LoginButtons enabled={enabled} />
 
-          <p className="mt-6 text-center text-[11px] text-brew-faint leading-relaxed">
+          <div className="my-5 flex items-center gap-3" aria-hidden="true">
+            <div className="h-px flex-1 bg-brew-border" />
+            <span className="text-xs text-brew-faint">또는</span>
+            <div className="h-px flex-1 bg-brew-border" />
+          </div>
+
+          <EmailLoginForm />
+
+          <p className="mt-6 text-center text-sm text-brew-muted">
+            계정이 없으신가요?{" "}
+            <Link href="/signup" className="text-brew-accent hover:text-brew-accent-hover transition-colors font-medium">
+              회원가입
+            </Link>
+          </p>
+
+          <p className="mt-3 text-center text-[11px] text-brew-faint leading-relaxed">
             계속하면 <span className="underline decoration-brew-faint underline-offset-2">이용약관</span> 및{" "}
             <span className="underline decoration-brew-faint underline-offset-2">개인정보처리방침</span>에
             동의하게 됩니다.

@@ -3,6 +3,8 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import KakaoProvider from "next-auth/providers/kakao";
 import NaverProvider from "next-auth/providers/naver";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { seedDefaultRecipes } from "./seed/default-recipes";
 import { seedCatalog } from "./seed/catalog";
@@ -69,6 +71,34 @@ if (SOCIAL_PROVIDERS.naver) {
   );
 }
 
+// 이메일/비밀번호 (CredentialsProvider) — 소셜과 동시 사용.
+// JWT 세션 전략에서는 PrismaAdapter와 충돌하지 않음 (Account/Session 미사용).
+providers.push(
+  CredentialsProvider({
+    name: "credentials",
+    credentials: {
+      email: { label: "이메일", type: "email" },
+      password: { label: "비밀번호", type: "password" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) return null;
+      const email = credentials.email.trim().toLowerCase();
+      const user = await db.user.findUnique({ where: { email } });
+      if (!user?.password || !user.isActive) return null;
+      const valid = await bcrypt.compare(credentials.password, user.password);
+      if (!valid) return null;
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        ...(user.tenantId ? { tenantId: user.tenantId } : {}),
+        role: user.role,
+        isAdmin: user.isAdmin,
+      };
+    },
+  })
+);
+
 // ── 슬러그 충돌 회피 ──────────────────────────────────────────────
 function slugifyKo(input: string): string {
   const base = input
@@ -122,17 +152,14 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers,
-  // 콜백 에러 디버깅 — Vercel 로그에서 원인 식별용
-  debug: true,
+  // 운영 환경에서는 에러만 출력 (필요 시 NEXTAUTH_DEBUG=1 로 켤 수 있게 가드)
+  ...(process.env.NEXTAUTH_DEBUG === "1" ? { debug: true } : {}),
   logger: {
     error(code, metadata) {
       console.error("[NextAuth Error]", code, JSON.stringify(metadata, null, 2));
     },
     warn(code) {
       console.warn("[NextAuth Warn]", code);
-    },
-    debug(code, metadata) {
-      console.log("[NextAuth Debug]", code, metadata ? JSON.stringify(metadata) : "");
     },
   },
   events: {
@@ -148,13 +175,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      console.log("[NextAuth signIn]", {
-        userId: user?.id,
-        email: user?.email,
-        provider: account?.provider,
-        profileKeys: profile ? Object.keys(profile) : null,
-      });
+    async signIn() {
       return true;
     },
     async jwt({ token, user }) {

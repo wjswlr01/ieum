@@ -5,6 +5,25 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import bcrypt from "bcryptjs";
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+  if (newPassword.length < 8) throw new Error("새 비밀번호는 8자 이상이어야 합니다.");
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { password: true },
+  });
+  if (!user?.password) throw new Error("소셜 로그인 계정은 비밀번호 변경을 지원하지 않습니다.");
+
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) throw new Error("현재 비밀번호가 올바르지 않습니다.");
+
+  const hashed = await bcrypt.hash(newPassword, 12);
+  await db.user.update({ where: { id: session.user.id }, data: { password: hashed } });
+}
 
 export async function updateProfile(name: string) {
   const session = await getServerSession(authOptions);

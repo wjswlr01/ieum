@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { ProfileSection } from "./profile-section";
+import { ProfileSection, PasswordSection } from "./profile-section";
 import { TenantSection, MembersSection } from "./members-section";
 import { PreferencesSection, NotificationsSection, AccountSection } from "./account-section";
 
@@ -26,7 +26,7 @@ export default async function SettingsPage() {
   const [user, tenant, members] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true, password: true },
     }),
     db.tenant.findUnique({
       where: { id: session.user.tenantId },
@@ -41,13 +41,27 @@ export default async function SettingsPage() {
 
   if (!user || !tenant) redirect("/dashboard");
 
+  // 비밀번호가 설정된 사용자(이메일 가입자)에게만 비밀번호 변경 섹션 노출
+  const hasPassword = !!user.password;
+
   return (
     <main className="px-4 py-6 md:px-12 md:py-10 max-w-2xl mx-auto w-full">
       <h1 className="font-serif text-xl md:text-2xl font-bold mb-8">계정 설정</h1>
 
       <div className="flex flex-col gap-6">
         <SectionCard title="프로필">
-          <ProfileSection initialName={user.name ?? ""} email={user.email ?? ""} />
+          <div className="flex flex-col gap-6">
+            <ProfileSection initialName={user.name ?? ""} email={user.email ?? ""} />
+            {hasPassword && (
+              <>
+                <Divider />
+                <div>
+                  <p className="text-sm font-medium text-brew-text mb-3">비밀번호 변경</p>
+                  <PasswordSection />
+                </div>
+              </>
+            )}
+          </div>
         </SectionCard>
 
         <SectionCard title="양조장">
