@@ -7,7 +7,8 @@
     "build": "prisma generate --schema=../../packages/db/prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@ieum/brewing-logic": "workspace:*",
@@ -29,6 +30,7 @@
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.0",
     "prisma": "^5.13.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.4.0"
   }
 }
