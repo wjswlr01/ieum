@@ -35,7 +35,7 @@ type WizardState = {
 const STEPS = ["주종 선택", "템플릿", "기본 정보", "공정 확인"];
 
 const RICE_TYPES = ["찹쌀", "멥쌀", "쌀가루", "흑미", "현미", "기타"];
-const STEAMING_METHODS = ["시루", "찜기", "압력솥"];
+const STEAMING_METHODS = ["시루", "찜기", "압력솥", "죽 만들기"];
 const NURUK_TYPES = ["개량누룩", "전통누룩", "입국", "조효소제"];
 const BEOPJE_METHODS = ["볶음", "찜", "기타"];
 const MEASURE_INTERVALS = ["매일", "2일마다", "3일마다"];
@@ -429,35 +429,14 @@ function FermentationPanel({
 }) {
   const p = getExtra<FermentationParams>(node);
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">발효 기간 (일)</label>
-        <input type="number" step="1" min="1"
-          value={p.durationDays ?? ""}
-          onChange={(e) => onChange("durationDays", parseInt(e.target.value) || undefined)}
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">측정 주기</label>
-        <select
-          value={p.measureInterval ?? ""}
-          onChange={(e) => onChange("measureInterval", e.target.value)}
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        >
-          <option value="">선택</option>
-          {MEASURE_INTERVALS.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-      </div>
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">목표 산도 (선택)</label>
-        <input type="number" step="0.01" min="0"
-          value={p.targetAcidity ?? ""}
-          onChange={(e) => onChange("targetAcidity", parseFloat(e.target.value) || undefined)}
-          placeholder="예: 0.35"
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        />
-      </div>
+    <div>
+      <label className="block text-xs text-brew-subtle mb-1">목표 산도 (선택)</label>
+      <input type="number" step="0.01" min="0"
+        value={p.targetAcidity ?? ""}
+        onChange={(e) => onChange("targetAcidity", parseFloat(e.target.value) || undefined)}
+        placeholder="예: 0.35"
+        className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+      />
     </div>
   );
 }
@@ -778,10 +757,27 @@ export default function NewRecipePage() {
                             />
                           </div>
                         )}
+                        {/* FERMENTATION: 측정 주기를 목표 온도 옆에 배치 */}
+                        {node.nodeType === "FERMENTATION" && (
+                          <div>
+                            <label className="block text-xs text-brew-subtle mb-1">측정 주기</label>
+                            <select
+                              value={(node.extraParams as FermentationParams | undefined)?.measureInterval ?? ""}
+                              onChange={(e) => setNodeExtra(i, "measureInterval", e.target.value || undefined)}
+                              className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+                            >
+                              <option value="">선택</option>
+                              {MEASURE_INTERVALS.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                        )}
                       </div>
 
-                      {/* 타입별 상세 입력 */}
-                      {hasExtra && (
+                      {/* 타입별 상세 입력 — FERMENTATION은 헤더 없이 목표 산도만 */}
+                      {hasExtra && node.nodeType === "FERMENTATION" && (
+                        <FermentationPanel node={node} onChange={(k, v) => setNodeExtra(i, k, v)} />
+                      )}
+                      {hasExtra && node.nodeType !== "FERMENTATION" && (
                         <div className="border-t border-brew-border/50 pt-4">
                           <p className="text-xs font-medium text-brew-muted mb-3">
                             {meta?.label} 세부 정보
@@ -791,9 +787,6 @@ export default function NewRecipePage() {
                           )}
                           {node.nodeType === "MASH" && (
                             <MashPanel node={node} onChange={(k, v) => setNodeExtra(i, k, v)} />
-                          )}
-                          {node.nodeType === "FERMENTATION" && (
-                            <FermentationPanel node={node} onChange={(k, v) => setNodeExtra(i, k, v)} />
                           )}
                         </div>
                       )}

@@ -151,7 +151,7 @@ type FieldDef = {
 const GRAIN_PREP_FIELDS: FieldDef[] = [
   { key: "soakingHours", label: "침지 시간", unit: "시간", type: "number", step: "0.5",
     diffFn: (a, p) => diffMinutesToStr(Math.round((a - p) * 60)) },
-  { key: "steamingMethod", label: "증자 방법", unit: "", type: "select", options: ["시루", "찜기", "압력솥"] },
+  { key: "steamingMethod", label: "증자 방법", unit: "", type: "select", options: ["시루", "찜기", "압력솥", "죽 만들기"] },
   { key: "steamingMinutes", label: "증자 시간", unit: "분", type: "number", step: "1",
     diffFn: (a, p) => diffMinutesToStr(Math.round(a - p)) },
   { key: "coolingTargetTemp", label: "목표 냉각 온도", unit: "°C", type: "number", step: "0.5",
