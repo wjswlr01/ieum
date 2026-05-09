@@ -1,9 +1,18 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SOCIAL_PROVIDERS } from "@/lib/auth";
 import LoginButtons from "./login-buttons";
 
+// 빌드 타임이 아니라 요청 시점의 process.env를 읽도록 강제
+export const dynamic = "force-dynamic";
+
 export default function LoginPage() {
+  // 매 요청마다 평가 — Vercel ENV가 빌드 후 추가되어도 즉시 반영됨
+  const enabled = {
+    google: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    kakao: !!(process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET),
+    naver: !!(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET),
+  };
+
   return (
     <div className="min-h-screen bg-brew-bg text-brew-text flex flex-col">
       <header className="bg-brew-dark flex items-center justify-between px-6 py-5 md:px-12">
@@ -30,7 +39,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <LoginButtons enabled={SOCIAL_PROVIDERS} />
+          <LoginButtons enabled={enabled} />
 
           <p className="mt-6 text-center text-[11px] text-brew-faint leading-relaxed">
             계속하면 <span className="underline decoration-brew-faint underline-offset-2">이용약관</span> 및{" "}
