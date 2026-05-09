@@ -28,6 +28,21 @@ if (SOCIAL_PROVIDERS.kakao) {
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID!,
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+      // 카카오 계정 동의 항목에서 이메일이 선택일 수 있어 명시 매핑
+      profile(profile: any) {
+        return {
+          id: String(profile.id),
+          name:
+            profile.kakao_account?.profile?.nickname ??
+            profile.properties?.nickname ??
+            null,
+          email: profile.kakao_account?.email ?? null,
+          image:
+            profile.kakao_account?.profile?.profile_image_url ??
+            profile.properties?.profile_image ??
+            null,
+        };
+      },
     })
   );
 }
@@ -36,6 +51,16 @@ if (SOCIAL_PROVIDERS.naver) {
     NaverProvider({
       clientId: process.env.NAVER_CLIENT_ID!,
       clientSecret: process.env.NAVER_CLIENT_SECRET!,
+      // 네이버 응답은 { response: { id, email, name, ... } } 형태
+      profile(profile: any) {
+        const r = profile.response ?? {};
+        return {
+          id: r.id,
+          name: r.name ?? r.nickname ?? null,
+          email: r.email ?? null,
+          image: r.profile_image ?? null,
+        };
+      },
     })
   );
 }
@@ -101,25 +126,23 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async signIn({ user }) {
-      // 기존 이메일 가입자가 같은 이메일로 OAuth 로그인 시 PrismaAdapter가
-      // Account를 자동 link 함. tenant가 이미 있으면 그대로 통과.
-      if (!user.email) return false;
+    async signIn() {
+      // 이메일 미제공 케이스도 허용 (네이버는 동의항목에 따라 email 누락 가능).
+      // PrismaAdapter가 Account를 자동 link / User를 자동 생성하므로 별도 처리 불필요.
       return true;
     },
     async jwt({ token, user }) {
-      // 첫 로그인 — adapter가 user를 새로 생성/조회한 시점.
-      // user 객체에는 tenantId/role 등이 빠져 있을 수 있어 DB에서 다시 fetch.
-      if (user?.email || (token.email && !token.tenantId)) {
-        const email = (user?.email ?? token.email)?.toLowerCase().trim();
-        if (email) {
-          const dbUser = await db.user.findUnique({ where: { email } });
-          if (dbUser) {
-            token.id = dbUser.id;
-            token.tenantId = dbUser.tenantId ?? "";
-            token.role = dbUser.role;
-            token.isAdmin = dbUser.isAdmin;
-          }
+      // user.id는 첫 로그인 시 (adapter가 createUser 후 호출), token.sub는 이후 요청.
+      // 둘 중 하나로 DB 조회해 tenantId/role 등을 토큰에 채워둠.
+      const userId = user?.id ?? (token.tenantId ? null : token.sub);
+      if (userId) {
+        const dbUser = await db.user.findUnique({ where: { id: userId } });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.tenantId = dbUser.tenantId ?? "";
+          token.role = dbUser.role;
+          token.isAdmin = dbUser.isAdmin;
+          if (dbUser.email) token.email = dbUser.email;
         }
       }
       return token;
