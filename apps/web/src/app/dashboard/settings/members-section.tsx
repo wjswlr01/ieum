@@ -8,7 +8,7 @@ import {
   removeMember,
 } from "@/lib/actions/settings";
 
-type Member = { id: string; name: string; email: string; role: string };
+type Member = { id: string; name: string | null; email: string | null; role: string };
 
 const ROLE_LABEL: Record<string, string> = {
   OWNER: "오너",
@@ -99,7 +99,7 @@ export function MembersSection({
 
   const [invite, setInvite] = useState({ email: "", name: "", role: "BREWER" });
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [inviteOk, setInviteOk] = useState<string | null>(null);
   const [invitePending, startInviteTransition] = useTransition();
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
@@ -132,11 +132,11 @@ export function MembersSection({
   function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviteMsg(null);
-    setTempPassword(null);
+    setInviteOk(null);
     startInviteTransition(async () => {
       try {
-        const result = await inviteMember(invite);
-        setTempPassword(result.tempPassword);
+        await inviteMember(invite);
+        setInviteOk(`${invite.name}님이 초대되었습니다. 같은 이메일로 소셜 로그인하면 본 양조장에 자동 합류합니다.`);
         setInvite({ email: "", name: "", role: "BREWER" });
       } catch (e) {
         setInviteMsg(e instanceof Error ? e.message : "오류가 발생했습니다.");
@@ -163,12 +163,12 @@ export function MembersSection({
               {members.map((m) => (
                 <tr key={m.id} className="border-b border-brew-border/50">
                   <td className="px-4 py-3 text-brew-text font-medium">
-                    {m.name}
+                    {m.name ?? "—"}
                     {m.id === currentUserId && (
                       <span className="ml-1.5 text-xs text-brew-subtle">(나)</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-brew-subtle text-xs hidden sm:table-cell">{m.email}</td>
+                  <td className="px-4 py-3 text-brew-subtle text-xs hidden sm:table-cell">{m.email ?? "—"}</td>
                   <td className="px-4 py-3">
                     {isOwner && m.id !== currentUserId && m.role !== "OWNER" ? (
                       <select
@@ -263,12 +263,10 @@ export function MembersSection({
             </div>
 
             {inviteMsg && <p className="text-xs text-red-600">{inviteMsg}</p>}
-            {tempPassword && (
-              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <p className="text-xs text-green-800 mb-1">초대 완료! 임시 비밀번호를 공유해주세요:</p>
-                <p className="font-mono font-bold text-green-900 text-sm">{tempPassword}</p>
-                <p className="text-xs text-green-700 mt-1">첫 로그인 후 비밀번호를 변경하도록 안내해주세요.</p>
-              </div>
+            {inviteOk && (
+              <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-xs text-green-800">
+                {inviteOk}
+              </p>
             )}
 
             <button

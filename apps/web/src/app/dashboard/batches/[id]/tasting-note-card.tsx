@@ -23,7 +23,7 @@ type TastingNote = {
   appearance: unknown;
   notes: string | null;
   createdAt: Date;
-  taster: { name: string };
+  taster: { name: string | null };
 };
 
 // ── SVG 레이더 차트 ──────────────────────────────────────────────
@@ -179,7 +179,7 @@ export default function TastingNoteCard({
             <span className="text-lg font-bold font-mono text-brew-text">{note.overallScore}</span>
             <span className="text-xs text-brew-subtle">/ 10</span>
             <span className="text-xs text-brew-faint">
-              · {note.taster.name} ·{" "}
+              · {note.taster.name ?? "이름 없음"} ·{" "}
               {new Date(note.createdAt).toLocaleDateString("ko-KR")}
             </span>
           </div>

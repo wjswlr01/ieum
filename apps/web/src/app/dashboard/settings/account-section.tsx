@@ -180,16 +180,22 @@ export function NotificationsSection() {
 
 export function AccountSection() {
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [password, setPassword] = useState("");
+  const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function closeDialog() {
+    setDeleteOpen(false);
+    setError(null);
+    setConfirmText("");
+  }
 
   function handleDelete(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
       try {
-        await deleteAccount(password);
+        await deleteAccount(confirmText);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "오류가 발생했습니다.";
         if (!msg.includes("NEXT_REDIRECT")) setError(msg);
@@ -230,7 +236,7 @@ export function AccountSection() {
       {deleteOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => { setDeleteOpen(false); setError(null); setPassword(""); }}
+          onClick={closeDialog}
         >
           <div
             className="w-full max-w-sm mx-4 rounded-2xl bg-white p-6 shadow-xl"
@@ -243,13 +249,14 @@ export function AccountSection() {
             <form onSubmit={handleDelete} className="flex flex-col gap-3">
               <div>
                 <label className="block text-sm text-brew-text mb-1.5">
-                  비밀번호를 입력하여 확인하세요
+                  확인을 위해 <span className="font-semibold text-red-600">계정 삭제</span>를 입력하세요
                 </label>
                 <input
-                  type="password"
+                  type="text"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder="계정 삭제"
                   className="w-full rounded-lg border border-brew-border px-4 py-2.5 text-sm focus:border-red-400 focus:outline-none"
                 />
               </div>
@@ -261,14 +268,14 @@ export function AccountSection() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => { setDeleteOpen(false); setError(null); setPassword(""); }}
+                  onClick={closeDialog}
                   className="flex-1 rounded-xl border border-brew-border py-2.5 text-sm font-medium text-brew-muted hover:border-brew-border-hover transition-colors"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending || !password}
+                  disabled={isPending || confirmText.trim() !== "계정 삭제"}
                   className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
                 >
                   {isPending ? "삭제 중..." : "영구 삭제"}

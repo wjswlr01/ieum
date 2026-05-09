@@ -53,8 +53,8 @@ export async function GET(req: Request) {
       isAdmin: u.isAdmin,
       isActive: u.isActive,
       createdAt: u.createdAt.toISOString(),
-      tenantName: u.tenant.name,
-      tenantId: u.tenant.id,
+      tenantName: u.tenant?.name ?? null,
+      tenantId: u.tenant?.id ?? null,
       batchCount: u._count.batches,
     })),
   });

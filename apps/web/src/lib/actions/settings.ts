@@ -5,14 +5,6 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import bcrypt from "bcryptjs";
-
-function generateTempPassword(len = 10): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  let out = "";
-  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
-}
 
 export async function updateProfile(name: string) {
   const session = await getServerSession(authOptions);
@@ -25,24 +17,6 @@ export async function updateProfile(name: string) {
   });
 
   revalidatePath("/dashboard/settings");
-}
-
-export async function changePassword(currentPassword: string, newPassword: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
-  if (newPassword.length < 8) throw new Error("새 비밀번호는 8자 이상이어야 합니다.");
-
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { password: true },
-  });
-  if (!user?.password) throw new Error("비밀번호 인증을 사용하지 않는 계정입니다.");
-
-  const valid = await bcrypt.compare(currentPassword, user.password);
-  if (!valid) throw new Error("현재 비밀번호가 올바르지 않습니다.");
-
-  const hashed = await bcrypt.hash(newPassword, 12);
-  await db.user.update({ where: { id: session.user.id }, data: { password: hashed } });
 }
 
 export async function updateTenantName(name: string) {
@@ -60,30 +34,29 @@ export async function updateTenantName(name: string) {
   revalidatePath("/dashboard/settings");
 }
 
+// 멤버 초대: 소셜 로그인 전용 전환 후에는 이메일 사전등록만 가능.
+// 초대받은 사용자가 같은 이메일로 첫 소셜 로그인 시 자동으로 본 양조장에 합류.
 export async function inviteMember(input: { email: string; name: string; role: string }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   if (!["OWNER", "MANAGER"].includes(session.user.role))
     throw new Error("권한이 없습니다.");
 
-  const existing = await db.user.findUnique({ where: { email: input.email } });
+  const email = input.email.trim().toLowerCase();
+  const existing = await db.user.findUnique({ where: { email } });
   if (existing) throw new Error("이미 등록된 이메일입니다.");
-
-  const tempPassword = generateTempPassword();
-  const hashed = await bcrypt.hash(tempPassword, 12);
 
   await db.user.create({
     data: {
-      email: input.email.trim().toLowerCase(),
+      email,
       name: input.name.trim(),
-      password: hashed,
       role: input.role as any,
       tenantId: session.user.tenantId,
     },
   });
 
   revalidatePath("/dashboard/settings");
-  return { tempPassword };
+  return { ok: true as const };
 }
 
 export async function updateMemberRole(userId: string, role: string) {
@@ -122,18 +95,14 @@ export async function removeMember(userId: string) {
   revalidatePath("/dashboard/settings");
 }
 
-export async function deleteAccount(password: string) {
+// 계정 삭제 — 소셜 로그인 전환 후 비밀번호 인증 불가.
+// 명시 문구("계정 삭제")를 typed-confirm으로 받아 오인 삭제 방지.
+export async function deleteAccount(confirmText: string) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { password: true },
-  });
-  if (!user?.password) throw new Error("비밀번호 인증을 사용하지 않는 계정입니다.");
-
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) throw new Error("비밀번호가 올바르지 않습니다.");
+  if (confirmText.trim() !== "계정 삭제")
+    throw new Error("'계정 삭제'를 정확히 입력해주세요.");
 
   const batchCount = await db.batch.count({ where: { brewerId: session.user.id } });
   if (batchCount > 0)

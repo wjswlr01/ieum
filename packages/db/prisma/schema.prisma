@@ -125,12 +125,14 @@ model Tenant {
 // 2. users
 model User {
   id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  password      String?
+  email         String?   @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  password      String?   // 레거시 이메일 가입자 호환용 — 신규 가입자는 null
   role          UserRole  @default(BREWER)
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  tenantId      String?   // 신규 OAuth 가입 직후 잠시 null (events.createUser에서 채움)
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
   resetToken    String?   @unique
   resetTokenExp DateTime?
   isAdmin       Boolean   @default(false)
@@ -139,6 +141,8 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  accounts       Account[]
+  sessions       Session[]
   batches        Batch[]
   recipeShares   RecipeShare[]
   accessMappings AccessMapping[]
@@ -147,6 +151,46 @@ model User {
 
   @@index([tenantId])
   @@index([email])
+}
+
+// 2b. NextAuth — Account / Session / VerificationToken
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 // ─── 레시피 ───────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { ProfileSection, PasswordSection } from "./profile-section";
+import { ProfileSection } from "./profile-section";
 import { TenantSection, MembersSection } from "./members-section";
 import { PreferencesSection, NotificationsSection, AccountSection } from "./account-section";
 
@@ -47,14 +47,7 @@ export default async function SettingsPage() {
 
       <div className="flex flex-col gap-6">
         <SectionCard title="프로필">
-          <div className="flex flex-col gap-6">
-            <ProfileSection initialName={user.name} email={user.email ?? ""} />
-            <Divider />
-            <div>
-              <p className="text-sm font-medium text-brew-text mb-3">비밀번호 변경</p>
-              <PasswordSection />
-            </div>
-          </div>
+          <ProfileSection initialName={user.name ?? ""} email={user.email ?? ""} />
         </SectionCard>
 
         <SectionCard title="양조장">
