@@ -529,6 +529,16 @@ const CATALOG_ITEMS: CatalogItem[] = [
       recommendedUse: ["막걸리", "탁주", "약주"],
     },
   },
+  {
+    name: "쌀가루",
+    category: "RICE",
+    unit: "KG",
+    sku: "CATALOG:RICE:쌀가루",
+    metadata: {
+      description: "고두밥 대신 쓰거나 발효 보조 원료로 사용. 입자가 작아 호화·당화가 빠름",
+      recommendedUse: ["속성주", "범벅", "구멍떡"],
+    },
+  },
 
   // ── 몰트 5종 ────────────────────────────────────────────────────
   {

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkLowStockNotifications, createNotification } from "@/lib/notifications";
 import { compatible, hasSufficient, toBase, fromBase, type Unit as ConvUnit } from "@ieum/brewing-logic";
+import { unitLabel } from "@/lib/units";
 
 export type BatchIngredientInput = {
   inventoryId: string;
@@ -146,12 +147,12 @@ export async function activateBatch(batchId: string) {
         }
         if (!compatible(inv.unit as ConvUnit, bi.unit as ConvUnit)) {
           throw new Error(
-            `[${inv.name}] 단위 불일치: 재고 ${inv.unit} vs 사용 ${bi.unit}.`
+            `[${inv.name}] 단위 불일치: 재고 ${unitLabel(inv.unit)} vs 사용 ${unitLabel(bi.unit)}.`
           );
         }
         if (!hasSufficient(inv.quantity, inv.unit as ConvUnit, bi.plannedAmt, bi.unit as ConvUnit)) {
           throw new Error(
-            `[${inv.name}] 재고 부족: 보유 ${inv.quantity}${inv.unit} / 필요 ${bi.plannedAmt}${bi.unit}.`
+            `[${inv.name}] 재고 부족: 보유 ${inv.quantity}${unitLabel(inv.unit)} / 필요 ${bi.plannedAmt}${unitLabel(bi.unit)}.`
           );
         }
       }
@@ -319,11 +320,11 @@ export async function saveActualParams(
         throw new Error(`재고를 찾을 수 없습니다 (id=${ing.inventoryId}).`);
       }
       if (!compatible(inv.unit as ConvUnit, ing.unit as ConvUnit)) {
-        throw new Error(`[${inv.name}] 단위 불일치: 재고 ${inv.unit} vs 사용 ${ing.unit}.`);
+        throw new Error(`[${inv.name}] 단위 불일치: 재고 ${unitLabel(inv.unit)} vs 사용 ${unitLabel(ing.unit)}.`);
       }
       if (!hasSufficient(inv.quantity, inv.unit as ConvUnit, ing.plannedAmt, ing.unit as ConvUnit)) {
         throw new Error(
-          `[${inv.name}] 재고 부족: 보유 ${inv.quantity}${inv.unit} / 필요 ${ing.plannedAmt}${ing.unit}.`
+          `[${inv.name}] 재고 부족: 보유 ${inv.quantity}${unitLabel(inv.unit)} / 필요 ${ing.plannedAmt}${unitLabel(ing.unit)}.`
         );
       }
     }

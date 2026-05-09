@@ -33,17 +33,23 @@ export type GrainPrepParams = {
   steamingMethod?: string;    // 시루/찜기/압력솥
   steamingMinutes?: number;   // 증자 시간
   coolingTargetTemp?: number; // 목표 냉각 온도
+  waterMl?: number;           // 고두밥용 물 투입량 (mL)
 };
 
 // ── 밑술/덧술 담기 노드 extraParams ──────────────────────────────
 export type MashParams = {
-  nurukType?: string;   // 개량누룩/전통누룩/입국/조효소제
-  nurukSource?: string; // 제조사/출처
-  nurukRatio?: number;  // 쌀 대비 누룩 비율 (%)
-  hasIpguk?: boolean;   // 입국 여부
-  waterL?: number;      // 물 투입량 (L)
-  waterTemp?: number;   // 물 온도 (°C)
-  mixTemp?: number;     // 혼합 온도 목표 (°C)
+  useNuruk?: boolean;       // 누룩 사용 여부 (기본 true) — 덧술에서 OFF 가능
+  nurukType?: string;       // 개량누룩/전통누룩/입국/조효소제
+  nurukSource?: string;     // 제조사/출처
+  nurukRatio?: number;      // 쌀 대비 누룩 비율 (%)
+  nurukAmountKg?: number;   // 누룩 무게 (kg) — 비율과 자동 연동
+  hasIpguk?: boolean;       // 입국 여부
+  waterL?: number;          // 물 투입량 (L)
+  waterTemp?: number;       // 물 온도 (°C)
+  mixTemp?: number;         // 혼합 온도 목표 (°C)
+  isBeopje?: boolean;       // 법제 처리 여부 (기본 false)
+  beopjeMethod?: string;    // 법제 방법: 볶음/찜/기타
+  beopjeMinutes?: number;   // 법제 시간 (분)
 };
 
 // ── 발효 노드 extraParams ─────────────────────────────────────────

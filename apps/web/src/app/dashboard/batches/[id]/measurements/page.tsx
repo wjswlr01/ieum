@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import MeasurementForm from "./measurement-form";
 import MeasurementChart, { type ChartPoint } from "./measurement-chart";
+import { unitLabel } from "@/lib/units";
 
 type RecipeSnapshot = { brewType: string };
 
@@ -18,14 +19,6 @@ const TYPE_LABEL: Record<string, string> = {
   GRAVITY_FINAL: "최종 비중 (SG)",
 };
 
-const UNIT_LABEL: Record<string, string> = {
-  PIECE: "",
-  PERCENT: "%",
-  BX: "°Bx",
-  PH: "pH",
-  KG: "kg",
-  L: "L",
-};
 
 const CHART_TYPES: Record<string, string[]> = {
   BEER: ["GRAVITY_ORIGINAL"],
@@ -135,11 +128,10 @@ export default async function MeasurementsPage({ params }: Props) {
                     className="border-b border-brew-border/50 hover:bg-[#E8DFD0]/50 transition-colors"
                   >
                     <td className="px-5 py-3 text-brew-muted whitespace-nowrap">
-                      {new Date(m.takenAt).toLocaleString("ko-KR", {
+                      {new Date(m.takenAt).toLocaleDateString("ko-KR", {
+                        year: "2-digit",
                         month: "2-digit",
                         day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
                       })}
                     </td>
                     <td className="px-5 py-3 text-brew-text">
@@ -147,8 +139,8 @@ export default async function MeasurementsPage({ params }: Props) {
                     </td>
                     <td className="px-5 py-3 text-right font-mono text-brew-text">
                       {m.value}
-                      {UNIT_LABEL[m.unit] && (
-                        <span className="ml-1 text-xs text-brew-subtle">{UNIT_LABEL[m.unit]}</span>
+                      {unitLabel(m.unit) && (
+                        <span className="ml-1 text-xs text-brew-subtle">{unitLabel(m.unit)}</span>
                       )}
                     </td>
                     <td className="px-5 py-3 text-brew-subtle max-w-[200px] truncate">

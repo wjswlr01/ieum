@@ -17,10 +17,10 @@ const MAKGEOLLI_TYPES = [
   { type: "PH", label: "pH", unit: "PH", placeholder: "3.5", step: "0.1" },
 ];
 
-function localDatetimeNow() {
+function localDateToday() {
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 16);
+  return now.toISOString().slice(0, 10);
 }
 
 export default function MeasurementForm({
@@ -37,20 +37,22 @@ export default function MeasurementForm({
   const [selectedType, setSelectedType] = useState(types[0]!.type);
   const [value, setValue] = useState("");
   const [notes, setNotes] = useState("");
-  const [takenAt, setTakenAt] = useState(localDatetimeNow);
+  const [takenAt, setTakenAt] = useState(localDateToday);
 
   const meta = types.find((t) => t.type === selectedType) ?? types[0]!;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!value) return;
+    // 날짜만 선택받음 — 시각은 정오(12:00)로 고정해 시간대 경계 회피
+    const iso = new Date(`${takenAt}T12:00:00`).toISOString();
     startTransition(async () => {
       await addMeasurement({
         batchId,
         type: selectedType,
         value: parseFloat(value),
         unit: meta.unit,
-        takenAt: new Date(takenAt).toISOString(),
+        takenAt: iso,
         ...(notes ? { notes } : {}),
       });
       setValue("");
@@ -98,15 +100,16 @@ export default function MeasurementForm({
           />
         </div>
 
-        {/* Datetime */}
+        {/* Date — 과거 날짜로 소급 입력 가능 */}
         <div>
-          <label className="block text-xs text-brew-subtle mb-1.5">측정 일시</label>
+          <label className="block text-xs text-brew-subtle mb-1.5">측정 날짜</label>
           <input
-            type="datetime-local"
+            type="date"
             value={takenAt}
             onChange={(e) => setTakenAt(e.target.value)}
             className="w-full rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
           />
+          <p className="text-[11px] text-brew-faint mt-1">과거 날짜로 소급 입력 가능합니다.</p>
         </div>
 
         {/* Notes */}

@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createBatch, type BatchIngredientInput } from "@/lib/actions/batch";
 import { compatible, hasSufficient, type Unit as ConvUnit } from "@ieum/brewing-logic";
+import { unitLabel } from "@/lib/units";
 
 type RecipeIngredient = { id: string; name: string; amount: number; unit: string };
 type Recipe = {
@@ -120,7 +121,7 @@ export default function DirectBatchStarter({
       return { ok: false, message: "단위 불일치" };
     }
     if (!hasSufficient(inv.quantity, inv.unit as ConvUnit, amt, r.unit as ConvUnit)) {
-      return { ok: false, message: `재고 부족! (보유 ${inv.quantity}${inv.unit})` };
+      return { ok: false, message: `재고 부족! (보유 ${inv.quantity}${unitLabel(inv.unit)})` };
     }
     return { ok: true };
   }
@@ -219,7 +220,7 @@ export default function DirectBatchStarter({
                     <option value="">— 재고 선택 —</option>
                     {filteredInventory.map((i) => (
                       <option key={i.id} value={i.id}>
-                        {i.name} (보유: {i.quantity}{i.unit})
+                        {i.name} (보유: {i.quantity}{unitLabel(i.unit)})
                       </option>
                     ))}
                   </select>
@@ -234,7 +235,7 @@ export default function DirectBatchStarter({
                       className="w-24 min-w-0 rounded-md border border-brew-border bg-white px-2.5 py-1.5 text-sm focus:border-brew-accent focus:outline-none"
                     />
                     <span className="text-xs text-brew-muted shrink-0 w-10">
-                      {r.unit ? r.unit : "-"}
+                      {r.unit ? unitLabel(r.unit) : "-"}
                     </span>
                     <button
                       type="button"
@@ -248,7 +249,7 @@ export default function DirectBatchStarter({
                 </div>
                 {inv && status.ok && (
                   <p className="mt-1.5 text-[11px] text-brew-muted">
-                    보유: {inv.quantity}{inv.unit}
+                    보유: {inv.quantity}{unitLabel(inv.unit)}
                   </p>
                 )}
                 {!status.ok && r.inventoryId && (

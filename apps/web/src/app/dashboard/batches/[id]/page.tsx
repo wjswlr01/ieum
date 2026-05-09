@@ -10,6 +10,7 @@ import NodeActualForm from "./node-actual-form";
 import DeleteBatchButton from "../delete-batch-button";
 import TastingNoteCard from "./tasting-note-card";
 import { calcAbvFromMeasurements, type AbvResult } from "@/lib/abv-calculator";
+import { unitLabel } from "@/lib/units";
 
 const STATUS_LABEL: Record<string, string> = {
   PLANNED: "대기",
@@ -32,12 +33,19 @@ const PARAM_LABELS: Record<string, string> = {
   steamingMethod: "증자 방법",
   steamingMinutes: "증자 시간",
   coolingTargetTemp: "냉각 목표",
+  waterMl: "물 투입량(고두밥)",
+  riceWeightKg: "총 쌀 중량",
+  useNuruk: "누룩 사용",
   nurukType: "누룩 종류",
   nurukSource: "제조사/출처",
   nurukRatio: "누룩 비율",
+  nurukAmountKg: "누룩 무게",
   waterL: "물 투입량",
   waterTemp: "물 온도",
   mixTemp: "혼합 온도",
+  isBeopje: "법제 처리",
+  beopjeMethod: "법제 방법",
+  beopjeMinutes: "법제 시간",
   actualTargetTemp: "실제 온도",
   durationDays: "발효 기간",
   measureInterval: "측정 주기",
@@ -49,13 +57,23 @@ const PARAM_UNITS: Record<string, string> = {
   totalWeightKg: "kg",
   steamingMinutes: "분",
   coolingTargetTemp: "°C",
+  waterMl: "mL",
+  riceWeightKg: "kg",
   nurukRatio: "%",
+  nurukAmountKg: "kg",
   waterL: "L",
   waterTemp: "°C",
   mixTemp: "°C",
+  beopjeMinutes: "분",
   actualTargetTemp: "°C",
   durationDays: "일",
 };
+
+function fmtBoolParam(v: unknown): string | null {
+  if (v === true) return "예";
+  if (v === false) return "아니오";
+  return null;
+}
 
 function formatActualParams(params: Record<string, unknown>): Array<{ label: string; value: string }> {
   const results: Array<{ label: string; value: string }> = [];
@@ -64,8 +82,14 @@ function formatActualParams(params: Record<string, unknown>): Array<{ label: str
     results.push({ label: "쌀 혼합", value: blend.map((r) => `${r.type} ${r.ratio}% (${r.weightKg}kg)`).join(", ") });
   }
   for (const [key, val] of Object.entries(params)) {
-    if (key === "riceBlend") continue;
+    if (key === "riceBlend" || key === "nurukInventoryId" || key === "nurukMode") continue;
+    if (val === undefined || val === null || val === "") continue;
     const label = PARAM_LABELS[key] ?? key;
+    const boolStr = fmtBoolParam(val);
+    if (boolStr != null) {
+      results.push({ label, value: boolStr });
+      continue;
+    }
     const unit = PARAM_UNITS[key] ?? "";
     results.push({ label, value: unit ? `${val}${unit}` : String(val) });
   }
@@ -733,7 +757,7 @@ export default async function BatchDetailPage({ params }: Props) {
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-brew-text">
                         {bi.plannedAmt}
-                        <span className="ml-1 text-xs text-brew-muted">{bi.unit}</span>
+                        <span className="ml-1 text-xs text-brew-muted">{unitLabel(bi.unit)}</span>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-brew-muted">
                         {tx ? new Date(tx.occurredAt).toLocaleString("ko-KR") : "—"}

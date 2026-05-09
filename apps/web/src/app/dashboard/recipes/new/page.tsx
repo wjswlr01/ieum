@@ -30,9 +30,10 @@ type WizardState = {
 
 const STEPS = ["주종 선택", "템플릿", "기본 정보", "공정 확인"];
 
-const RICE_TYPES = ["찹쌀", "멥쌀", "흑미", "현미", "기타"];
+const RICE_TYPES = ["찹쌀", "멥쌀", "쌀가루", "흑미", "현미", "기타"];
 const STEAMING_METHODS = ["시루", "찜기", "압력솥"];
 const NURUK_TYPES = ["개량누룩", "전통누룩", "입국", "조효소제"];
+const BEOPJE_METHODS = ["볶음", "찜", "기타"];
 const MEASURE_INTERVALS = ["매일", "2일마다", "3일마다"];
 
 function getExtra<T>(node: NodeDraft): T {
@@ -238,6 +239,15 @@ function GrainPrepPanel({
             className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
           />
         </div>
+        <div>
+          <label className="block text-xs text-brew-subtle mb-1">물 투입량 (mL)</label>
+          <input type="number" step="10" min="0"
+            value={p.waterMl ?? ""}
+            onChange={(e) => onMultiChange({ waterMl: parseFloat(e.target.value) || undefined })}
+            placeholder="고두밥용 가수량"
+            className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+          />
+        </div>
       </div>
     </div>
   );
@@ -251,71 +261,23 @@ function MashPanel({
   onChange: (key: string, value: unknown) => void;
 }) {
   const p = getExtra<MashParams>(node);
+  const useNuruk = p.useNuruk ?? true;
+  const isBeopje = p.isBeopje ?? false;
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">누룩 종류</label>
-        <select
-          value={p.nurukType ?? ""}
-          onChange={(e) => onChange("nurukType", e.target.value)}
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        >
-          <option value="">선택</option>
-          {NURUK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-      </div>
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">제조사/출처</label>
-        <input type="text"
-          value={(p.nurukSource as string) ?? ""}
-          onChange={(e) => onChange("nurukSource", e.target.value || undefined)}
-          placeholder="예: 송학곡자"
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">쌀 대비 누룩 비율 (%)</label>
-        <input type="number" step="0.1" min="0"
-          value={p.nurukRatio ?? ""}
-          onChange={(e) => onChange("nurukRatio", parseFloat(e.target.value) || undefined)}
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">물 투입량 (L)</label>
-        <input type="number" step="0.1" min="0"
-          value={p.waterL ?? ""}
-          onChange={(e) => onChange("waterL", parseFloat(e.target.value) || undefined)}
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">물 온도 (°C)</label>
-        <input type="number" step="0.5" min="0"
-          value={p.waterTemp ?? ""}
-          onChange={(e) => onChange("waterTemp", parseFloat(e.target.value) || undefined)}
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brew-subtle mb-1">혼합 온도 목표 (°C)</label>
-        <input type="number" step="0.5" min="0"
-          value={p.mixTemp ?? ""}
-          onChange={(e) => onChange("mixTemp", parseFloat(e.target.value) || undefined)}
-          className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
-        />
-      </div>
-      <div className="col-span-2">
-        <label className="block text-xs text-brew-subtle mb-1">입국 사용 여부</label>
-        <div className="flex gap-3">
+    <div className="space-y-3">
+      {/* 누룩 사용 여부 토글 (덧술 케이스 대응) */}
+      <div className="flex items-center justify-between rounded-lg border border-brew-border bg-white px-3 py-2">
+        <span className="text-xs font-medium text-brew-text">누룩 사용</span>
+        <div className="flex gap-1.5">
           {[true, false].map((v) => (
             <button
               key={String(v)}
               type="button"
-              onClick={() => onChange("hasIpguk", v)}
-              className={`px-4 py-1.5 rounded-lg text-xs border transition-colors ${
-                p.hasIpguk === v
-                  ? "border-brew-accent bg-brew-accent/10 text-brew-accent"
+              onClick={() => onChange("useNuruk", v)}
+              className={`px-3 py-1 rounded text-xs border transition-colors ${
+                useNuruk === v
+                  ? "border-brew-accent bg-brew-accent/10 text-brew-accent font-semibold"
                   : "border-brew-border text-brew-muted hover:border-brew-border-hover"
               }`}
             >
@@ -323,6 +285,132 @@ function MashPanel({
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {useNuruk && (
+          <>
+            <div>
+              <label className="block text-xs text-brew-subtle mb-1">누룩 종류</label>
+              <select
+                value={p.nurukType ?? ""}
+                onChange={(e) => onChange("nurukType", e.target.value)}
+                className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+              >
+                <option value="">선택</option>
+                {NURUK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-brew-subtle mb-1">제조사/출처</label>
+              <input type="text"
+                value={(p.nurukSource as string) ?? ""}
+                onChange={(e) => onChange("nurukSource", e.target.value || undefined)}
+                placeholder="예: 송학곡자"
+                className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-brew-subtle mb-1">쌀 대비 누룩 비율 (%)</label>
+              <input type="number" step="0.1" min="0"
+                value={p.nurukRatio ?? ""}
+                onChange={(e) => onChange("nurukRatio", parseFloat(e.target.value) || undefined)}
+                className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+              />
+            </div>
+          </>
+        )}
+        <div>
+          <label className="block text-xs text-brew-subtle mb-1">물 투입량 (L)</label>
+          <input type="number" step="0.1" min="0"
+            value={p.waterL ?? ""}
+            onChange={(e) => onChange("waterL", parseFloat(e.target.value) || undefined)}
+            className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-brew-subtle mb-1">물 온도 (°C)</label>
+          <input type="number" step="0.5" min="0"
+            value={p.waterTemp ?? ""}
+            onChange={(e) => onChange("waterTemp", parseFloat(e.target.value) || undefined)}
+            className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-brew-subtle mb-1">혼합 온도 목표 (°C)</label>
+          <input type="number" step="0.5" min="0"
+            value={p.mixTemp ?? ""}
+            onChange={(e) => onChange("mixTemp", parseFloat(e.target.value) || undefined)}
+            className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+          />
+        </div>
+        {useNuruk && (
+          <div className="col-span-2">
+            <label className="block text-xs text-brew-subtle mb-1">입국 사용 여부</label>
+            <div className="flex gap-3">
+              {[true, false].map((v) => (
+                <button
+                  key={String(v)}
+                  type="button"
+                  onClick={() => onChange("hasIpguk", v)}
+                  className={`px-4 py-1.5 rounded-lg text-xs border transition-colors ${
+                    p.hasIpguk === v
+                      ? "border-brew-accent bg-brew-accent/10 text-brew-accent"
+                      : "border-brew-border text-brew-muted hover:border-brew-border-hover"
+                  }`}
+                >
+                  {v ? "사용" : "미사용"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 법제 처리 섹션 */}
+      <div className="rounded-lg border border-brew-border bg-white p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-brew-text">법제 처리</label>
+          <div className="flex gap-1.5">
+            {[false, true].map((v) => (
+              <button
+                key={String(v)}
+                type="button"
+                onClick={() => onChange("isBeopje", v)}
+                className={`px-3 py-1 rounded text-xs border transition-colors ${
+                  isBeopje === v
+                    ? "border-brew-accent bg-brew-accent/10 text-brew-accent font-semibold"
+                    : "border-brew-border text-brew-muted hover:border-brew-border-hover"
+                }`}
+              >
+                {v ? "법제" : "미법제"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {isBeopje && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-brew-subtle mb-1">법제 방법</label>
+              <select
+                value={p.beopjeMethod ?? ""}
+                onChange={(e) => onChange("beopjeMethod", e.target.value || undefined)}
+                className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+              >
+                <option value="">선택</option>
+                {BEOPJE_METHODS.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-brew-subtle mb-1">법제 시간 (분)</label>
+              <input type="number" step="1" min="0"
+                value={p.beopjeMinutes ?? ""}
+                onChange={(e) => onChange("beopjeMinutes", parseInt(e.target.value) || undefined)}
+                className="w-full rounded-lg border border-brew-border bg-white px-3 py-1.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

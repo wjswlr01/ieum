@@ -6,6 +6,7 @@ import Link from "next/link";
 import { saveActualParams, type BatchIngredientInput } from "@/lib/actions/batch";
 import type { GrainPrepParams, RiceBlendRow, MashParams, FermentationParams } from "@/lib/recipe-templates";
 import { hasSufficient, type Unit as ConvUnit } from "@ieum/brewing-logic";
+import { unitLabel } from "@/lib/units";
 
 type Params = Record<string, unknown>;
 type Mode = "inventory" | "manual";
@@ -155,11 +156,11 @@ const GRAIN_PREP_FIELDS: FieldDef[] = [
     diffFn: (a, p) => diffMinutesToStr(Math.round(a - p)) },
   { key: "coolingTargetTemp", label: "목표 냉각 온도", unit: "°C", type: "number", step: "0.5",
     diffFn: (a, p) => fmtDiff(parseFloat((a - p).toFixed(1)), "°C") },
+  { key: "waterMl", label: "물 투입량", unit: "mL", type: "number", step: "10",
+    diffFn: (a, p) => fmtDiff(parseFloat((a - p).toFixed(0)), "mL") },
 ];
 
-const MASH_REMAINING_FIELDS: FieldDef[] = [
-  { key: "nurukRatio", label: "누룩 비율", unit: "%", type: "number", step: "0.1",
-    diffFn: (a, p) => fmtDiff(parseFloat((a - p).toFixed(1)), "%") },
+const MASH_WATER_FIELDS: FieldDef[] = [
   { key: "waterL", label: "물 투입량", unit: "L", type: "number", step: "0.1",
     diffFn: (a, p) => fmtDiff(parseFloat((a - p).toFixed(1)), "L") },
   { key: "waterTemp", label: "물 온도", unit: "°C", type: "number", step: "0.5",
@@ -183,6 +184,7 @@ const FIELDS_BY_TYPE: Record<string, FieldDef[]> = {
 };
 
 const NURUK_DIRECT_OPTIONS = ["개량누룩", "전통누룩", "입국", "조효소제"];
+const BEOPJE_METHOD_OPTIONS = ["볶음", "찜", "기타"];
 
 function rowMode(r: RiceBlendRow): Mode {
   return r.mode ?? (r.inventoryId ? "inventory" : "manual");
@@ -420,7 +422,7 @@ function RiceBlendSection({
                           <option value="">— 재고에서 선택 —</option>
                           {riceInventory.map((x) => (
                             <option key={x.id} value={x.id}>
-                              {x.name} (보유: {x.quantity}{x.unit})
+                              {x.name} (보유: {x.quantity}{unitLabel(x.unit)})
                             </option>
                           ))}
                         </select>
@@ -461,7 +463,7 @@ function RiceBlendSection({
 
                     {insufficient && (
                       <p className="mt-1.5 text-[11px] text-red-600 font-medium">
-                        ⚠ 재고 부족 — 보유 {inv?.quantity}{inv?.unit} / 필요 {row.weightKg}kg
+                        ⚠ 재고 부족 — 보유 {inv?.quantity}{unitLabel(inv?.unit)} / 필요 {row.weightKg}kg
                       </p>
                     )}
                   </div>
@@ -523,7 +525,30 @@ export default function NodeActualForm({
     nurukAmountKg?: number;
     nurukMode?: Mode;
   };
+  const useNuruk = mashP.useNuruk ?? true;
+  const isBeopje = mashP.isBeopje ?? false;
   const nurukMode: Mode = mashP.nurukMode ?? (mashP.nurukInventoryId ? "inventory" : "manual");
+
+  // 누룩 무게 표시용: 재고 모드면 선택된 재고 단위, 직접 모드면 g 기본
+  const selectedNurukInv = mashP.nurukInventoryId
+    ? inventory.find((i) => i.id === mashP.nurukInventoryId)
+    : null;
+  const nurukDisplayUnit: "KG" | "G" =
+    nurukMode === "inventory" && selectedNurukInv?.unit === "G" ? "G" : "KG";
+
+  // kg 저장값을 표시 단위로 변환
+  function nurukAmountForDisplay(): string {
+    if (mashP.nurukAmountKg == null) return "";
+    if (nurukDisplayUnit === "G") return String(round2(mashP.nurukAmountKg * 1000));
+    return String(mashP.nurukAmountKg);
+  }
+
+  // 표시 단위 입력값을 kg 저장값으로 변환
+  function nurukParseInput(v: string): number | undefined {
+    const n = parseFloat(v);
+    if (!Number.isFinite(n) || n <= 0) return undefined;
+    return nurukDisplayUnit === "G" ? round2(n / 1000) : round2(n);
+  }
 
   function setActualField(key: string, value: unknown) {
     const storeKey = key === "_targetTemp" ? "actualTargetTemp" : key;
@@ -538,12 +563,81 @@ export default function NodeActualForm({
     });
   }
 
+  // 누룩 비율 ↔ 무게 자동 연동 (총 쌀 중량 기준)
+  function setNurukRatio(ratio: number | undefined) {
+    setActual((prev) => {
+      const next = { ...prev };
+      if (ratio == null) delete next.nurukRatio;
+      else next.nurukRatio = ratio;
+      const totalKg = Number(next.riceWeightKg);
+      if (ratio != null && Number.isFinite(totalKg) && totalKg > 0) {
+        next.nurukAmountKg = round2((ratio / 100) * totalKg);
+      }
+      return next;
+    });
+  }
+
+  function setNurukAmountKg(kg: number | undefined) {
+    setActual((prev) => {
+      const next = { ...prev };
+      if (kg == null) delete next.nurukAmountKg;
+      else next.nurukAmountKg = kg;
+      const totalKg = Number(next.riceWeightKg);
+      if (kg != null && Number.isFinite(totalKg) && totalKg > 0) {
+        next.nurukRatio = round2((kg * 100) / totalKg);
+      }
+      return next;
+    });
+  }
+
+  function setRiceWeightKg(kg: number | undefined) {
+    setActual((prev) => {
+      const next = { ...prev };
+      if (kg == null) {
+        delete next.riceWeightKg;
+      } else {
+        next.riceWeightKg = kg;
+        const ratio = Number(next.nurukRatio);
+        if (Number.isFinite(ratio) && ratio > 0) {
+          next.nurukAmountKg = round2((ratio / 100) * kg);
+        }
+      }
+      return next;
+    });
+  }
+
   function setNurukMode(mode: Mode) {
     setActual((prev) => {
       const next = { ...prev, nurukMode: mode };
       if (mode === "manual") {
         delete (next as any).nurukInventoryId;
+      }
+      return next;
+    });
+  }
+
+  function setUseNuruk(v: boolean) {
+    setActual((prev) => {
+      const next = { ...prev, useNuruk: v };
+      if (!v) {
+        delete (next as any).nurukType;
+        delete (next as any).nurukSource;
+        delete (next as any).nurukRatio;
         delete (next as any).nurukAmountKg;
+        delete (next as any).nurukInventoryId;
+        delete (next as any).nurukMode;
+        delete (next as any).hasIpguk;
+      }
+      return next;
+    });
+  }
+
+  function setIsBeopje(v: boolean) {
+    setActual((prev) => {
+      const next = { ...prev, isBeopje: v };
+      if (!v) {
+        delete (next as any).beopjeMethod;
+        delete (next as any).beopjeMinutes;
       }
       return next;
     });
@@ -587,8 +681,14 @@ export default function NodeActualForm({
       }
     }
 
-    // 2) MASH 누룩 (inventory 모드만)
-    if (nodeType === "MASH" && nurukMode === "inventory" && mashP.nurukInventoryId && (mashP.nurukAmountKg ?? 0) > 0) {
+    // 2) MASH 누룩 (inventory 모드 + 누룩 사용일 때만)
+    if (
+      nodeType === "MASH" &&
+      useNuruk &&
+      nurukMode === "inventory" &&
+      mashP.nurukInventoryId &&
+      (mashP.nurukAmountKg ?? 0) > 0
+    ) {
       list.push({ inventoryId: mashP.nurukInventoryId, plannedAmt: mashP.nurukAmountKg!, unit: "KG" });
     }
 
@@ -603,7 +703,7 @@ export default function NodeActualForm({
       const inv = inventory.find((i) => i.id === ing.inventoryId);
       if (!inv) continue;
       if (!hasSufficient(inv.quantity, inv.unit as ConvUnit, ing.plannedAmt, ing.unit as ConvUnit)) {
-        const msg = `[${inv.name}] 재고 부족 — 보유 ${inv.quantity}${inv.unit} / 필요 ${ing.plannedAmt}${ing.unit}`;
+        const msg = `[${inv.name}] 재고 부족 — 보유 ${inv.quantity}${unitLabel(inv.unit)} / 필요 ${ing.plannedAmt}${unitLabel(ing.unit)}`;
         setError(msg);
         showToast(msg, "error");
         return;
@@ -627,11 +727,14 @@ export default function NodeActualForm({
     });
   }
 
-  const fields = FIELDS_BY_TYPE[nodeType] ?? (nodeType === "MASH" ? MASH_REMAINING_FIELDS : []);
+  const fields = FIELDS_BY_TYPE[nodeType] ?? (nodeType === "MASH" ? MASH_WATER_FIELDS : []);
   const showRiceBlend = nodeType === "GRAIN_PREP";
   const showMashNuruk = nodeType === "MASH";
   const showFieldsTable = showRiceBlend || showMashNuruk || fields.length > 0;
   const hasPlanData = fields.some((f) => getPlanned(f.key) != null);
+
+  // MASH: 누룩 비율 자동 계산용 총 쌀 중량 (사용자 입력)
+  const riceWeightKg = Number((actual as Record<string, unknown>).riceWeightKg) || 0;
 
   return (
     <div className="mt-3 rounded-xl border border-brew-border bg-white overflow-hidden relative">
@@ -664,92 +767,220 @@ export default function NodeActualForm({
               )}
 
               {showMashNuruk && (
-                <tr>
-                  <td colSpan={4} className="px-3 pt-3 pb-2 border-b border-brew-border/50">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-brew-muted font-medium">누룩</span>
-                      <ModeToggle mode={nurukMode} onChange={setNurukMode} size="xs" />
-                    </div>
-                    {(plannedParams as MashParams)?.nurukType && (
-                      <p className="text-xs text-brew-subtle mb-2">
-                        계획: {(plannedParams as MashParams).nurukType}
-                      </p>
-                    )}
-
-                    {nurukMode === "inventory" ? (
-                      nurukInventory.length === 0 ? (
-                        <p className="text-[11px] text-amber-700">
-                          ⚠ 재고에 등록된 누룩이 없습니다.{" "}
-                          <Link href="/dashboard/inventory/new" className="underline">재료 등록</Link>
-                        </p>
-                      ) : (
-                        (() => {
-                          const inv = mashP.nurukInventoryId ? nurukInventory.find((x) => x.id === mashP.nurukInventoryId) : null;
-                          const amt = mashP.nurukAmountKg ?? 0;
-                          const insufficient = inv && amt > 0
-                            ? !hasSufficient(inv.quantity, inv.unit as ConvUnit, amt, "KG")
-                            : false;
-                          return (
-                            <div className={`rounded-md border bg-white p-2 ${insufficient ? "border-red-300 bg-red-50/50" : "border-brew-border"}`}>
-                              <select
-                                value={mashP.nurukInventoryId ?? ""}
-                                onChange={(e) => {
-                                  const id = e.target.value;
-                                  const sel = nurukInventory.find((x) => x.id === id);
-                                  setActualField("nurukInventoryId", id || undefined);
-                                  if (sel) setActualField("nurukType", sel.name);
-                                }}
-                                className="w-full rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none mb-1.5"
-                              >
-                                <option value="">— 재고에서 선택 —</option>
-                                {nurukInventory.map((x) => (
-                                  <option key={x.id} value={x.id}>
-                                    {x.name} (보유: {x.quantity}{x.unit})
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="flex flex-nowrap items-center gap-1.5">
-                                <SuffixedNumber
-                                  value={mashP.nurukAmountKg != null ? String(mashP.nurukAmountKg) : ""}
-                                  onChange={(v) => setActualField("nurukAmountKg", parseFloat(v) || undefined)}
-                                  suffix="kg"
-                                  placeholder="사용량"
-                                  width="w-20"
-                                  step="0.01"
-                                />
-                              </div>
-                              {insufficient && (
-                                <p className="mt-1.5 text-[11px] text-red-600 font-medium">
-                                  ⚠ 재고 부족 — 보유 {inv?.quantity}{inv?.unit} / 필요 {amt}kg
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })()
-                      )
-                    ) : (
-                      <div className="flex flex-col sm:flex-row gap-1.5">
-                        <select
-                          value={(mashP.nurukType as string | undefined) ?? ""}
-                          onChange={(e) => setActualField("nurukType", e.target.value || undefined)}
-                          className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
-                        >
-                          <option value="">— 종류 선택 —</option>
-                          {NURUK_DIRECT_OPTIONS.map((o) => (
-                            <option key={o} value={o}>{o}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          value={(mashP.nurukSource as string | undefined) ?? ""}
-                          onChange={(e) => setActualField("nurukSource", e.target.value || undefined)}
-                          placeholder="제조사/출처"
-                          className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
+                <>
+                  {/* 총 쌀 중량 (누룩 비율 자동 계산용) */}
+                  <tr>
+                    <td colSpan={4} className="px-3 pt-3 pb-2 border-b border-brew-border/50">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-brew-muted font-medium whitespace-nowrap">총 쌀 중량</span>
+                        <SuffixedNumber
+                          value={(actual as Record<string, unknown>).riceWeightKg != null ? String((actual as Record<string, unknown>).riceWeightKg) : ""}
+                          onChange={(v) => setRiceWeightKg(parseFloat(v) || undefined)}
+                          suffix="kg"
+                          placeholder="고두밥 합계"
+                          width="w-20"
+                          step="0.01"
                         />
                       </div>
-                    )}
-                  </td>
-                </tr>
+                      <p className="text-[10px] text-brew-faint mt-1">고두밥 총중량 입력 시 누룩 비율↔무게 자동 계산</p>
+                    </td>
+                  </tr>
+
+                  {/* 누룩 사용 토글 */}
+                  <tr>
+                    <td colSpan={4} className="px-3 pt-3 pb-2 border-b border-brew-border/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-brew-muted font-medium">누룩 사용</span>
+                        <div className="inline-flex rounded-md border border-brew-border bg-white overflow-hidden shrink-0">
+                          {[true, false].map((v) => (
+                            <button
+                              key={String(v)}
+                              type="button"
+                              onClick={() => setUseNuruk(v)}
+                              className={`text-[11px] px-2.5 py-1 transition-colors ${
+                                useNuruk === v
+                                  ? "bg-brew-accent text-white font-semibold"
+                                  : "text-brew-muted hover:text-brew-text"
+                              }`}
+                            >
+                              {v ? "사용" : "미사용"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {useNuruk && (
+                        <>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs text-brew-muted font-medium">누룩</span>
+                            <ModeToggle mode={nurukMode} onChange={setNurukMode} size="xs" />
+                          </div>
+                          {(plannedParams as MashParams)?.nurukType && (
+                            <p className="text-xs text-brew-subtle mb-2">
+                              계획: {(plannedParams as MashParams).nurukType}
+                              {(plannedParams as MashParams)?.nurukRatio != null && ` · ${(plannedParams as MashParams).nurukRatio}%`}
+                            </p>
+                          )}
+
+                          {nurukMode === "inventory" ? (
+                            nurukInventory.length === 0 ? (
+                              <p className="text-[11px] text-amber-700">
+                                ⚠ 재고에 등록된 누룩이 없습니다.{" "}
+                                <Link href="/dashboard/inventory/new" className="underline">재료 등록</Link>
+                              </p>
+                            ) : (
+                              (() => {
+                                const inv = mashP.nurukInventoryId ? nurukInventory.find((x) => x.id === mashP.nurukInventoryId) : null;
+                                const amt = mashP.nurukAmountKg ?? 0;
+                                const insufficient = inv && amt > 0
+                                  ? !hasSufficient(inv.quantity, inv.unit as ConvUnit, amt, "KG")
+                                  : false;
+                                const dispUnit = inv?.unit === "G" ? "g" : "kg";
+                                return (
+                                  <div className={`rounded-md border bg-white p-2 ${insufficient ? "border-red-300 bg-red-50/50" : "border-brew-border"}`}>
+                                    <select
+                                      value={mashP.nurukInventoryId ?? ""}
+                                      onChange={(e) => {
+                                        const id = e.target.value;
+                                        const sel = nurukInventory.find((x) => x.id === id);
+                                        setActualField("nurukInventoryId", id || undefined);
+                                        if (sel) setActualField("nurukType", sel.name);
+                                      }}
+                                      className="w-full rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none mb-1.5"
+                                    >
+                                      <option value="">— 재고에서 선택 —</option>
+                                      {nurukInventory.map((x) => (
+                                        <option key={x.id} value={x.id}>
+                                          {x.name} (보유: {x.quantity}{unitLabel(x.unit)})
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <div className="flex flex-nowrap items-center gap-1.5">
+                                      <SuffixedNumber
+                                        value={mashP.nurukRatio != null ? String(mashP.nurukRatio) : ""}
+                                        onChange={(v) => setNurukRatio(parseFloat(v) || undefined)}
+                                        suffix="%"
+                                        placeholder="비율"
+                                        width="w-14"
+                                        step="0.1"
+                                        max="100"
+                                      />
+                                      <span className="text-[11px] text-brew-faint">↔</span>
+                                      <SuffixedNumber
+                                        value={nurukAmountForDisplay()}
+                                        onChange={(v) => setNurukAmountKg(nurukParseInput(v))}
+                                        suffix={dispUnit}
+                                        placeholder="무게"
+                                        width="w-20"
+                                        step={dispUnit === "g" ? "1" : "0.01"}
+                                      />
+                                      {riceWeightKg > 0 && <span className="text-[10px] text-brew-faint">자동</span>}
+                                    </div>
+                                    {insufficient && (
+                                      <p className="mt-1.5 text-[11px] text-red-600 font-medium">
+                                        ⚠ 재고 부족 — 보유 {inv?.quantity}{unitLabel(inv?.unit)} / 필요 {amt}kg
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()
+                            )
+                          ) : (
+                            <div className="space-y-1.5">
+                              <div className="flex flex-col sm:flex-row gap-1.5">
+                                <select
+                                  value={(mashP.nurukType as string | undefined) ?? ""}
+                                  onChange={(e) => setActualField("nurukType", e.target.value || undefined)}
+                                  className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
+                                >
+                                  <option value="">— 종류 선택 —</option>
+                                  {NURUK_DIRECT_OPTIONS.map((o) => (
+                                    <option key={o} value={o}>{o}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="text"
+                                  value={(mashP.nurukSource as string | undefined) ?? ""}
+                                  onChange={(e) => setActualField("nurukSource", e.target.value || undefined)}
+                                  placeholder="제조사/출처"
+                                  className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
+                                />
+                              </div>
+                              <div className="flex flex-nowrap items-center gap-1.5">
+                                <SuffixedNumber
+                                  value={mashP.nurukRatio != null ? String(mashP.nurukRatio) : ""}
+                                  onChange={(v) => setNurukRatio(parseFloat(v) || undefined)}
+                                  suffix="%"
+                                  placeholder="비율"
+                                  width="w-14"
+                                  step="0.1"
+                                  max="100"
+                                />
+                                <span className="text-[11px] text-brew-faint">↔</span>
+                                <SuffixedNumber
+                                  value={nurukAmountForDisplay()}
+                                  onChange={(v) => setNurukAmountKg(nurukParseInput(v))}
+                                  suffix={nurukDisplayUnit === "G" ? "g" : "kg"}
+                                  placeholder="무게"
+                                  width="w-20"
+                                  step={nurukDisplayUnit === "G" ? "1" : "0.01"}
+                                />
+                                {riceWeightKg > 0 && <span className="text-[10px] text-brew-faint">자동</span>}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* 법제 처리 */}
+                  <tr>
+                    <td colSpan={4} className="px-3 pt-3 pb-2 border-b border-brew-border/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-brew-muted font-medium">법제 처리</span>
+                        <div className="inline-flex rounded-md border border-brew-border bg-white overflow-hidden shrink-0">
+                          {[false, true].map((v) => (
+                            <button
+                              key={String(v)}
+                              type="button"
+                              onClick={() => setIsBeopje(v)}
+                              className={`text-[11px] px-2.5 py-1 transition-colors ${
+                                isBeopje === v
+                                  ? "bg-brew-accent text-white font-semibold"
+                                  : "text-brew-muted hover:text-brew-text"
+                              }`}
+                            >
+                              {v ? "법제" : "미법제"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {isBeopje && (
+                        <div className="flex flex-col sm:flex-row gap-1.5">
+                          <select
+                            value={(mashP.beopjeMethod as string | undefined) ?? ""}
+                            onChange={(e) => setActualField("beopjeMethod", e.target.value || undefined)}
+                            className="flex-1 rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none"
+                          >
+                            <option value="">— 법제 방법 선택 —</option>
+                            {BEOPJE_METHOD_OPTIONS.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                          <SuffixedNumber
+                            value={mashP.beopjeMinutes != null ? String(mashP.beopjeMinutes) : ""}
+                            onChange={(v) => setActualField("beopjeMinutes", parseInt(v) || undefined)}
+                            suffix="분"
+                            placeholder="시간"
+                            width="w-20"
+                            step="1"
+                          />
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                </>
               )}
 
               {fields.map((field) => {
