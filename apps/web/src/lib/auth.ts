@@ -20,6 +20,8 @@ if (SOCIAL_PROVIDERS.google) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // 같은 이메일 다른 provider 가입 시 OAuthAccountNotLinked 회피
+      allowDangerousEmailAccountLinking: true,
     })
   );
 }
@@ -28,6 +30,7 @@ if (SOCIAL_PROVIDERS.kakao) {
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID!,
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
       // 카카오 계정 동의 항목에서 이메일이 선택일 수 있어 명시 매핑
       profile(profile: any) {
         return {
@@ -51,6 +54,7 @@ if (SOCIAL_PROVIDERS.naver) {
     NaverProvider({
       clientId: process.env.NAVER_CLIENT_ID!,
       clientSecret: process.env.NAVER_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
       // 네이버 응답은 { response: { id, email, name, ... } } 형태
       profile(profile: any) {
         const r = profile.response ?? {};
@@ -118,17 +122,39 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers,
+  // 콜백 에러 디버깅 — Vercel 로그에서 원인 식별용
+  debug: true,
+  logger: {
+    error(code, metadata) {
+      console.error("[NextAuth Error]", code, JSON.stringify(metadata, null, 2));
+    },
+    warn(code) {
+      console.warn("[NextAuth Warn]", code);
+    },
+    debug(code, metadata) {
+      console.log("[NextAuth Debug]", code, metadata ? JSON.stringify(metadata) : "");
+    },
+  },
   events: {
     async createUser({ user }) {
       // PrismaAdapter가 User row를 만든 직후 — tenantId가 아직 null인 상태.
       // 양조장 + 기본 재료 + 레시피 시드 생성.
-      await bootstrapNewUser(user.id, user.name ?? null);
+      // 시드 실패해도 가입 자체는 막지 않도록 try/catch 로 감쌈.
+      try {
+        await bootstrapNewUser(user.id, user.name ?? null);
+      } catch (e) {
+        console.error("[NextAuth createUser event error]", e);
+      }
     },
   },
   callbacks: {
-    async signIn() {
-      // 이메일 미제공 케이스도 허용 (네이버는 동의항목에 따라 email 누락 가능).
-      // PrismaAdapter가 Account를 자동 link / User를 자동 생성하므로 별도 처리 불필요.
+    async signIn({ user, account, profile }) {
+      console.log("[NextAuth signIn]", {
+        userId: user?.id,
+        email: user?.email,
+        provider: account?.provider,
+        profileKeys: profile ? Object.keys(profile) : null,
+      });
       return true;
     },
     async jwt({ token, user }) {
