@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import UserMenu from "./user-menu";
 import NavLinks from "./nav-links";
 import NotificationBell from "./notification-bell";
@@ -29,9 +30,20 @@ export default async function DashboardLayout({
         <div className="flex items-center gap-3 md:gap-8 min-w-0">
           <Link
             href="/dashboard"
-            className="font-serif text-lg md:text-xl font-bold tracking-tight text-brew-text-light shrink-0"
+            className="flex items-center gap-2 shrink-0"
+            aria-label="이음 홈"
           >
-            이음
+            <Image
+              src="/icon-192.png"
+              alt=""
+              width={28}
+              height={28}
+              priority
+              className="rounded-md"
+            />
+            <span className="hidden md:inline font-serif text-lg md:text-xl font-bold tracking-tight text-brew-text-light">
+              이음
+            </span>
           </Link>
           <NavLinks />
         </div>

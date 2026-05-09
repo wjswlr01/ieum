@@ -25,7 +25,8 @@ const STATUS_BADGE: Record<string, string> = {
   ABORTED: "text-red-700 bg-[#FCE8E8] border-red-200",
 };
 
-const ACTUAL_PARAMS_NODE_TYPES = new Set(["GRAIN_PREP", "MASH", "BOIL", "FERMENTATION"]);
+// 발효는 측정값으로만 기록 — 계획값 vs 실제값 폼은 표시하지 않음
+const ACTUAL_PARAMS_NODE_TYPES = new Set(["GRAIN_PREP", "MASH", "BOIL"]);
 
 const PARAM_LABELS: Record<string, string> = {
   soakingHours: "침지 시간",

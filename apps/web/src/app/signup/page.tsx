@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import EmailInput from "@/components/EmailInput";
 
 export default function SignupPage() {
@@ -51,15 +52,27 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-brew-bg text-brew-text flex flex-col">
       <header className="bg-brew-dark flex items-center justify-between px-6 py-5 md:px-12">
-        <Link href="/" className="font-serif text-xl font-bold tracking-tight text-brew-text-light">
-          이음
+        <Link href="/" className="flex items-center gap-2" aria-label="이음 홈">
+          <Image src="/icon-192.png" alt="" width={28} height={28} className="rounded-md" />
+          <span className="font-serif text-xl font-bold tracking-tight text-brew-text-light">이음</span>
         </Link>
       </header>
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <h1 className="font-serif text-xl md:text-2xl font-bold mb-1">회원가입</h1>
-          <p className="text-sm text-brew-muted mb-8">양조장을 개설하고 시작하세요.</p>
+          <div className="flex flex-col items-center mb-6">
+            <Image
+              src="/icon-512.png"
+              alt="이음"
+              width={80}
+              height={80}
+              priority
+              className="rounded-2xl shadow-sm"
+            />
+            <h1 className="font-serif text-2xl font-bold mt-4">이음</h1>
+          </div>
+          <h2 className="font-serif text-xl md:text-2xl font-bold mb-1 text-center">회원가입</h2>
+          <p className="text-sm text-brew-muted mb-8 text-center">양조장을 개설하고 시작하세요.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 type StepKind = "modal" | "highlight";
 
@@ -11,14 +12,15 @@ type Step = {
   selector?: string; // for highlight
   title: string;
   body: React.ReactNode;
-  icon?: string;
+  icon?: string;       // emoji 폴백
+  brandIcon?: boolean; // true 이면 이음 로고 이미지 사용
 };
 
 const STEPS: Step[] = [
   {
     id: 1,
     kind: "modal",
-    icon: "🍶🍺",
+    brandIcon: true,
     title: "이음에 오신 것을 환영합니다!",
     body: (
       <>
@@ -223,11 +225,22 @@ export default function OnboardingOverlay({
         aria-modal="true"
       >
         <div className="w-full max-w-md rounded-2xl border-2 border-brew-accent bg-brew-surface p-6 shadow-2xl">
-          {step.icon && (
+          {step.brandIcon ? (
+            <div className="flex justify-center mb-4">
+              <Image
+                src="/icon-512.png"
+                alt="이음"
+                width={120}
+                height={120}
+                priority
+                className="rounded-2xl shadow-md"
+              />
+            </div>
+          ) : step.icon ? (
             <p className="text-center text-4xl mb-3" aria-hidden="true">
               {step.icon}
             </p>
-          )}
+          ) : null}
           <h2 className="font-serif text-xl md:text-2xl font-bold text-brew-text text-center mb-3">
             {step.title}
           </h2>
