@@ -4,8 +4,26 @@ import { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 
 type Enabled = { google: boolean; kakao: boolean; naver: boolean };
+type Mode = "login" | "signup";
 
-export default function LoginButtons({ enabled }: { enabled: Enabled }) {
+const PROVIDER_LABEL: Record<"google" | "kakao" | "naver", string> = {
+  google: "Google",
+  kakao: "카카오",
+  naver: "네이버",
+};
+
+function buttonText(provider: "google" | "kakao" | "naver", mode: Mode): string {
+  const label = PROVIDER_LABEL[provider];
+  return mode === "signup" ? `${label}로 회원가입` : `${label}로 로그인`;
+}
+
+export default function LoginButtons({
+  enabled,
+  mode = "login",
+}: {
+  enabled: Enabled;
+  mode?: Mode;
+}) {
   const [toast, setToast] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -21,9 +39,11 @@ export default function LoginButtons({ enabled }: { enabled: Enabled }) {
     timerRef.current = setTimeout(() => setToast(null), 3000);
   }
 
-  function handleClick(provider: "google" | "kakao" | "naver", label: string) {
+  function handleClick(provider: "google" | "kakao" | "naver") {
     if (!enabled[provider]) {
-      showToast(`${label} 로그인은 준비 중입니다.`);
+      const label = PROVIDER_LABEL[provider];
+      const action = mode === "signup" ? "회원가입" : "로그인";
+      showToast(`${label} ${action}은 준비 중입니다.`);
       return;
     }
     void signIn(provider, { callbackUrl: "/dashboard" });
@@ -33,32 +53,32 @@ export default function LoginButtons({ enabled }: { enabled: Enabled }) {
     <div className="flex flex-col gap-3 relative">
       <button
         type="button"
-        onClick={() => handleClick("kakao", "카카오")}
+        onClick={() => handleClick("kakao")}
         className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
         style={{ backgroundColor: "#FEE500", color: "#191919" }}
       >
         <KakaoIcon />
-        카카오로 시작하기
+        {buttonText("kakao", mode)}
       </button>
 
       <button
         type="button"
-        onClick={() => handleClick("naver", "네이버")}
+        onClick={() => handleClick("naver")}
         className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
         style={{ backgroundColor: "#03C75A", color: "#FFFFFF" }}
       >
         <NaverIcon />
-        네이버로 시작하기
+        {buttonText("naver", mode)}
       </button>
 
       <button
         type="button"
-        onClick={() => handleClick("google", "Google")}
+        onClick={() => handleClick("google")}
         className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors hover:bg-[#F8F9FA]"
         style={{ backgroundColor: "#FFFFFF", color: "#3C4043", borderColor: "#DADCE0" }}
       >
         <GoogleIcon />
-        Google로 시작하기
+        {buttonText("google", mode)}
       </button>
 
       {toast && (

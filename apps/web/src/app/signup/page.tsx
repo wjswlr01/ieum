@@ -36,7 +36,7 @@ export default function SignupPage() {
             <p className="mt-2 text-sm text-brew-muted text-center">양조장을 개설하고 시작하세요.</p>
           </div>
 
-          <LoginButtons enabled={enabled} />
+          <LoginButtons enabled={enabled} mode="signup" />
 
           <div className="my-5 flex items-center gap-3" aria-hidden="true">
             <div className="h-px flex-1 bg-brew-border" />
