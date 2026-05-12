@@ -9,6 +9,8 @@ import NodeActions from "./node-actions";
 import NodeActualForm from "./node-actual-form";
 import DeleteBatchButton from "../delete-batch-button";
 import TastingNoteCard from "./tasting-note-card";
+import PhotoGallery from "./photo-gallery";
+import { getPhotosByBatch } from "@/lib/actions/photo";
 import { calcAbvFromMeasurements, type AbvResult } from "@/lib/abv-calculator";
 import { unitLabel } from "@/lib/units";
 
@@ -486,6 +488,9 @@ export default async function BatchDetailPage({ params }: Props) {
   });
   if (!batch) notFound();
 
+  const isAdmin = session.user.isAdmin ?? false;
+  const initialPhotos = await getPhotosByBatch(batch.id);
+
   const snapshot = batch.recipeSnapshot as unknown as RecipeSnapshot | null;
   const isFreeForm = snapshot?.freeForm === true;
   const rawName = snapshot?.name ?? batch.recipe?.name;
@@ -774,6 +779,18 @@ export default async function BatchDetailPage({ params }: Props) {
           </p>
         </div>
       )}
+
+      {/* 사진 기록 */}
+      <PhotoGallery
+        batchId={batch.id}
+        isAdmin={isAdmin}
+        batchNodes={batch.batchNodes.map((n) => {
+          const freeformNode = freeformNodes.find((f) => f.order === n.order);
+          const label = n.recipeNode?.name ?? freeformNode?.name ?? `공정 ${n.order}`;
+          return { id: n.id, label };
+        })}
+        initialPhotos={initialPhotos}
+      />
 
       {/* 시음 기록 */}
       <div className="mt-12">

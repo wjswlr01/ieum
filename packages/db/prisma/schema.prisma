@@ -118,6 +118,7 @@ model Tenant {
   tenantGroupMembers TenantGroupMember[]
   accessMappings     AccessMapping[]
   notifications      Notification[]
+  photos             Photo[]
 
   @@index([slug])
 }
@@ -148,6 +149,7 @@ model User {
   accessMappings AccessMapping[]
   tastingNotes   TastingNote[]
   notifications  Notification[]
+  photos         Photo[]
 
   @@index([tenantId])
   @@index([email])
@@ -385,6 +387,7 @@ model Batch {
   batchIngredients      BatchIngredient[]
   tastingNotes          TastingNote[]
   inventoryTransactions InventoryTransaction[]
+  photos                Photo[]
 
   @@index([tenantId])
   @@index([recipeId])
@@ -410,6 +413,7 @@ model BatchNode {
   updatedAt    DateTime   @updatedAt
 
   batchIngredients BatchIngredient[]
+  photos           Photo[]
 
   @@index([batchId])
   @@index([recipeNodeId])
@@ -544,6 +548,35 @@ model Notification {
   @@index([userId, isRead])
   @@index([tenantId])
   @@index([createdAt])
+}
+
+// 20. photos — 배치별 사진 (admin 업로드, 전체 조회)
+model Photo {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  batchId      String
+  batch        Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchNodeId  String?
+  batchNode    BatchNode? @relation(fields: [batchNodeId], references: [id], onDelete: SetNull)
+
+  // Supabase Storage 경로만 저장 (signed URL은 조회 시 생성)
+  originalPath String
+  caption      String?
+  capturedAt   DateTime
+  fileSize     Int
+  width        Int?
+  height       Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId, capturedAt])
+  @@index([tenantId])
+  @@index([batchNodeId])
+  @@index([uploadedById])
 }
 
 // 18. recipe_node_ingredients

@@ -28,3 +28,4 @@ packages/db/generated/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+apps/web/.env.local*
