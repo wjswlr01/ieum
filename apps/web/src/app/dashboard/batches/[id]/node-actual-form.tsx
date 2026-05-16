@@ -310,8 +310,8 @@ function RiceBlendSection({
     updateBlend(actualBlend.filter((_, idx) => idx !== i));
   }
 
-  const tdCls = "px-3 py-2 border-b border-brew-border/50";
-  const inputCls = "w-full rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none";
+  const tdCls = "px-2 md:px-3 py-2 border-b border-brew-border/50";
+  const inputCls = "w-full min-w-[88px] rounded border border-brew-border bg-white px-2 py-1 text-xs focus:border-brew-accent focus:outline-none";
 
   return (
     <>
@@ -750,10 +750,10 @@ export default function NodeActualForm({
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-brew-border bg-[#FAF7F2] text-brew-subtle">
-                <th className="px-3 py-2 text-left font-medium w-[130px]">항목</th>
-                <th className="px-3 py-2 text-right font-medium w-[90px]">계획</th>
-                <th className="px-3 py-2 text-center font-medium w-[110px]">실제</th>
-                <th className="px-3 py-2 text-center font-medium w-[70px]">편차</th>
+                <th className="px-2 md:px-3 py-2 text-left font-medium whitespace-nowrap min-w-[80px] md:w-[130px]">항목</th>
+                <th className="px-2 md:px-3 py-2 text-right font-medium whitespace-nowrap min-w-[60px] md:w-[90px]">계획</th>
+                <th className="px-2 md:px-3 py-2 text-center font-medium whitespace-nowrap min-w-[112px] md:w-[110px]">실제</th>
+                <th className="px-2 md:px-3 py-2 text-center font-medium whitespace-nowrap min-w-[60px] md:w-[70px]">편차</th>
               </tr>
             </thead>
             <tbody>
@@ -991,11 +991,11 @@ export default function NodeActualForm({
 
                 return (
                   <tr key={field.key} className="border-b border-brew-border/50">
-                    <td className="px-3 py-2 text-brew-muted whitespace-nowrap">
+                    <td className="px-2 md:px-3 py-2 text-brew-muted whitespace-nowrap">
                       {field.label}
                       {field.unit ? <span className="text-brew-faint ml-1">({field.unit})</span> : null}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-brew-subtle whitespace-nowrap">
+                    <td className="px-2 md:px-3 py-2 text-right font-mono text-brew-subtle whitespace-nowrap">
                       {planned != null ? (
                         <>
                           {String(planned)}
@@ -1005,12 +1005,12 @@ export default function NodeActualForm({
                         <span className="text-brew-faint">—</span>
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-2 md:px-3 py-2">
                       {field.type === "select" ? (
                         <select
                           value={getActual(field.key)}
                           onChange={(e) => setActualField(field.key, e.target.value)}
-                          className="w-full rounded border border-brew-border bg-white px-2 py-1 text-xs text-brew-text focus:border-brew-accent focus:outline-none"
+                          className="w-full min-w-[88px] rounded border border-brew-border bg-white px-2 py-1 text-xs text-brew-text focus:border-brew-accent focus:outline-none"
                         >
                           <option value="">—</option>
                           {field.options?.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -1023,11 +1023,11 @@ export default function NodeActualForm({
                           value={getActual(field.key)}
                           onChange={(e) => setActualField(field.key, e.target.value)}
                           placeholder="—"
-                          className="w-full rounded border border-brew-border bg-white px-2 py-1 text-xs font-mono text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none"
+                          className="w-full min-w-[88px] rounded border border-brew-border bg-white px-2 py-1 text-xs font-mono text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none"
                         />
                       )}
                     </td>
-                    <td className="px-3 py-2 text-center font-mono whitespace-nowrap">
+                    <td className="px-2 md:px-3 py-2 text-center font-mono whitespace-nowrap">
                       {diff != null ? (
                         <span className={
                           diff === "±0" ? "text-brew-subtle" :

@@ -62,7 +62,7 @@ export default function MeasurementForm({
   }
 
   return (
-    <div className="rounded-xl border border-brew-border bg-brew-surface p-5">
+    <div className="rounded-xl border border-brew-border bg-brew-surface p-4 md:p-5">
       <h2 className="text-sm font-semibold text-brew-text mb-4">새 측정값 입력</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Type selector */}
@@ -96,7 +96,7 @@ export default function MeasurementForm({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={meta.placeholder}
-            className="w-full rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none"
+            className="w-full rounded-lg border border-brew-border bg-white px-3 md:px-4 py-2.5 text-sm text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none"
           />
         </div>
 
@@ -107,7 +107,7 @@ export default function MeasurementForm({
             type="date"
             value={takenAt}
             onChange={(e) => setTakenAt(e.target.value)}
-            className="w-full rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm text-brew-text focus:border-brew-accent focus:outline-none"
+            className="block w-full min-w-0 rounded-lg border border-brew-border bg-white px-3 md:px-4 py-2.5 text-sm text-left text-brew-text appearance-none focus:border-brew-accent focus:outline-none"
           />
           <p className="text-[11px] text-brew-faint mt-1">과거 날짜로 소급 입력 가능합니다.</p>
         </div>
@@ -120,7 +120,7 @@ export default function MeasurementForm({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="특이사항"
-            className="w-full rounded-lg border border-brew-border bg-white px-4 py-2.5 text-sm text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none"
+            className="w-full rounded-lg border border-brew-border bg-white px-3 md:px-4 py-2.5 text-sm text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none"
           />
         </div>
 
