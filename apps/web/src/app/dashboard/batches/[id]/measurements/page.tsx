@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import MeasurementForm from "./measurement-form";
 import MeasurementChart, { type ChartPoint } from "./measurement-chart";
+import MeasurementRowActions from "./measurement-row-actions";
 import { unitLabel } from "@/lib/units";
 
 type RecipeSnapshot = { brewType: string };
@@ -115,10 +116,11 @@ export default async function MeasurementsPage({ params }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-brew-border text-xs text-brew-muted bg-[#E6DFD1]">
-                  <th className="px-5 py-3 text-left font-medium">일시</th>
-                  <th className="px-5 py-3 text-left font-medium">항목</th>
-                  <th className="px-5 py-3 text-right font-medium">값</th>
-                  <th className="px-5 py-3 text-left font-medium">메모</th>
+                  <th className="px-3 md:px-5 py-3 text-left font-medium whitespace-nowrap">일시</th>
+                  <th className="px-3 md:px-5 py-3 text-left font-medium whitespace-nowrap">항목</th>
+                  <th className="px-3 md:px-5 py-3 text-right font-medium whitespace-nowrap">값</th>
+                  <th className="px-3 md:px-5 py-3 text-left font-medium">메모</th>
+                  <th className="px-2 md:px-3 py-3 w-[44px]"><span className="sr-only">액션</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -127,24 +129,34 @@ export default async function MeasurementsPage({ params }: Props) {
                     key={m.id}
                     className="border-b border-brew-border/50 hover:bg-[#E8DFD0]/50 transition-colors"
                   >
-                    <td className="px-5 py-3 text-brew-muted whitespace-nowrap">
+                    <td className="px-3 md:px-5 py-3 text-brew-muted whitespace-nowrap">
                       {new Date(m.takenAt).toLocaleDateString("ko-KR", {
                         year: "2-digit",
                         month: "2-digit",
                         day: "2-digit",
                       })}
                     </td>
-                    <td className="px-5 py-3 text-brew-text">
+                    <td className="px-3 md:px-5 py-3 text-brew-text whitespace-nowrap">
                       {TYPE_LABEL[m.type] ?? m.type}
                     </td>
-                    <td className="px-5 py-3 text-right font-mono text-brew-text">
+                    <td className="px-3 md:px-5 py-3 text-right font-mono text-brew-text whitespace-nowrap">
                       {m.value}
                       {unitLabel(m.unit) && (
                         <span className="ml-1 text-xs text-brew-subtle">{unitLabel(m.unit)}</span>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-brew-subtle max-w-[200px] truncate">
+                    <td className="px-3 md:px-5 py-3 text-brew-subtle max-w-[160px] md:max-w-[200px] truncate">
                       {m.notes ?? "—"}
+                    </td>
+                    <td className="px-2 md:px-3 py-2 text-right">
+                      <MeasurementRowActions
+                        id={m.id}
+                        typeLabel={TYPE_LABEL[m.type] ?? m.type}
+                        value={m.value}
+                        unit={m.unit}
+                        takenAt={m.takenAt.toISOString()}
+                        notes={m.notes}
+                      />
                     </td>
                   </tr>
                 ))}

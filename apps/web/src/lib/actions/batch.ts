@@ -583,3 +583,51 @@ export async function addMeasurement(input: {
 
   revalidatePath(`/dashboard/batches/${input.batchId}/measurements`);
 }
+
+// ── updateMeasurement ────────────────────────────────────────────────────────
+
+export async function updateMeasurement(input: {
+  id: string;
+  value: number;
+  takenAt: string;
+  notes?: string | null;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const measurement = await db.measurement.findFirst({
+    where: { id: input.id, batch: { tenantId: session.user.tenantId } },
+    select: { id: true, batchId: true },
+  });
+  if (!measurement) throw new Error("측정 기록을 찾을 수 없습니다.");
+
+  await db.measurement.update({
+    where: { id: measurement.id },
+    data: {
+      value: input.value,
+      takenAt: new Date(input.takenAt),
+      notes: input.notes ?? null,
+    },
+  });
+
+  revalidatePath(`/dashboard/batches/${measurement.batchId}`);
+  revalidatePath(`/dashboard/batches/${measurement.batchId}/measurements`);
+}
+
+// ── deleteMeasurement ────────────────────────────────────────────────────────
+
+export async function deleteMeasurement(input: { id: string }) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const measurement = await db.measurement.findFirst({
+    where: { id: input.id, batch: { tenantId: session.user.tenantId } },
+    select: { id: true, batchId: true },
+  });
+  if (!measurement) throw new Error("측정 기록을 찾을 수 없습니다.");
+
+  await db.measurement.delete({ where: { id: measurement.id } });
+
+  revalidatePath(`/dashboard/batches/${measurement.batchId}`);
+  revalidatePath(`/dashboard/batches/${measurement.batchId}/measurements`);
+}
