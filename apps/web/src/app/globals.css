@@ -15,6 +15,13 @@
   --brew-muted: #6B6560;
   --brew-subtle: #8B7B6B;
   --brew-faint: #A09080;
+
+  /* ── Stitch 시안 매핑용 신규 토큰 ─────────────────────── */
+  --brew-cream: #E5C07B;          /* primary-container (강조 컨테이너) */
+  --brew-cream-ink: #684D13;      /* on-primary-container (cream 위 텍스트) */
+  --brew-green-soft: #B9EEAB;     /* secondary-container (소프트 그린 컨테이너) */
+  --brew-danger: #C8453D;         /* error (경고 강조 컬러) */
+  --brew-danger-soft: #FFDAD6;    /* error-container (경고 소프트 배경) */
 }
 
 /* ── 다크 모드 CSS 변수 ──────────────────────────────── */
@@ -28,6 +35,13 @@
   --brew-muted: #9C9687;
   --brew-subtle: #7C7268;
   --brew-faint: #6C6258;
+
+  /* ── 다크 모드 미러 (M3 dark-scheme 톤 참조) ──────────── */
+  --brew-cream: #5C4308;          /* primary-container dark */
+  --brew-cream-ink: #FFDEA4;      /* on-primary-container dark */
+  --brew-green-soft: #234B1F;     /* secondary-container dark */
+  --brew-danger: #FFB4AB;         /* error dark */
+  --brew-danger-soft: #5C1916;    /* error-container dark */
 }
 
 @layer base {
@@ -52,4 +66,13 @@
 
 .gantt-active-pulse {
   animation: gantt-pulse 1.8s ease-in-out infinite;
+}
+
+/* ── 가로 스크롤 영역에서 스크롤바 숨김 (Pipeline 등) ──── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

@@ -1,0 +1,441 @@
+<!DOCTYPE html><html lang="ko" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Ieum Dashboard - Active Batches</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Manrope:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#4d4639",
+                        "tertiary": "#6a5c4c",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#efeeec",
+                        "surface-tint": "#765a1f",
+                        "inverse-surface": "#2f3130",
+                        "inverse-on-surface": "#f1f1ef",
+                        "tertiary-fixed": "#f3dfcb",
+                        "tertiary-fixed-dim": "#d6c3b0",
+                        "on-secondary-fixed-variant": "#23501e",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#5c4308",
+                        "secondary-container": "#b9eeab",
+                        "secondary": "#3b6934",
+                        "on-tertiary-fixed-variant": "#514535",
+                        "on-primary-fixed": "#261900",
+                        "surface-container-highest": "#e3e2e0",
+                        "primary": "#765a1f",
+                        "on-secondary-container": "#3f6d38",
+                        "on-surface": "#1a1c1b",
+                        "surface-container-high": "#e9e8e6",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#d1c5b4",
+                        "surface-dim": "#dadad8",
+                        "surface-container-low": "#f4f3f1",
+                        "secondary-fixed": "#bcf0ae",
+                        "surface": "#faf9f7",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e3e2e0",
+                        "background": "#faf9f7",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#ffdea4",
+                        "on-background": "#1a1c1b",
+                        "inverse-primary": "#e7c17c",
+                        "surface-bright": "#faf9f7",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#a1d494",
+                        "on-tertiary-container": "#5d4f40",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#241a0d",
+                        "on-primary-container": "#684d13",
+                        "primary-fixed-dim": "#e7c17c",
+                        "on-secondary-fixed": "#002201",
+                        "tertiary-container": "#d5c2ae",
+                        "outline": "#7f7668",
+                        "primary-container": "#e5c07b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "xl": "80px",
+                        "base": "8px",
+                        "md": "24px",
+                        "margin-desktop": "40px",
+                        "sm": "12px",
+                        "lg": "48px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-lg": ["Manrope"],
+                        "headline-xl": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "data-display": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-xl": ["40px", { "lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "data-display": ["20px", { "lineHeight": "24px", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col lg:flex-row">
+<!-- Navigation Drawer (Desktop) -->
+<nav class="hidden lg:flex flex-col fixed left-0 top-0 h-full p-md z-40 bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant/30 shadow-sm docked left-0 h-full w-72">
+<div class="mb-8 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: &quot;FILL&quot; 1;">waves</span>
+<span class="font-headline-md text-headline-md text-primary font-bold tracking-tight">Ieum</span>
+</div>
+<div class="flex items-center gap-4 mb-8 p-4 rounded-xl bg-surface-container-high border border-outline-variant/30">
+<img alt="Master Brewer Profile" class="w-12 h-12 rounded-full object-cover" data-alt="A professional headshot of a master brewer in a modern, clean brewery setting. Soft, warm lighting reflecting off stainless steel vats in the background. The mood is calm and expert, fitting a premium craft brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8tp_UBiyBWm2gPryRQkLiHakXPdtroq595y_6bsrSMCX6gbVbapvqFUHEuktJSCSXFHCidnIG5-Fv8YIXH2zLzVKlLUzCDMYodVEV_ujD0V0jm0lkvOCTBjvKHrYMNV64qtBXPtXOuC9ixnJS_6xH6mZHneYLhZQ81zOYr49BncyDW9WUGE6Cyu8pQjirZXNiHJmgadGutx8Ae_2iin-a0RO_JvVkleTrRemidFhN8eg2fCDnsz4YnwGGiic8jXfMidhxrDExAsk7">
+<div class="flex flex-col">
+<span class="font-headline-md text-[16px] font-bold text-on-surface">Brewmaster Kim</span>
+<span class="font-body-md text-[12px] text-on-surface-variant">Modern Brewery Seoul</span>
+<span class="font-label-sm text-label-sm text-primary mt-1">Premium Tier</span>
+</div>
+</div>
+<ul class="flex flex-col gap-2">
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 bg-primary text-on-primary rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">dashboard</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-md text-label-md">Recipes</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">rebase_edit</span>
+<span class="font-label-md text-label-md">Batches</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">package_2</span>
+<span class="font-label-md text-label-md">Inventory</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-lg hover:translate-x-1 transition-all duration-200 mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Top App Bar (Mobile) -->
+<header class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16 z-50 bg-surface dark:bg-background shadow-sm docked full-width top-0 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 lg:hidden fixed top-0 left-0">
+<button class="text-primary dark:text-primary-fixed hover:bg-surface-container-high transition-colors duration-200 p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">waves</span>
+</button>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed tracking-tight">Ieum</span>
+<button class="text-primary dark:text-primary-fixed hover:bg-surface-container-high transition-colors duration-200 p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 lg:ml-72 pt-20 lg:pt-8 px-margin-mobile md:px-margin-desktop pb-24 lg:pb-8 flex flex-col gap-lg max-w-[1440px] mx-auto w-full">
+<!-- Greeting Section -->
+<section class="flex flex-col gap-2">
+<h1 class="font-headline-xl text-headline-xl text-on-surface">안녕하세요, 박양조사님</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">2026년 5월 17일 일요일 / 오늘 측정 3건 · 덧술 1건 예정</p>
+</section>
+<!-- Quick Actions Bento Grid -->
+<section class="grid md:grid-cols-4 gap-4 grid-cols-4"><button class="bg-primary-container text-on-primary-container rounded-xl flex flex-col items-center justify-center gap-1.5 hover:bg-inverse-primary transition-colors duration-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant/20 hover:-translate-y-0.5 py-2 px-1">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: &quot;FILL&quot; 1;">add_circle</span>
+<span class="font-label-sm font-medium text-[11px]">새 배치</span>
+</button>
+<button class="bg-secondary text-on-secondary rounded-xl flex flex-col items-center justify-center gap-1.5 hover:bg-on-secondary-container transition-colors duration-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant/20 hover:-translate-y-0.5 py-2 px-1">
+<span class="material-symbols-outlined text-2xl">menu_book</span>
+<span class="font-label-sm font-medium text-[11px]">새 레시피</span>
+</button>
+<button class="bg-surface-container-high text-on-surface rounded-xl flex flex-col items-center justify-center gap-1.5 hover:bg-surface-container-highest transition-colors duration-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant/20 hover:-translate-y-0.5 py-2 px-1">
+<span class="material-symbols-outlined text-2xl">thermostat</span>
+<span class="font-label-sm font-medium text-[11px]">간편 측정</span>
+</button>
+<button class="bg-surface-container-high text-on-surface rounded-xl flex flex-col items-center justify-center gap-1.5 hover:bg-surface-container-highest transition-colors duration-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant/20 hover:-translate-y-0.5 py-2 px-1">
+<span class="material-symbols-outlined text-2xl">photo_camera</span>
+<span class="font-label-sm font-medium text-[11px]">사진 기록</span>
+</button></section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Left Column: Active Batches & Inventory -->
+<div class="lg:col-span-2 flex flex-col gap-lg">
+<!-- Active Batches -->
+<section class="flex flex-col gap-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">진행 중인 배치</h2>
+<div class="flex flex-col gap-4">
+<!-- Makgeolli Card -->
+<article class="bg-[#FFFFFF] rounded-[16px] p-6 border border-[#E0DDD5] shadow-[0_8px_24px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+<div class="absolute top-0 left-0 w-2 h-full bg-primary-container"></div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">봄 막걸리 · 14 <span class="font-body-md text-body-md text-on-surface-variant">(BATCH #2026-014)</span></h3>
+<span class="inline-block mt-2 px-3 py-1 bg-primary-container/30 text-on-primary-container rounded-full font-label-sm text-label-sm">D+8일차</span>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Progress Pipeline -->
+<div class="mb-6 relative">
+    <div class="absolute left-0 top-3 w-full h-3 bg-surface-container-high rounded-full z-0"></div>
+    <div class="absolute left-0 top-3 w-[50%] h-3 bg-primary-container rounded-full z-0"></div>
+    <div class="grid grid-cols-5 w-full relative z-10">
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[10px] text-on-primary font-bold">check</span>
+                </div>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap mt-1">고두밥</span>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[10px] text-on-primary font-bold">check</span>
+                </div>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap mt-1">밑술</span>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center bg-background rounded-full">
+                <div class="w-6 h-6 rounded-full bg-primary-container border-2 border-surface-container-lowest flex items-center justify-center shadow-sm">
+                    <span class="material-symbols-outlined text-[14px] text-on-primary-container" style="font-variation-settings: &quot;FILL&quot; 1;">science</span>
+                </div>
+            </div>
+            <span class="font-label-sm text-[14px] font-bold text-primary whitespace-nowrap mt-1">덧술</span>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-surface-container-high border border-outline-variant"></div>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap mt-1">발효</span>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-surface-container-high border border-outline-variant"></div>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap mt-1">숙성</span>
+        </div>
+    </div>
+</div>
+<div class="flex gap-4 p-4 bg-surface-container-low rounded-xl border border-outline-variant/30">
+<div class="flex-1">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Temperature</span>
+<span class="font-data-display text-data-display text-on-surface">24°C</span>
+</div>
+<div class="w-px bg-outline-variant/30"></div>
+<div class="flex-1">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Gravity/Brix</span>
+<span class="font-data-display text-data-display text-on-surface">12°Bx</span>
+</div>
+<div class="w-px bg-outline-variant/30"></div>
+<div class="flex-1">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1">pH Level</span>
+<span class="font-data-display text-data-display text-on-surface">3.8</span>
+</div>
+</div>
+</article>
+<!-- Beer Card -->
+<article class="bg-[#FFFFFF] rounded-[16px] p-6 border border-[#E0DDD5] shadow-[0_8px_24px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+<div class="absolute top-0 left-0 w-2 h-full bg-secondary-container"></div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">한라 페일 · 07</h3>
+<span class="inline-block mt-2 px-3 py-1 bg-secondary-container/30 text-on-secondary-container rounded-full font-label-sm text-label-sm">D+3일차</span>
+</div>
+<button class="text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Progress Pipeline -->
+<div class="mb-6 relative">
+    <div class="absolute left-0 top-3 w-full h-3 bg-surface-container-high rounded-full z-0"></div>
+    <div class="absolute left-0 top-3 w-[33%] h-3 bg-secondary-container rounded-full z-0"></div>
+    <div class="grid grid-cols-4 w-full relative z-10">
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-secondary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[10px] text-on-secondary font-bold">check</span>
+                </div>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap mt-1">당화</span>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center bg-background rounded-full">
+                <div class="w-6 h-6 rounded-full bg-secondary-container border-2 border-surface-container-lowest flex items-center justify-center shadow-sm">
+                    <span class="material-symbols-outlined text-[14px] text-on-secondary-container" style="font-variation-settings: &quot;FILL&quot; 1;">local_fire_department</span>
+                </div>
+            </div>
+            <span class="font-label-sm text-[14px] font-bold text-secondary whitespace-nowrap mt-1">끓임</span>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-surface-container-high border border-outline-variant"></div>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap mt-1">발효</span>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-6 h-6 flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-surface-container-high border border-outline-variant"></div>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap mt-1">숙성</span>
+        </div>
+    </div>
+</div>
+</article>
+</div>
+</section>
+<!-- Inventory Grid -->
+<section class="flex flex-col gap-4">
+<div class="flex justify-between items-end border-b border-outline-variant/30 pb-2">
+<h2 class="font-headline-md text-headline-md text-on-surface">재고 현황</h2>
+<a class="font-label-md text-label-md text-primary hover:underline" href="#">자세히 보기</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 flex flex-col items-center text-center min-h-[140px] justify-center">
+<span class="material-symbols-outlined text-tertiary text-3xl mb-2">grain</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">누룩</span>
+<span class="font-data-display text-data-display text-on-surface mt-1">45kg</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 flex flex-col items-center text-center min-h-[140px] justify-center">
+<span class="material-symbols-outlined text-primary text-3xl mb-2">agriculture</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">쌀</span>
+<span class="font-data-display text-data-display text-on-surface mt-1">120kg</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 flex flex-col items-center text-center min-h-[140px] justify-center">
+<span class="material-symbols-outlined text-secondary text-3xl mb-2">eco</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">홉</span>
+<span class="font-data-display text-data-display text-on-surface mt-1">12kg</span>
+</div>
+<div class="bg-error-container/30 p-4 rounded-xl border border-error/20 flex flex-col items-center text-center min-h-[140px] justify-between transition-all duration-300">
+    <div class="flex flex-col items-center pt-2">
+        <span class="material-symbols-outlined text-error text-3xl mb-2">bubble_chart</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant">효모</span>
+        <div class="flex items-center gap-1.5 mt-1">
+            <span class="font-data-display text-data-display text-error">5kg</span>
+            <span class="font-label-sm text-[10px] bg-error text-on-error px-1.5 py-0.5 rounded-full">부족</span>
+        </div>
+    </div>
+    <button class="flex items-center gap-1 px-3 py-1 bg-error/10 border border-error/30 rounded-full hover:bg-error/20 transition-colors duration-200 mt-2">
+        <span class="material-symbols-outlined text-[14px] text-error">shopping_cart</span>
+        <span class="font-label-sm text-[10px] text-error font-bold">주문하기</span>
+    </button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Today's Tasks -->
+<aside class="flex flex-col gap-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">오늘의 할 일</h2>
+<div class="bg-[#FFFFFF] rounded-[16px] border border-[#E0DDD5] shadow-[0_8px_24px_rgba(0,0,0,0.05)] p-4 flex flex-col gap-0 relative">
+<!-- Vertical Timeline Line -->
+<div class="absolute left-8 top-8 bottom-8 w-px bg-outline-variant/50"></div>
+<div class="flex gap-4 p-4 relative z-10 group cursor-pointer hover:bg-surface-container-low rounded-lg transition-colors">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center shrink-0 border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-on-primary-container text-[16px]">thermostat</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">09:00 AM</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">봄 막걸리 14 온도 측정</span>
+</div>
+</div>
+<div class="flex gap-4 p-4 relative z-10 group cursor-pointer hover:bg-surface-container-low rounded-lg transition-colors">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center shrink-0 border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-on-secondary-container text-[16px]">water_drop</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">11:30 AM</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">한라 페일 07 비중 측정</span>
+</div>
+</div>
+<div class="flex gap-4 p-4 relative z-10 group cursor-pointer hover:bg-surface-container-low rounded-lg transition-colors bg-primary-container/10 border border-primary-container/30 ml-2">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 border-2 border-surface-container-lowest -ml-2">
+<span class="material-symbols-outlined text-on-primary text-[16px]" style="font-variation-settings: &quot;FILL&quot; 1;">science</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-primary font-bold">14:00 PM (예정)</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">봄 막걸리 14 덧술 투입</span>
+<span class="font-body-md text-[12px] text-on-surface-variant mt-1">레시피 확인 필요</span>
+</div>
+</div>
+<div class="flex gap-4 p-4 relative z-10 group cursor-pointer hover:bg-surface-container-low rounded-lg transition-colors opacity-60">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center shrink-0 border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">check</span>
+</div>
+<div class="flex flex-col line-through">
+<span class="font-label-sm text-label-sm text-on-surface-variant">07:00 AM</span>
+<span class="font-label-md text-label-md text-on-surface-variant">어제 배치 발효조 청소</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe bg-surface/90 backdrop-blur-lg h-20 bg-surface dark:bg-background border-t border-outline-variant/20 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] docked full-width bottom-0 rounded-t-xl lg:hidden">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 transition-all duration-300 ease-in-out active:bg-surface-container-highest rounded-xl" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-sm text-label-sm">Recipes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 transition-all duration-300 ease-in-out active:bg-surface-container-highest rounded-xl" href="#">
+<span class="material-symbols-outlined">science</span>
+<span class="font-label-sm text-label-sm">Batches</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 transition-all duration-300 ease-in-out active:bg-surface-container-highest rounded-xl" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-sm text-label-sm">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 transition-all duration-300 ease-in-out active:bg-surface-container-highest rounded-xl" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-sm text-label-sm">More</span>
+</a>
+</nav>
+
+
+
+
+</body></html>

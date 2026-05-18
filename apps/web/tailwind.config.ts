@@ -41,6 +41,13 @@ const config: Config = {
           muted: "var(--brew-muted)",
           subtle: "var(--brew-subtle)",
           faint: "var(--brew-faint)",
+
+          // ── Stitch 시안 매핑용 신규 토큰 (CSS 변수 기반) ──
+          cream: "var(--brew-cream)",
+          "cream-ink": "var(--brew-cream-ink)",
+          "green-soft": "var(--brew-green-soft)",
+          danger: "var(--brew-danger)",
+          "danger-soft": "var(--brew-danger-soft)",
         },
       },
       fontFamily: {

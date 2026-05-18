@@ -1,49 +1,21 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
 import Link from "next/link";
-import ActiveBatchesPanel from "./active-batches-panel";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
 import { seedDefaultRecipes } from "@/lib/seed/default-recipes";
 import { seedCatalog } from "@/lib/seed/catalog";
-
-const ACTIVE_STATUSES = ["IN_PROGRESS", "FERMENTING", "CONDITIONING", "PACKAGING"] as const;
-
-const BATCH_INCLUDE = {
-  recipe: { select: { name: true, brewType: true } },
-  batchNodes: {
-    where: { startedAt: { not: null }, finishedAt: null },
-    orderBy: { order: "asc" },
-    take: 1,
-    include: { recipeNode: { select: { name: true } } },
-  },
-  measurements: {
-    orderBy: { takenAt: "asc" },
-    take: 50,
-    select: { id: true, type: true, value: true, unit: true, takenAt: true },
-  },
-} as const;
-
-function mapBatch(b: any) {
-  const snapshot = b.recipeSnapshot as { name?: string; brewType?: string } | null;
-  return {
-    id: b.id,
-    batchNumber: b.batchNumber,
-    status: b.status as string,
-    startedAt: b.startedAt?.toISOString() ?? null,
-    finishedAt: b.finishedAt?.toISOString() ?? null,
-    recipeName: snapshot?.name ?? b.recipe?.name ?? "삭제된 레시피",
-    brewType: (snapshot?.brewType ?? b.recipe?.brewType ?? "BEER") as string,
-    currentNodeName: b.batchNodes[0]?.recipeNode?.name ?? null,
-    recentMeasurements: b.measurements.map((m: any) => ({
-      id: m.id,
-      type: m.type as string,
-      value: m.value as number,
-      unit: m.unit as string,
-      takenAt: m.takenAt.toISOString(),
-    })),
-  };
-}
+import {
+  getActiveBatches,
+  getAlerts,
+  getDashboardStats,
+  getInventoryStatus,
+  getTodayTasks,
+} from "@/lib/actions/dashboard";
+import HomeGreeting from "./_components/home-greeting";
+import HomeQuickActions from "./_components/home-quick-actions";
+import HomeActiveBatches from "./_components/home-active-batches";
+import HomeInventory from "./_components/home-inventory";
+import HomeTodayTasks from "./_components/home-today-tasks";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -54,98 +26,56 @@ export default async function DashboardPage() {
     seedCatalog(session.user.tenantId),
   ]);
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-  const [recipeCount, activeBatchCount, inventoryCount, rawActiveBatches, rawRecentCompleted] =
-    await Promise.all([
-      db.recipe.count({ where: { tenantId: session.user.tenantId } }),
-      db.batch.count({
-        where: {
-          tenantId: session.user.tenantId,
-          status: { in: ["PLANNED", "IN_PROGRESS", "FERMENTING", "CONDITIONING", "PACKAGING"] },
-        },
-      }),
-      db.inventory.count({ where: { tenantId: session.user.tenantId, isCatalog: false } }),
-      db.batch.findMany({
-        where: { tenantId: session.user.tenantId, status: { in: [...ACTIVE_STATUSES] } },
-        orderBy: { startedAt: "asc" },
-        include: BATCH_INCLUDE,
-      }),
-      db.batch.findMany({
-        where: {
-          tenantId: session.user.tenantId,
-          status: "COMPLETED",
-          finishedAt: { gte: sevenDaysAgo },
-        },
-        orderBy: { finishedAt: "desc" },
-        take: 3,
-        include: BATCH_INCLUDE,
-      }),
-    ]);
-
-  const activeBatches = rawActiveBatches.map(mapBatch);
-  const recentlyCompleted = rawRecentCompleted.map(mapBatch);
+  const [activeBatches, todayTasks, inventory, stats, alerts] = await Promise.all([
+    getActiveBatches(session.user.tenantId),
+    getTodayTasks(session.user.tenantId),
+    getInventoryStatus(session.user.tenantId),
+    getDashboardStats(session.user.tenantId),
+    getAlerts(session.user.tenantId),
+  ]);
 
   return (
-    <main className="px-4 py-6 md:px-12 md:py-10 max-w-5xl mx-auto w-full">
-      <div className="mb-10">
-        <h1 className="font-serif text-xl md:text-2xl font-bold">안녕하세요, {session.user.name}님</h1>
-        <p className="mt-1 text-sm text-brew-muted">
-          이음 양조 공정 관리 플랫폼에 오신 것을 환영합니다.
-        </p>
-      </div>
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:gap-8 md:px-10 md:py-8">
+      <HomeGreeting
+        userName={session.user.name ?? "양조사"}
+        todayLabel={stats.todayLabel}
+        todayMeasurementCount={stats.todayMeasurementCount}
+        todayPlannedTaskCount={stats.todayPlannedTaskCount}
+      />
 
-      <div data-onboarding-step="5">
-        <ActiveBatchesPanel batches={activeBatches} recentlyCompleted={recentlyCompleted} />
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10">
-        {[
-          { label: "활성 배치", value: String(activeBatchCount), unit: "개", href: "/dashboard/batches" },
-          { label: "레시피", value: String(recipeCount), unit: "개", href: "/dashboard/recipes" },
-          { label: "재고 항목", value: String(inventoryCount), unit: "개", href: "/dashboard/inventory" },
-        ].map((stat) => (
-          <Link
-            key={stat.label}
-            href={stat.href}
-            className="rounded-xl border border-brew-border bg-brew-surface px-6 py-5 hover:border-brew-border-hover transition-colors"
-          >
-            <p className="text-xs text-brew-subtle mb-1">{stat.label}</p>
-            <p className="font-mono text-3xl font-bold text-brew-text">
-              {stat.value}
-              <span className="ml-1 text-base font-normal text-brew-muted">{stat.unit}</span>
-            </p>
-          </Link>
-        ))}
-      </div>
-
-      {/* Quick actions */}
-      <div className="rounded-xl border border-brew-border bg-brew-surface px-6 py-6">
-        <h2 className="text-sm font-semibold text-brew-text mb-4">빠른 시작</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Link
-            href="/dashboard/recipes/new"
-            className="text-left rounded-lg border border-brew-border px-4 py-3 hover:border-brew-accent hover:bg-[#C8B32A]/5 transition-colors"
-          >
-            <p className="text-sm font-medium text-brew-text">새 레시피 만들기</p>
-            <p className="text-xs text-brew-subtle mt-0.5">맥주 또는 막걸리 레시피를 작성합니다.</p>
-          </Link>
-          <Link
-            href="/dashboard/recipes"
-            className="text-left rounded-lg border border-brew-border px-4 py-3 hover:border-brew-border-hover hover:bg-[#E8DFD0] transition-colors"
-          >
-            <p className="text-sm font-medium text-brew-text">레시피 목록 보기</p>
-            <p className="text-xs text-brew-subtle mt-0.5">저장된 레시피를 확인합니다.</p>
-          </Link>
-          <Link
-            href="/dashboard/batches/new"
-            className="text-left rounded-lg border border-brew-border px-4 py-3 hover:border-brew-border-hover hover:bg-[#E8DFD0] transition-colors"
-          >
-            <p className="text-sm font-medium text-brew-text">바로 배치 시작</p>
-            <p className="text-xs text-brew-subtle mt-0.5">레시피 없이 자유 양조를 기록합니다.</p>
-          </Link>
+      {alerts.total > 0 && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-brew-danger/30 bg-brew-danger-soft/30 px-4 py-3 text-sm">
+          <span className="inline-flex items-center gap-1.5 font-semibold text-brew-danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            확인 필요
+          </span>
+          {alerts.lowStockCount > 0 && (
+            <Link href="/dashboard/inventory" className="text-brew-danger hover:underline">
+              재고 부족 {alerts.lowStockCount}건
+            </Link>
+          )}
+          {alerts.measurementMissingCount > 0 && (
+            <Link href="/dashboard/batches" className="text-brew-danger hover:underline">
+              측정 누락 {alerts.measurementMissingCount}건
+            </Link>
+          )}
         </div>
+      )}
+
+      <HomeQuickActions isAdmin={session.user.isAdmin} />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+        <div className="flex flex-col gap-6 lg:col-span-2 md:gap-8">
+          <div data-onboarding-step="5">
+            <HomeActiveBatches batches={activeBatches} />
+          </div>
+          <HomeInventory items={inventory} />
+        </div>
+        <HomeTodayTasks tasks={todayTasks} />
       </div>
     </main>
   );
