@@ -279,40 +279,40 @@ export default async function BatchDetailPage({ params }: Props) {
           />
         )}
 
-        {isCompleted && (
-          <BrewingReport
-            batchNumber={batch.batchNumber}
-            startedAt={batch.startedAt}
-            finishedAt={batch.finishedAt}
-            measurements={batch.measurements as MeasRow[]}
-            brewType={brewType}
-            tastingNotes={batch.tastingNotes}
-          />
-        )}
-
         {!isPlanned && <BatchIngredientsTable rows={ingredientRows} />}
 
-        {!isPlanned && !isAborted && (
+        {!isPlanned && (
           <section className="mt-10">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-brew-text">시음 기록</h2>
-              <Link
-                href={`/dashboard/batches/${batch.id}/tasting`}
-                className="text-xs text-brew-accent transition-colors hover:text-brew-accent-hover"
-              >
-                + 시음 추가
-              </Link>
-            </div>
-
-            {batch.tastingNotes.length === 0 ? (
-              <div className="rounded-xl border border-brew-border bg-brew-surface p-6 text-center">
-                <p className="mb-3 text-sm text-brew-subtle">아직 시음 기록이 없습니다.</p>
+              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-brew-text">
+                <span aria-hidden="true">🍶</span>
+                <span>시음 기록</span>
+              </h2>
+              {isAborted ? (
+                <span className="text-xs text-brew-faint">폐기된 배치 — 추가 불가</span>
+              ) : (
                 <Link
                   href={`/dashboard/batches/${batch.id}/tasting`}
                   className="text-xs text-brew-accent transition-colors hover:text-brew-accent-hover"
                 >
-                  첫 번째 시음 기록 남기기 →
+                  + 시음 추가
                 </Link>
+              )}
+            </div>
+
+            {batch.tastingNotes.length === 0 ? (
+              <div className="rounded-xl border border-brew-border bg-brew-surface p-6 text-center">
+                <p className="mb-3 text-sm text-brew-subtle">
+                  {isAborted ? "이 배치에 남겨진 시음 기록이 없습니다." : "아직 시음 기록이 없습니다. 첫 시음을 기록해보세요!"}
+                </p>
+                {!isAborted && (
+                  <Link
+                    href={`/dashboard/batches/${batch.id}/tasting`}
+                    className="text-xs text-brew-accent transition-colors hover:text-brew-accent-hover"
+                  >
+                    첫 번째 시음 기록 남기기 →
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-4">
@@ -327,6 +327,17 @@ export default async function BatchDetailPage({ params }: Props) {
               </div>
             )}
           </section>
+        )}
+
+        {isCompleted && (
+          <BrewingReport
+            batchNumber={batch.batchNumber}
+            startedAt={batch.startedAt}
+            finishedAt={batch.finishedAt}
+            measurements={batch.measurements as MeasRow[]}
+            brewType={brewType}
+            tastingNotes={batch.tastingNotes}
+          />
         )}
       </main>
 
