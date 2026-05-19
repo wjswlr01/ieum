@@ -370,6 +370,38 @@ export async function saveActualParams(
   }
 }
 
+// ── updateBatchNodeNotes — 노드별 메모 자동 저장 ────────────────────────────
+
+const BATCH_NODE_NOTES_MAX = 5000;
+
+export async function updateBatchNodeNotes(
+  batchNodeId: string,
+  notes: string,
+): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  if (typeof notes !== "string") throw new Error("메모 형식이 올바르지 않습니다.");
+  if (notes.length > BATCH_NODE_NOTES_MAX) {
+    throw new Error(`메모는 ${BATCH_NODE_NOTES_MAX}자 이내로 입력해 주세요.`);
+  }
+
+  const node = await db.batchNode.findFirst({
+    where: { id: batchNodeId },
+    select: { id: true, batchId: true, batch: { select: { tenantId: true } } },
+  });
+  if (!node || node.batch.tenantId !== session.user.tenantId) {
+    throw new Error("노드를 찾을 수 없습니다.");
+  }
+
+  await db.batchNode.update({
+    where: { id: batchNodeId },
+    data: { notes: notes.length === 0 ? null : notes },
+  });
+
+  revalidatePath(`/dashboard/batches/${node.batchId}`);
+}
+
 // ── deleteBatch ──────────────────────────────────────────────────────────────
 
 async function restoreBatchInventory(
