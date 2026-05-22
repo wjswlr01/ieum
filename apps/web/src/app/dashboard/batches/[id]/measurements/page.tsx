@@ -4,7 +4,6 @@ import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import MeasurementForm from "./measurement-form";
-import MeasurementsChartSection from "./measurements-chart-section";
 import MeasurementRowActions from "./measurement-row-actions";
 import { unitLabel } from "@/lib/units";
 
@@ -73,13 +72,13 @@ export default async function MeasurementsPage({ params }: Props) {
         </p>
       </div>
 
-      {/* Form (상단) + 측정값 추이 (하단) */}
-      <div className="mb-8 flex flex-col gap-5">
-        <MeasurementForm batchId={params.id} brewType={brewType} />
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-brew-text">측정값 추이</h2>
-          <MeasurementsChartSection measurements={chartMeasurements} brewType={brewType} />
-        </section>
+      {/* 통합 카드: 측정 항목 탭 → 입력 칸 + 그래프 공유 */}
+      <div className="mb-8">
+        <MeasurementForm
+          batchId={params.id}
+          brewType={brewType}
+          measurements={chartMeasurements}
+        />
       </div>
 
       {/* History table */}
