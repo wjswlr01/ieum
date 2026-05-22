@@ -8,7 +8,6 @@ import type { NodeCategory } from "@/lib/batch-node-type";
 import type { PhotoWithUrls } from "@/lib/actions/photo";
 import NodeActualForm from "../node-actual-form";
 import NodeActions from "../node-actions";
-import MeasurementForm from "../measurements/measurement-form";
 import BatchNodeNotesTextarea from "./batch-node-notes-textarea";
 import NodeCharts, { type MeasurementRow } from "./node-charts";
 
@@ -393,34 +392,57 @@ const M_TYPE_LABEL: Record<string, string> = {
   ALCOHOL: "알코올",
 };
 
-function HistorySection({ measurements }: { measurements: MeasurementRow[] }) {
-  if (measurements.length === 0) return null;
+function HistorySection({
+  measurements,
+  measurementsHref,
+}: {
+  measurements: MeasurementRow[];
+  measurementsHref: string;
+}) {
   const rows = [...measurements].sort((a, b) => b.takenAt.getTime() - a.takenAt.getTime()).slice(0, 10);
   return (
     <section>
-      <p className="mb-1.5 text-xs font-medium text-brew-subtle">최근 측정 기록 ({measurements.length}개 중 최신 {rows.length})</p>
-      <div className="overflow-hidden rounded-xl border border-brew-border bg-brew-surface">
-        <table className="w-full text-xs">
-          <thead className="bg-brew-surface-dark text-brew-subtle">
-            <tr>
-              <th className="px-3 py-2 text-left font-medium">일시</th>
-              <th className="px-3 py-2 text-left font-medium">항목</th>
-              <th className="px-3 py-2 text-right font-medium">값</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((m, i) => (
-              <tr key={i} className="border-t border-brew-border">
-                <td className="px-3 py-2 font-mono text-brew-muted">
-                  {m.takenAt.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })}
-                </td>
-                <td className="px-3 py-2 text-brew-text">{M_TYPE_LABEL[m.type] ?? m.type}</td>
-                <td className="px-3 py-2 text-right font-mono text-brew-text">{m.value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mb-1.5 flex items-center justify-between">
+        <p className="text-xs font-medium text-brew-subtle">
+          {measurements.length > 0
+            ? `최근 측정 기록 (${measurements.length}개 중 최신 ${rows.length})`
+            : "측정 기록"}
+        </p>
+        <Link
+          href={measurementsHref}
+          className="text-[11px] font-medium text-brew-accent transition-colors hover:text-brew-accent-hover"
+        >
+          측정값 추가 / 전체 →
+        </Link>
       </div>
+      {measurements.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-brew-border bg-brew-bg px-4 py-5 text-center">
+          <p className="text-xs text-brew-faint">아직 측정값이 없습니다.</p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-brew-border bg-brew-surface">
+          <table className="w-full text-xs">
+            <thead className="bg-brew-surface-dark text-brew-subtle">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">일시</th>
+                <th className="px-3 py-2 text-left font-medium">항목</th>
+                <th className="px-3 py-2 text-right font-medium">값</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((m, i) => (
+                <tr key={i} className="border-t border-brew-border">
+                  <td className="px-3 py-2 font-mono text-brew-muted">
+                    {m.takenAt.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })}
+                  </td>
+                  <td className="px-3 py-2 text-brew-text">{M_TYPE_LABEL[m.type] ?? m.type}</td>
+                  <td className="px-3 py-2 text-right font-mono text-brew-text">{m.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }
@@ -598,13 +620,10 @@ export default function BatchNodeDetailPanel({
             <p className="mb-1.5 text-xs font-medium text-brew-subtle">측정값 추이</p>
             <NodeCharts measurements={measurements} />
           </section>
-          <HistorySection measurements={measurements} />
-          {isActive && (
-            <section>
-              <p className="mb-1.5 text-xs font-medium text-brew-subtle">새 측정값 추가</p>
-              <MeasurementForm batchId={batchId} brewType={brewType} />
-            </section>
-          )}
+          <HistorySection
+            measurements={measurements}
+            measurementsHref={`/dashboard/batches/${batchId}/measurements`}
+          />
         </>
       )}
 
