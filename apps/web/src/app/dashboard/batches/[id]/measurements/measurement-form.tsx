@@ -198,10 +198,10 @@ export default function MeasurementForm({ batchId, brewType, measurements = [] }
     <div className="rounded-xl border border-brew-border bg-brew-surface p-4 md:p-5">
       <h2 className="mb-4 text-sm font-semibold text-brew-text">측정값 입력 및 추이</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* 측정 항목 탭 — 입력 칸 + 그래프 공유 */}
+        {/* 측정 항목 탭 — 입력 칸 + 그래프 공유. 모바일 4개 한 줄 위해 짧은 라벨 + 컴팩트 padding/gap. */}
         <div>
           <label className="mb-2 block text-xs text-brew-subtle">측정 항목</label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 md:gap-2">
             {types.map((t) => {
               const isSelected = selectedType === t.type;
               const cnt = countByType.get(t.type) ?? 0;
@@ -211,13 +211,13 @@ export default function MeasurementForm({ batchId, brewType, measurements = [] }
                   type="button"
                   onClick={() => setSelectedType(t.type)}
                   aria-pressed={isSelected}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors md:gap-1.5 md:px-3 ${
                     isSelected
                       ? "border-brew-accent bg-brew-accent text-white"
                       : "border-brew-border text-brew-muted hover:border-brew-border-hover"
                   }`}
                 >
-                  <span>{t.label}</span>
+                  <span>{t.shortLabel}</span>
                   <span
                     className={`font-mono text-[10px] ${
                       isSelected ? "text-white/80" : "text-brew-faint"
