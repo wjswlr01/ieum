@@ -4,7 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import MeasurementForm from "./measurement-form";
-import MeasurementChart, { type ChartPoint } from "./measurement-chart";
+import MeasurementsChartSection from "./measurements-chart-section";
 import MeasurementRowActions from "./measurement-row-actions";
 import { unitLabel } from "@/lib/units";
 
@@ -18,12 +18,6 @@ const TYPE_LABEL: Record<string, string> = {
   CUSTOM: "산도 (%)",
   ALCOHOL: "알코올 (%)",
   GRAVITY_FINAL: "최종 비중 (SG)",
-};
-
-
-const CHART_TYPES: Record<string, string[]> = {
-  BEER: ["GRAVITY_ORIGINAL"],
-  MAKGEOLLI: ["BRIX", "CUSTOM"],
 };
 
 type Props = { params: { id: string } };
@@ -46,15 +40,11 @@ export default async function MeasurementsPage({ params }: Props) {
   const snapshot = batch.recipeSnapshot as unknown as RecipeSnapshot | null;
   const brewType = snapshot?.brewType ?? (batch.recipe?.brewType as string | undefined) ?? "BEER";
 
-  const allowedChartTypes = CHART_TYPES[brewType] ?? [];
-  const chartData: ChartPoint[] = measurements
-    .filter((m) => allowedChartTypes.includes(m.type))
-    .map((m) => ({
-      date: m.takenAt.toISOString(),
-      value: m.value,
-      type: m.type,
-      label: TYPE_LABEL[m.type] ?? m.type,
-    }));
+  const chartMeasurements = measurements.map((m) => ({
+    type: m.type,
+    value: m.value,
+    takenAt: m.takenAt,
+  }));
 
   return (
     <main className="px-4 py-6 md:px-12 md:py-10 max-w-4xl mx-auto w-full">
@@ -83,19 +73,13 @@ export default async function MeasurementsPage({ params }: Props) {
         </p>
       </div>
 
-      {/* Form + Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+      {/* Form (상단) + 측정값 추이 (하단) */}
+      <div className="mb-8 flex flex-col gap-5">
         <MeasurementForm batchId={params.id} brewType={brewType} />
-        {chartData.length >= 2 ? (
-          <MeasurementChart data={chartData} brewType={brewType} />
-        ) : (
-          <div className="rounded-xl border border-brew-border bg-brew-surface p-6 flex flex-col items-center justify-center text-center gap-2">
-            <p className="text-sm text-brew-subtle">
-              {allowedChartTypes.map((t) => TYPE_LABEL[t]).join(" / ")} 데이터가
-            </p>
-            <p className="text-sm text-brew-subtle">2개 이상이면 그래프가 표시됩니다.</p>
-          </div>
-        )}
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-brew-text">측정값 추이</h2>
+          <MeasurementsChartSection measurements={chartMeasurements} brewType={brewType} />
+        </section>
       </div>
 
       {/* History table */}
