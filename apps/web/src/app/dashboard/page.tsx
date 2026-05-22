@@ -66,7 +66,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <HomeQuickActions isAdmin={session.user.isAdmin} />
+      <HomeQuickActions isAdmin={session.user.isAdmin} activeBatches={activeBatches} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         <div className="flex flex-col gap-6 lg:col-span-2 md:gap-8">
