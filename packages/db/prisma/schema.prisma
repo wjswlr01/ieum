@@ -155,6 +155,10 @@ model User {
   notifications  Notification[]
   photos         Photo[]
 
+  breweryReviews   BreweryReview[]
+  breweryFavorites BreweryFavorite[]
+  breweryPhotos    BreweryPhoto[]
+
   @@index([tenantId])
   @@index([email])
 }
@@ -674,9 +678,11 @@ model BreweryPhoto {
   isPrimary    Boolean @default(false)
 
   uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
   uploadedAt   DateTime @default(now())
 
   @@index([breweryId])
+  @@index([uploadedById])
 }
 
 // 24. brewery_reviews — 양조장 후기 (이음 가입자)
@@ -686,6 +692,7 @@ model BreweryReview {
   brewery   Brewery @relation(fields: [breweryId], references: [id], onDelete: Cascade)
 
   authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   rating  Int
   content String @db.Text
@@ -702,6 +709,7 @@ model BreweryReview {
 model BreweryFavorite {
   id        String  @id @default(cuid())
   userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   breweryId String
   brewery   Brewery @relation(fields: [breweryId], references: [id], onDelete: Cascade)
 
