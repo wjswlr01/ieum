@@ -32,6 +32,9 @@ enum Unit {
 enum BrewType {
   BEER
   MAKGEOLLI
+  CHEONGJU
+  SOJU
+  FRUIT_WINE
 }
 
 enum UserRole {
@@ -119,28 +122,29 @@ model Tenant {
   accessMappings     AccessMapping[]
   notifications      Notification[]
   photos             Photo[]
+  brewery            Brewery?
 
   @@index([slug])
 }
 
 // 2. users
 model User {
-  id            String    @id @default(cuid())
-  email         String?   @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  password      String?   // 레거시 이메일 가입자 호환용 — 신규 가입자는 null
-  role          UserRole  @default(BREWER)
-  tenantId      String?   // 신규 OAuth 가입 직후 잠시 null (events.createUser에서 채움)
-  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
-  resetToken    String?   @unique
-  resetTokenExp DateTime?
-  isAdmin       Boolean   @default(false)
-  isActive      Boolean   @default(true)
-  hasCompletedOnboarding Boolean @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                     String    @id @default(cuid())
+  email                  String?   @unique
+  emailVerified          DateTime?
+  name                   String?
+  image                  String?
+  password               String? // 레거시 이메일 가입자 호환용 — 신규 가입자는 null
+  role                   UserRole  @default(BREWER)
+  tenantId               String? // 신규 OAuth 가입 직후 잠시 null (events.createUser에서 채움)
+  tenant                 Tenant?   @relation(fields: [tenantId], references: [id])
+  resetToken             String?   @unique
+  resetTokenExp          DateTime?
+  isAdmin                Boolean   @default(false)
+  isActive               Boolean   @default(true)
+  hasCompletedOnboarding Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   accounts       Account[]
   sessions       Session[]
@@ -298,20 +302,20 @@ model Ingredient {
 
 // 8. inventory
 model Inventory {
-  id           String   @id @default(cuid())
+  id           String             @id @default(cuid())
   tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
   name         String
   category     IngredientCategory @default(OTHER)
   sku          String?
-  quantity     Float    @default(0)
+  quantity     Float              @default(0)
   unit         Unit
   reorderLevel Float?
   notes        String?
   metadata     Json?
-  isCatalog    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isCatalog    Boolean            @default(false)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   transactions     InventoryTransaction[]
   batchIngredients BatchIngredient[]
@@ -342,15 +346,15 @@ model InventoryTransaction {
 
 // 10. batch_ingredients
 model BatchIngredient {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   batchId      String
-  batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch        Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
   batchNodeId  String?
-  batchNode    BatchNode? @relation(fields: [batchNodeId], references: [id], onDelete: SetNull)
+  batchNode    BatchNode?  @relation(fields: [batchNodeId], references: [id], onDelete: SetNull)
   ingredientId String?
   ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
   inventoryId  String?
-  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
+  inventory    Inventory?  @relation(fields: [inventoryId], references: [id])
   plannedAmt   Float
   actualAmt    Float?
   unit         Unit
@@ -364,23 +368,23 @@ model BatchIngredient {
 
 // 11. batches
 model Batch {
-  id           String      @id @default(cuid())
-  tenantId     String
-  tenant       Tenant      @relation(fields: [tenantId], references: [id])
-  recipeId     String?
-  recipe       Recipe?     @relation(fields: [recipeId], references: [id], onDelete: SetNull)
-  brewerId     String
-  brewer       User        @relation(fields: [brewerId], references: [id])
-  batchNumber     String      @unique
-  status          BatchStatus @default(PLANNED)
-  recipeSnapshot  Json?
-  actualVolume    Float?
-  actualUnit      Unit?
-  notes           String?
-  startedAt       DateTime?
-  finishedAt      DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id             String      @id @default(cuid())
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  recipeId       String?
+  recipe         Recipe?     @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  brewerId       String
+  brewer         User        @relation(fields: [brewerId], references: [id])
+  batchNumber    String      @unique
+  status         BatchStatus @default(PLANNED)
+  recipeSnapshot Json?
+  actualVolume   Float?
+  actualUnit     Unit?
+  notes          String?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   batchNodes            BatchNode[]
   measurements          Measurement[]
@@ -398,9 +402,9 @@ model Batch {
 
 // 12. batch_nodes
 model BatchNode {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   batchId      String
-  batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch        Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
   recipeNodeId String?
   recipeNode   RecipeNode? @relation(fields: [recipeNodeId], references: [id], onDelete: SetNull)
   order        Int
@@ -409,8 +413,8 @@ model BatchNode {
   actualTemp   Float?
   actualParams Json?
   notes        String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   batchIngredients BatchIngredient[]
   photos           Photo[]
@@ -440,33 +444,33 @@ model Measurement {
 
 // 14. tasting_notes
 model TastingNote {
-  id          String   @id @default(cuid())
-  batchId     String
-  batch       Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  tasterId    String
-  taster      User     @relation(fields: [tasterId], references: [id], onDelete: Cascade)
+  id       String @id @default(cuid())
+  batchId  String
+  batch    Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  tasterId String
+  taster   User   @relation(fields: [tasterId], references: [id], onDelete: Cascade)
 
-  appearance      Json?
-  aromaGrain      Int      @default(0)
-  aromaFruit      Int      @default(0)
-  aromaNuruk      Int      @default(0)
-  aromaHop        Int      @default(0)
-  aromaAlcohol    Int      @default(0)
-  aromaOther      String?
+  appearance   Json?
+  aromaGrain   Int     @default(0)
+  aromaFruit   Int     @default(0)
+  aromaNuruk   Int     @default(0)
+  aromaHop     Int     @default(0)
+  aromaAlcohol Int     @default(0)
+  aromaOther   String?
 
-  tasteSweet      Int      @default(0)
-  tasteSour       Int      @default(0)
-  tasteBitter     Int      @default(0)
-  tasteUmami      Int      @default(0)
+  tasteSweet  Int @default(0)
+  tasteSour   Int @default(0)
+  tasteBitter Int @default(0)
+  tasteUmami  Int @default(0)
 
-  body            Int      @default(0)
-  carbonation     Int      @default(0)
+  body        Int @default(0)
+  carbonation Int @default(0)
 
-  overallScore    Int      @default(0)
-  notes           String?
+  overallScore Int     @default(0)
+  notes        String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([batchId])
   @@index([tasterId])
@@ -538,7 +542,7 @@ model Notification {
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  type        String   // LOW_STOCK, FERMENTATION_REMINDER, BATCH_STATUS
+  type        String // LOW_STOCK, FERMENTATION_REMINDER, BATCH_STATUS
   title       String
   message     String
   isRead      Boolean  @default(false)
@@ -552,13 +556,13 @@ model Notification {
 
 // 20. photos — 배치별 사진 (admin 업로드, 전체 조회)
 model Photo {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
   uploadedById String
-  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  uploadedBy   User       @relation(fields: [uploadedById], references: [id])
   batchId      String
-  batch        Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
   batchNodeId  String?
   batchNode    BatchNode? @relation(fields: [batchNodeId], references: [id], onDelete: SetNull)
 
@@ -593,4 +597,117 @@ model RecipeNodeIngredient {
   @@unique([recipeNodeId, ingredientId])
   @@index([recipeNodeId])
   @@index([ingredientId])
+}
+
+// ─── 양조장 디렉토리 ──────────────────────────────────────────
+
+// 21. breweries — 양조장 메인 정보 (공공데이터 + 양조사 보강)
+model Brewery {
+  id String @id @default(cuid())
+
+  // 공공데이터 기반
+  name           String
+  address        String
+  latitude       Float?
+  longitude      Float?
+  region         String
+  city           String?
+  website        String?
+  businessNumber String?
+
+  // 매칭 (양조사가 자기 양조장 등록 시)
+  tenantId String? @unique
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  // 양조사 자체 입력
+  description       String? @db.Text
+  operatingHours    Json?
+  tourAvailable     Boolean @default(false)
+  tourBookingMethod String?
+  tastingAvailable  Boolean @default(false)
+  tastingPriceInfo  String?
+  parkingInfo       String?
+
+  products  BreweryProduct[]
+  photos    BreweryPhoto[]
+  reviews   BreweryReview[]
+  favorites BreweryFavorite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([region])
+  @@index([latitude, longitude])
+  @@index([name])
+}
+
+// 22. brewery_products — 양조장 제품
+model BreweryProduct {
+  id        String  @id @default(cuid())
+  breweryId String
+  brewery   Brewery @relation(fields: [breweryId], references: [id], onDelete: Cascade)
+
+  name           String
+  brewType       BrewType?
+  alcoholContent Float?
+  volume         String?
+  ingredients    String?   @db.Text
+  features       String?   @db.Text
+  awards         String?   @db.Text
+  isAvailable    Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([breweryId])
+  @@index([brewType])
+}
+
+// 23. brewery_photos — 양조장 사진 (양조사 업로드)
+model BreweryPhoto {
+  id        String  @id @default(cuid())
+  breweryId String
+  brewery   Brewery @relation(fields: [breweryId], references: [id], onDelete: Cascade)
+
+  originalPath String
+  caption      String?
+  isPrimary    Boolean @default(false)
+
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+
+  @@index([breweryId])
+}
+
+// 24. brewery_reviews — 양조장 후기 (이음 가입자)
+model BreweryReview {
+  id        String  @id @default(cuid())
+  breweryId String
+  brewery   Brewery @relation(fields: [breweryId], references: [id], onDelete: Cascade)
+
+  authorId String
+
+  rating  Int
+  content String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([breweryId, authorId])
+  @@index([breweryId])
+  @@index([authorId])
+}
+
+// 25. brewery_favorites — 즐겨찾기
+model BreweryFavorite {
+  id        String  @id @default(cuid())
+  userId    String
+  breweryId String
+  brewery   Brewery @relation(fields: [breweryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, breweryId])
+  @@index([userId])
+  @@index([breweryId])
 }
