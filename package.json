@@ -11,7 +11,8 @@
     "db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",
     "db:migrate": "turbo run db:migrate",
-    "seed:demo": "./packages/db/node_modules/.bin/tsx packages/db/prisma/seed-demo.ts"
+    "seed:demo": "./packages/db/node_modules/.bin/tsx packages/db/prisma/seed-demo.ts",
+    "seed:breweries": "./packages/db/node_modules/.bin/tsx packages/db/prisma/seed-breweries.ts"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
