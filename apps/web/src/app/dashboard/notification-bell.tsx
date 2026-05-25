@@ -109,12 +109,13 @@ export default function NotificationBell() {
       <button
         onClick={handleOpen}
         title="알림"
-        className="relative text-[#B0A080] hover:text-brew-text-light transition-colors text-base leading-none"
+        aria-label="알림"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#B0A080] hover:text-brew-text-light hover:bg-white/5 transition-colors"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -126,7 +127,7 @@ export default function NotificationBell() {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brew-accent text-[10px] font-bold text-[#1A1814] px-0.5 leading-none">
+          <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brew-accent text-[10px] font-bold text-[#1A1814] px-0.5 leading-none">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

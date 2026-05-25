@@ -34,7 +34,7 @@ export default function UserMenu({
       >
         <span
           aria-hidden="true"
-          className="md:hidden flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brew-accent/20 text-xs font-semibold text-brew-accent"
+          className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brew-accent/20 text-sm font-semibold text-brew-accent"
         >
           {initial}
         </span>

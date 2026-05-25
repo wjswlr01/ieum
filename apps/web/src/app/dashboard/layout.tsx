@@ -47,7 +47,7 @@ export default async function DashboardLayout({
           </Link>
           <NavLinks />
         </div>
-        <div className="flex items-center gap-1 md:gap-3 shrink-0">
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
           <NotificationBell />
           <UserMenu
             userName={session.user.name ?? ""}
