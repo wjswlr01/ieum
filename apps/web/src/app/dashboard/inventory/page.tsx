@@ -63,7 +63,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-serif text-xl md:text-2xl font-bold">재고</h1>
+          <h1 className="text-xl md:text-2xl font-bold">재고</h1>
           {lowStockCount > 0 && (
             <p className="text-xs text-red-600 mt-1">
               ⚠ 저재고 {lowStockCount}개 항목

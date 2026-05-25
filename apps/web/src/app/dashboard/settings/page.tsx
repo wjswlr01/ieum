@@ -46,7 +46,7 @@ export default async function SettingsPage() {
 
   return (
     <main className="px-4 py-6 md:px-12 md:py-10 max-w-2xl mx-auto w-full">
-      <h1 className="font-serif text-xl md:text-2xl font-bold mb-8">계정 설정</h1>
+      <h1 className="text-xl md:text-2xl font-bold mb-8">계정 설정</h1>
 
       <div className="flex flex-col gap-6">
         <SectionCard title="프로필">

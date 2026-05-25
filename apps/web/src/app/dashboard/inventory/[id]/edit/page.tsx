@@ -26,7 +26,7 @@ export default async function InventoryEditPage({ params }: Props) {
         <span className="text-brew-text">편집</span>
       </nav>
 
-      <h1 className="font-serif text-xl md:text-2xl font-bold mb-8">재료 편집</h1>
+      <h1 className="text-xl md:text-2xl font-bold mb-8">재료 편집</h1>
       <InventoryEditForm
         initial={{
           id: item.id,

@@ -10,7 +10,7 @@ export default function NewInventoryPage() {
       >
         ← 재고 목록
       </Link>
-      <h1 className="font-serif text-xl md:text-2xl font-bold mt-2 mb-2">재료 등록</h1>
+      <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">재료 등록</h1>
       <p className="text-sm text-brew-muted mb-8">재고 관리할 원재료를 등록합니다.</p>
       <InventoryForm />
     </main>

@@ -242,7 +242,7 @@ export function AccountSection() {
             className="w-full max-w-sm mx-4 rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="font-serif text-lg font-bold text-brew-text mb-2">계정 삭제</h2>
+            <h2 className="text-lg font-bold text-brew-text mb-2">계정 삭제</h2>
             <p className="text-sm text-brew-muted mb-4">
               계정을 삭제하면 모든 데이터가 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
             </p>

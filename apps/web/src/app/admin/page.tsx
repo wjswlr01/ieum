@@ -105,7 +105,7 @@ export default async function AdminDashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="font-serif text-xl md:text-2xl font-bold">관리자 대시보드</h1>
+        <h1 className="text-xl md:text-2xl font-bold">관리자 대시보드</h1>
         <p className="mt-1 text-sm text-brew-muted">전체 시스템 현황을 확인합니다.</p>
       </div>
 

@@ -84,7 +84,7 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="font-serif text-lg font-bold text-brew-text">
+            <h2 className="text-lg font-bold text-brew-text">
               {step === "confirm" ? "배치를 폐기하시겠습니까?" : "폐기 사유 (선택)"}
             </h2>
             <p className="mt-2 text-sm text-brew-muted">

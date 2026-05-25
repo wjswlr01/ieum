@@ -90,7 +90,7 @@ export default function BrewingReport({
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className="font-serif text-lg font-semibold tracking-tight text-brew-text">종합 발효 리포트</p>
+              <p className="text-lg font-semibold tracking-tight text-brew-text">종합 발효 리포트</p>
               <p className="mt-0.5 font-mono text-xs text-brew-muted">#{batchNumber}</p>
             </div>
             <span className="text-2xl">{brewType === "BEER" ? "🍺" : "🍶"}</span>

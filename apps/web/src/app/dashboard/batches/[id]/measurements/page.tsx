@@ -64,7 +64,7 @@ export default async function MeasurementsPage({ params }: Props) {
       </nav>
 
       <div className="mb-8">
-        <h1 className="font-serif text-xl md:text-2xl font-bold">측정값 입력</h1>
+        <h1 className="text-xl md:text-2xl font-bold">측정값 입력</h1>
         <p className="mt-1 text-sm text-brew-muted">
           {brewType === "BEER"
             ? "발효 중 비중·온도·pH를 기록하세요."

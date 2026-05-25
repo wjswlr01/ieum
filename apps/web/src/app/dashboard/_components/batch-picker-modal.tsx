@@ -68,7 +68,7 @@ export default function BatchPickerModal({ mode, batches, onClose }: Props) {
       >
         <div className="flex items-start justify-between gap-3 border-b border-brew-border px-5 py-4">
           <div>
-            <h2 id="batch-picker-title" className="font-serif text-base font-bold text-brew-text">
+            <h2 id="batch-picker-title" className="text-base font-bold text-brew-text">
               {meta.title}
             </h2>
             <p className="mt-0.5 text-xs text-brew-muted">{meta.subtitle}</p>

@@ -45,7 +45,7 @@ export default async function NewBatchPage({ searchParams }: Props) {
         >
           ← 레시피로 돌아가기
         </Link>
-        <h1 className="font-serif text-xl md:text-2xl font-bold mt-2 mb-2">배치 시작</h1>
+        <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">배치 시작</h1>
         <p className="text-sm text-brew-muted mb-8">아래 레시피로 새 배치를 생성합니다.</p>
         <DirectBatchStarter recipe={recipe} inventory={inventory} />
       </main>
@@ -67,7 +67,7 @@ export default async function NewBatchPage({ searchParams }: Props) {
         >
           ← 뒤로
         </Link>
-        <h1 className="font-serif text-xl md:text-2xl font-bold mt-2 mb-2">레시피 기반 배치</h1>
+        <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">레시피 기반 배치</h1>
         <p className="text-sm text-brew-muted mb-8">사용할 레시피를 선택하세요.</p>
 
         {recipes.length === 0 ? (
@@ -93,7 +93,7 @@ export default async function NewBatchPage({ searchParams }: Props) {
         >
           ← 뒤로
         </Link>
-        <h1 className="font-serif text-xl md:text-2xl font-bold mt-2 mb-2">자유 양조</h1>
+        <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">자유 양조</h1>
         <p className="text-sm text-brew-muted mb-8">레시피 없이 바로 양조를 기록합니다.</p>
         <FreeformBatchForm />
       </main>
@@ -109,7 +109,7 @@ export default async function NewBatchPage({ searchParams }: Props) {
       >
         ← 배치 목록
       </Link>
-      <h1 className="font-serif text-xl md:text-2xl font-bold mt-2 mb-2">새 배치 시작</h1>
+      <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">새 배치 시작</h1>
       <p className="text-sm text-brew-muted mb-8">배치를 시작하는 방식을 선택하세요.</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

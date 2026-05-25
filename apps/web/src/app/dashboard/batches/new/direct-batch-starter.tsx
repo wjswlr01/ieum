@@ -165,7 +165,7 @@ export default function DirectBatchStarter({
           <span className="text-xl">{recipe.brewType === "BEER" ? "🍺" : "🍶"}</span>
           <span className="text-xs text-brew-subtle">{recipe.brewType === "BEER" ? "맥주" : "막걸리"}</span>
         </div>
-        <p className="font-serif text-xl font-semibold text-brew-text">{recipe.name}</p>
+        <p className="text-xl font-semibold text-brew-text">{recipe.name}</p>
         <p className="text-sm text-brew-muted mt-1">목표 {recipe.targetVolume}L</p>
       </div>
 

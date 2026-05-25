@@ -23,7 +23,7 @@ export default function HomePage() {
         </div>
 
         {/* Headline */}
-        <h1 className="font-serif max-w-2xl text-4xl font-bold leading-tight tracking-tight md:text-6xl md:leading-[1.1] text-brew-text-light">
+        <h1 className="max-w-2xl text-4xl font-bold leading-tight tracking-tight md:text-6xl md:leading-[1.1] text-brew-text-light">
           맥주와 막걸리,
           <br />
           <span className="text-brew-accent">

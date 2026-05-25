@@ -302,7 +302,7 @@ function BatchCard({ batch, isCompleted = false }: { batch: ActiveBatch; isCompl
           </div>
           <Link
             href={`/dashboard/batches/${batch.id}`}
-            className="font-serif text-base font-semibold text-brew-text hover:text-brew-accent transition-colors"
+            className="text-base font-semibold text-brew-text hover:text-brew-accent transition-colors"
           >
             {batch.recipeName}
           </Link>

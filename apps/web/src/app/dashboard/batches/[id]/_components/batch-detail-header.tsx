@@ -64,7 +64,7 @@ export default function BatchDetailHeader({
           <div className="flex items-center gap-2">
             <span aria-hidden="true" className="text-sm">{emoji(brewType)}</span>
             <h1
-              className={`truncate font-serif text-base font-bold leading-tight md:text-lg ${
+              className={`truncate text-base font-bold leading-tight md:text-lg ${
                 isRecipeDeleted ? "italic text-brew-subtle" : "text-brew-text"
               }`}
             >

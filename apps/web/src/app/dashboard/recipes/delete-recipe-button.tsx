@@ -61,7 +61,7 @@ export default function DeleteRecipeButton({
             className="w-full max-w-sm mx-4 rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="font-serif text-lg font-bold text-brew-text mb-2">레시피 삭제</h2>
+            <h2 className="text-lg font-bold text-brew-text mb-2">레시피 삭제</h2>
             <p className="text-sm text-brew-muted mb-1">
               <span className="font-semibold text-brew-text">{recipeName}</span> 레시피를
               삭제하시겠습니까?

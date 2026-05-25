@@ -44,7 +44,7 @@ export default async function RecipeDetailPage({ params }: Props) {
             </span>
             <span className="text-xs text-brew-subtle">v{recipe.version}</span>
           </div>
-          <h1 className="font-serif text-xl md:text-2xl font-bold">{recipe.name}</h1>
+          <h1 className="text-xl md:text-2xl font-bold">{recipe.name}</h1>
           {recipe.description && (
             <p className="mt-2 text-sm text-brew-muted">{recipe.description}</p>
           )}

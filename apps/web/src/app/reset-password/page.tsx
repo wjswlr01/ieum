@@ -94,7 +94,7 @@ export default function ResetPasswordPage() {
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <h1 className="font-serif text-xl md:text-2xl font-bold mb-1">비밀번호 재설정</h1>
+          <h1 className="text-xl md:text-2xl font-bold mb-1">비밀번호 재설정</h1>
           <p className="text-sm text-brew-muted mb-8">
             {step === "email" && "가입하신 이메일을 입력해주세요."}
             {step === "code" && "이메일로 발송된 6자리 인증코드를 입력해주세요."}

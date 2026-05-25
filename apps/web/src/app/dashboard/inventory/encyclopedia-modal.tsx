@@ -48,7 +48,7 @@ function HopCard({ item }: { item: EncyclopediaItem }) {
   return (
     <div className="rounded-xl border border-brew-border bg-brew-surface p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-serif font-semibold text-brew-text">{item.name}</h3>
+        <h3 className="font-semibold text-brew-text">{item.name}</h3>
         <span className="shrink-0 text-xs rounded-full border border-green-200 bg-green-50 text-green-800 px-2 py-0.5">홉</span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -77,7 +77,7 @@ function NurukCard({ item }: { item: EncyclopediaItem }) {
   return (
     <div className="rounded-xl border border-brew-border bg-brew-surface p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-serif font-semibold text-brew-text">{item.name}</h3>
+        <h3 className="font-semibold text-brew-text">{item.name}</h3>
         <span className="shrink-0 text-xs rounded-full border border-orange-200 bg-orange-50 text-orange-800 px-2 py-0.5">누룩</span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -106,7 +106,7 @@ function YeastCard({ item }: { item: EncyclopediaItem }) {
   return (
     <div className="rounded-xl border border-brew-border bg-brew-surface p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-serif font-semibold text-brew-text">{item.name}</h3>
+        <h3 className="font-semibold text-brew-text">{item.name}</h3>
         <span className="shrink-0 text-xs rounded-full border border-yellow-200 bg-yellow-50 text-yellow-800 px-2 py-0.5">효모</span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -138,7 +138,7 @@ function GrainCard({ item }: { item: EncyclopediaItem }) {
   return (
     <div className="rounded-xl border border-brew-border bg-brew-surface p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-serif font-semibold text-brew-text">{item.name}</h3>
+        <h3 className="font-semibold text-brew-text">{item.name}</h3>
         <span className={`shrink-0 text-xs rounded-full border px-2 py-0.5 ${badge.cls}`}>
           {badge.label}
         </span>
@@ -240,7 +240,7 @@ export default function EncyclopediaButton() {
           <div className="relative flex flex-col w-full max-w-5xl bg-brew-bg rounded-2xl shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-brew-border shrink-0">
-              <h2 className="font-serif text-xl font-bold text-brew-text">양조 재료 도감</h2>
+              <h2 className="text-xl font-bold text-brew-text">양조 재료 도감</h2>
               <button
                 onClick={closeModal}
                 className="text-brew-muted hover:text-brew-text transition-colors text-xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-brew-surface"

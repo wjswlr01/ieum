@@ -241,7 +241,7 @@ export default function OnboardingOverlay({
               {step.icon}
             </p>
           ) : null}
-          <h2 className="font-serif text-xl md:text-2xl font-bold text-brew-text text-center mb-3">
+          <h2 className="text-xl md:text-2xl font-bold text-brew-text text-center mb-3">
             {step.title}
           </h2>
           <div className="text-sm text-brew-text text-center space-y-1 mb-5">
@@ -402,7 +402,7 @@ function TooltipCard({
       <p className="text-[10px] font-mono text-brew-subtle mb-1">
         {stepIdx + 1} / {totalSteps}
       </p>
-      <h3 className="font-serif text-base font-bold text-brew-text mb-1.5">
+      <h3 className="text-base font-bold text-brew-text mb-1.5">
         {step.title}
       </h3>
       <div className="text-sm text-brew-text mb-4">{step.body}</div>

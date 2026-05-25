@@ -60,7 +60,7 @@ export default function DeleteInventoryButton({
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h2 className="font-serif text-lg font-bold mb-3">재료 삭제</h2>
+            <h2 className="text-lg font-bold mb-3">재료 삭제</h2>
             <p className="text-sm text-brew-text mb-3">
               <span className="font-semibold">{inventoryName}</span>을(를) 삭제하시겠습니까?
             </p>

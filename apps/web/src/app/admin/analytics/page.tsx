@@ -182,7 +182,7 @@ export default async function AdminAnalyticsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-serif text-xl md:text-2xl font-bold">통계</h1>
+        <h1 className="text-xl md:text-2xl font-bold">통계</h1>
         <p className="mt-1 text-sm text-brew-muted">전체 사용 데이터 분석.</p>
       </div>
 

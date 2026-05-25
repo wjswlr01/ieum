@@ -208,7 +208,7 @@ function BatchCard({ batch }: { batch: ActiveBatchSummary }) {
           <div className="min-w-0 flex-1">
             <Link
               href={`/dashboard/batches/${batch.id}`}
-              className="font-serif text-base md:text-lg font-bold text-brew-text hover:text-brew-accent transition-colors break-keep"
+              className="text-base md:text-lg font-bold text-brew-text hover:text-brew-accent transition-colors break-keep"
             >
               <span className="mr-1.5">{emoji(batch.brewType)}</span>
               {batch.recipeName}
@@ -257,7 +257,7 @@ export default function HomeActiveBatches({ batches }: { batches: ActiveBatchSum
   if (batches.length === 0) {
     return (
       <section className="flex flex-col gap-3">
-        <h2 className="font-serif text-lg md:text-xl font-bold text-brew-text">진행 중인 배치</h2>
+        <h2 className="text-lg md:text-xl font-bold text-brew-text">진행 중인 배치</h2>
         <div className="rounded-2xl border border-dashed border-brew-border bg-brew-surface px-6 py-10 text-center">
           <p className="text-sm text-brew-muted">진행 중인 배치가 없습니다</p>
           <Link
@@ -274,7 +274,7 @@ export default function HomeActiveBatches({ batches }: { batches: ActiveBatchSum
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-lg md:text-xl font-bold text-brew-text">진행 중인 배치</h2>
+        <h2 className="text-lg md:text-xl font-bold text-brew-text">진행 중인 배치</h2>
         <Link
           href="/dashboard/batches"
           className="text-xs md:text-sm text-brew-accent hover:text-brew-accent-hover transition-colors"

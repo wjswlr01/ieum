@@ -380,7 +380,7 @@ function UploadModal({
         className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="font-serif text-lg font-bold text-brew-text mb-4">사진 추가</h2>
+        <h2 className="text-lg font-bold text-brew-text mb-4">사진 추가</h2>
 
         <div className="flex flex-col gap-4">
           <div>

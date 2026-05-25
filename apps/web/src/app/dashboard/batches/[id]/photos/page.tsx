@@ -69,7 +69,7 @@ export default async function BatchPhotosPage({ params }: Props) {
 
       <header className="mb-6">
         <p className="font-mono text-xs text-brew-muted">#{batch.batchNumber}</p>
-        <h1 className="mt-1 font-serif text-2xl font-bold text-brew-text">{recipeName} 전체 사진</h1>
+        <h1 className="mt-1 text-2xl font-bold text-brew-text">{recipeName} 전체 사진</h1>
         <p className="mt-1 text-sm text-brew-muted">
           전체 {photos.length}장
           {batchNodeOptions.length > 0 && ` · ${batchNodeOptions.length}개 공정`}

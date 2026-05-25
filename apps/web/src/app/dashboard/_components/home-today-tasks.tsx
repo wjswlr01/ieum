@@ -35,7 +35,7 @@ function EmptyState() {
 export default function HomeTodayTasks({ tasks }: { tasks: TodayTask[] }) {
   return (
     <aside className="flex flex-col gap-3">
-      <h2 className="font-serif text-lg md:text-xl font-bold text-brew-text">오늘의 할 일</h2>
+      <h2 className="text-lg md:text-xl font-bold text-brew-text">오늘의 할 일</h2>
 
       {tasks.length === 0 ? (
         <EmptyState />

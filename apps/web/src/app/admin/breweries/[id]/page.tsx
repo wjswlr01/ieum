@@ -49,7 +49,7 @@ export default async function BreweryDetailPage({
         </Link>
       </div>
       <div className="mb-6">
-        <h1 className="font-serif text-xl md:text-2xl font-bold">{tenant.name}</h1>
+        <h1 className="text-xl md:text-2xl font-bold">{tenant.name}</h1>
         <p className="mt-1 font-mono text-xs text-brew-muted">
           {tenant.slug} · {tenant.createdAt.toISOString().slice(0, 10)}
         </p>
@@ -71,7 +71,7 @@ export default async function BreweryDetailPage({
       </div>
 
       <section className="mb-8">
-        <h2 className="font-serif text-lg font-bold mb-3">멤버</h2>
+        <h2 className="text-lg font-bold mb-3">멤버</h2>
         <div className="rounded-xl border border-brew-border bg-brew-surface overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-brew-surface-dark">
@@ -108,7 +108,7 @@ export default async function BreweryDetailPage({
       </section>
 
       <section className="mb-8">
-        <h2 className="font-serif text-lg font-bold mb-3">최근 레시피</h2>
+        <h2 className="text-lg font-bold mb-3">최근 레시피</h2>
         <div className="rounded-xl border border-brew-border bg-brew-surface overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-brew-surface-dark">
@@ -144,7 +144,7 @@ export default async function BreweryDetailPage({
       </section>
 
       <section>
-        <h2 className="font-serif text-lg font-bold mb-3">최근 배치</h2>
+        <h2 className="text-lg font-bold mb-3">최근 배치</h2>
         <div className="rounded-xl border border-brew-border bg-brew-surface overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-brew-surface-dark">

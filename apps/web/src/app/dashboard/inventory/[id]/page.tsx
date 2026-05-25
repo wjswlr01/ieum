@@ -180,7 +180,7 @@ export default async function InventoryDetailPage({ params }: Props) {
             </span>
             {item.sku && <span className="text-xs text-brew-subtle">SKU: {item.sku}</span>}
           </div>
-          <h1 className="font-serif text-xl md:text-2xl font-bold">{item.name}</h1>
+          <h1 className="text-xl md:text-2xl font-bold">{item.name}</h1>
           {item.notes && <p className="mt-1 text-sm text-brew-muted">{item.notes}</p>}
         </div>
 

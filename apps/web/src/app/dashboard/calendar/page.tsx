@@ -58,7 +58,7 @@ export default async function CalendarPage() {
   return (
     <main className="px-4 py-6 md:px-12 md:py-10 max-w-6xl mx-auto w-full">
       <div className="mb-6">
-        <h1 className="font-serif text-xl md:text-2xl font-bold text-brew-text">양조 캘린더</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-brew-text">양조 캘린더</h1>
         <p className="mt-1 text-sm text-brew-muted">최근 3개월 배치의 공정 흐름을 한눈에 확인합니다.</p>
       </div>
 

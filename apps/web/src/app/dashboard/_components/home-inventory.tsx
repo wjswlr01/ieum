@@ -29,7 +29,7 @@ export default function HomeInventory({ items }: { items: InventoryItemStatus[] 
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-end justify-between border-b border-brew-border pb-2">
-        <h2 className="font-serif text-lg md:text-xl font-bold text-brew-text">재고 현황</h2>
+        <h2 className="text-lg md:text-xl font-bold text-brew-text">재고 현황</h2>
         <Link
           href="/dashboard/inventory"
           className="text-xs md:text-sm text-brew-accent hover:text-brew-accent-hover transition-colors"

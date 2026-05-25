@@ -244,7 +244,7 @@ export default async function BatchDetailPage({ params }: Props) {
       <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-12 md:py-10">
         {isPlanned ? (
           <section className="rounded-2xl border border-brew-border bg-brew-surface p-6">
-            <h2 className="font-serif text-lg font-semibold text-brew-text">시작 대기 중</h2>
+            <h2 className="text-lg font-semibold text-brew-text">시작 대기 중</h2>
             <p className="mt-1 text-sm text-brew-muted">
               배치를 시작하면 첫 공정이 자동으로 진행되고, 재료가 차감됩니다.
             </p>
@@ -255,7 +255,7 @@ export default async function BatchDetailPage({ params }: Props) {
           </section>
         ) : isAborted ? (
           <section className="rounded-2xl border border-red-200 bg-red-50/50 p-6">
-            <h2 className="font-serif text-lg font-semibold text-red-700">폐기된 배치</h2>
+            <h2 className="text-lg font-semibold text-red-700">폐기된 배치</h2>
             {batch.finishedAt && (
               <p className="mt-1 text-sm text-red-600">
                 폐기 시각: {new Date(batch.finishedAt).toLocaleString("ko-KR")}

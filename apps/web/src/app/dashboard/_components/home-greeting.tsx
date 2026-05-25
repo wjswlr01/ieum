@@ -22,7 +22,7 @@ export default function HomeGreeting({
 }: Props) {
   return (
     <section className="flex flex-col gap-1">
-      <h1 className="font-serif text-2xl md:text-4xl font-bold tracking-tight text-brew-text">
+      <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-brew-text">
         안녕하세요, {userName}님
       </h1>
       <p className="text-sm md:text-base text-brew-muted">
