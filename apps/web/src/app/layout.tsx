@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Nanum_Myeongjo, DM_Mono } from "next/font/google";
+import { Nanum_Myeongjo } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
@@ -7,12 +9,7 @@ const nanumMyeongjo = Nanum_Myeongjo({
   subsets: ["latin"],
   weight: ["400", "700", "800"],
   variable: "--font-nanum-myeongjo",
-});
-
-const dmMono = DM_Mono({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-dm-mono",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -44,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className={`${nanumMyeongjo.variable} ${dmMono.variable}`} suppressHydrationWarning>
+    <html lang="ko" className={`${nanumMyeongjo.variable} ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />

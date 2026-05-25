@@ -52,14 +52,26 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
+          "var(--font-geist-sans)",
+          "Wanted Sans",
           "Pretendard",
           "-apple-system",
           "BlinkMacSystemFont",
           "system-ui",
           "sans-serif",
         ],
-        serif: ["var(--font-nanum-myeongjo)", "Georgia", "serif"],
-        mono: ["var(--font-dm-mono)", "ui-monospace", "monospace"],
+        serif: [
+          "var(--font-nanum-myeongjo)",
+          "Noto Serif KR",
+          "Georgia",
+          "serif",
+        ],
+        mono: [
+          "var(--font-geist-mono)",
+          "ui-monospace",
+          "SFMono-Regular",
+          "monospace",
+        ],
       },
     },
   },
