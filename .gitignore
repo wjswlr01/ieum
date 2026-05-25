@@ -29,3 +29,7 @@ packages/db/generated/
 npm-debug.log*
 pnpm-debug.log*
 apps/web/.env.local*
+
+# Brewery seed data
+data/*.csv
+data/*.xlsxs
