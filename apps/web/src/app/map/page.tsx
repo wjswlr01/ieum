@@ -2,8 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getBreweries } from "@/lib/actions/brewery";
+import { KakaoMap } from "./_components/kakao-map";
 import { MapHeader } from "./_components/map-header";
-import { MapPlaceholder } from "./_components/map-placeholder";
 
 type SearchParams = {
   q?: string;
@@ -40,7 +40,7 @@ export default async function MapPage({
         userName={session.user.name ?? ""}
         userEmail={session.user.email ?? ""}
       />
-      <MapPlaceholder breweries={result.breweries} total={result.total} />
+      <KakaoMap breweryCount={result.total} />
     </div>
   );
 }
