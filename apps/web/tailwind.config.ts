@@ -48,6 +48,10 @@ const config: Config = {
           "green-soft": "var(--brew-green-soft)",
           danger: "var(--brew-danger)",
           "danger-soft": "var(--brew-danger-soft)",
+
+          // ── 양조장 지도 (Phase 3) — 활성 칩 강조 ──
+          "accent-light": "#F8E155",
+          "accent-light-text": "#706300",
         },
       },
       fontFamily: {
