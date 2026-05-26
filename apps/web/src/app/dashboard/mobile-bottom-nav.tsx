@@ -46,19 +46,19 @@ const TABS: Tab[] = [
     ),
   },
   {
-    href: "/dashboard/inventory",
-    label: "재고",
+    href: "/map",
+    label: "지도",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
-        <path d="M3 9h18" />
-        <path d="M9 21V12h6v9" />
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+        <circle cx="12" cy="10" r="3" />
       </svg>
     ),
   },
 ];
 
 const MORE_LINKS = [
+  { href: "/dashboard/inventory", label: "재고" },
   { href: "/dashboard/calendar", label: "캘린더" },
   { href: "/dashboard/settings", label: "계정 설정" },
 ];
@@ -101,7 +101,6 @@ export default function MobileBottomNav({ isAdmin = false }: { isAdmin?: boolean
             const onboardStep =
               tab.href === "/dashboard/recipes" ? "3"
               : tab.href === "/dashboard/batches" ? "4"
-              : tab.href === "/dashboard/inventory" ? "6"
               : undefined;
             return (
               <li key={tab.href}>
@@ -151,21 +150,26 @@ export default function MobileBottomNav({ isAdmin = false }: { isAdmin?: boolean
               <div className="h-1 w-10 rounded-full bg-[#5A5246]" />
             </div>
             <ul className="px-2 pb-2">
-              {MORE_LINKS.map((l) => (
-                <li key={l.href}>
-                  <Link
-                    href={l.href}
-                    onClick={() => setMoreOpen(false)}
-                    className={`block rounded-lg px-4 py-3 text-sm transition-colors ${
-                      pathname.startsWith(l.href)
-                        ? "bg-white/5 text-brew-accent"
-                        : "text-[#B0A080] hover:bg-white/5"
-                    }`}
-                  >
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
+              {MORE_LINKS.map((l) => {
+                const onboardStep =
+                  l.href === "/dashboard/inventory" ? "6" : undefined;
+                return (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      onClick={() => setMoreOpen(false)}
+                      {...(onboardStep ? { "data-onboarding-step": onboardStep } : {})}
+                      className={`block rounded-lg px-4 py-3 text-sm transition-colors ${
+                        pathname.startsWith(l.href)
+                          ? "bg-white/5 text-brew-accent"
+                          : "text-[#B0A080] hover:bg-white/5"
+                      }`}
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                );
+              })}
               {isAdmin && (
                 <li>
                   <Link

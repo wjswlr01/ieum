@@ -55,6 +55,13 @@ export default function UserMenu({
           </div>
           <div className="py-1">
             <Link
+              href="/dashboard/calendar"
+              onClick={() => setOpen(false)}
+              className="hidden md:flex items-center px-4 py-2.5 text-sm text-[#B0A080] hover:text-brew-text-light hover:bg-white/5 transition-colors"
+            >
+              캘린더
+            </Link>
+            <Link
               href="/dashboard/settings"
               onClick={() => setOpen(false)}
               className="flex items-center px-4 py-2.5 text-sm text-[#B0A080] hover:text-brew-text-light hover:bg-white/5 transition-colors"
