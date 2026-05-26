@@ -4,7 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import type { BrewType, Prisma } from "@ieum/db";
+import { revalidatePath } from "next/cache";
+import { Prisma } from "@ieum/db";
+import type { BrewType } from "@ieum/db";
 
 // ── 공통 타입 ────────────────────────────────────────────────────────────────
 
@@ -445,4 +447,273 @@ export async function getFavorites(): Promise<{ favorites: BreweryCard[] }> {
   });
 
   return { favorites: cards };
+}
+
+// ── toggleFavorite ───────────────────────────────────────────────────────────
+
+export async function toggleFavorite(
+  breweryId: string,
+): Promise<{ isFavorited: boolean; favoriteCount: number }> {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  if (typeof breweryId !== "string" || !breweryId.trim()) {
+    throw new Error("양조장 ID가 올바르지 않습니다.");
+  }
+
+  const brewery = await db.brewery.findUnique({
+    where: { id: breweryId },
+    select: { id: true },
+  });
+  if (!brewery) throw new Error("양조장을 찾을 수 없습니다.");
+
+  const userId = session.user.id;
+
+  const { isFavorited, favoriteCount } = await db.$transaction(async (tx) => {
+    const existing = await tx.breweryFavorite.findUnique({
+      where: { userId_breweryId: { userId, breweryId } },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await tx.breweryFavorite.delete({ where: { id: existing.id } });
+    } else {
+      await tx.breweryFavorite.create({ data: { userId, breweryId } });
+    }
+
+    const favoriteCount = await tx.breweryFavorite.count({ where: { breweryId } });
+    return { isFavorited: !existing, favoriteCount };
+  });
+
+  revalidatePath("/map");
+  revalidatePath(`/map/brewery/${breweryId}`);
+  revalidatePath("/map/favorites");
+
+  return { isFavorited, favoriteCount };
+}
+
+// ── createReview ─────────────────────────────────────────────────────────────
+
+export type CreateReviewInput = {
+  breweryId: string;
+  rating: number;
+  content: string;
+};
+
+function validateReviewInput(input: CreateReviewInput): {
+  breweryId: string;
+  rating: number;
+  content: string;
+} {
+  if (typeof input.breweryId !== "string" || !input.breweryId.trim()) {
+    throw new Error("양조장 ID가 올바르지 않습니다.");
+  }
+  if (
+    typeof input.rating !== "number" ||
+    !Number.isInteger(input.rating) ||
+    input.rating < 1 ||
+    input.rating > 5
+  ) {
+    throw new Error("별점은 1~5 사이의 정수여야 합니다.");
+  }
+  if (typeof input.content !== "string") {
+    throw new Error("후기 내용이 올바르지 않습니다.");
+  }
+  const content = input.content.trim();
+  if (content.length < 1) throw new Error("후기 내용을 입력해주세요.");
+  if (content.length > 1000) throw new Error("후기 내용은 1000자 이내로 작성해주세요.");
+
+  return { breweryId: input.breweryId, rating: input.rating, content };
+}
+
+export async function createReview(input: CreateReviewInput): Promise<{
+  review: {
+    id: string;
+    rating: number;
+    content: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}> {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const { breweryId, rating, content } = validateReviewInput(input);
+
+  const brewery = await db.brewery.findUnique({
+    where: { id: breweryId },
+    select: { id: true, tenantId: true },
+  });
+  if (!brewery) throw new Error("양조장을 찾을 수 없습니다.");
+
+  if (
+    brewery.tenantId !== null &&
+    session.user.tenantId &&
+    brewery.tenantId === session.user.tenantId
+  ) {
+    throw new Error("본인 양조장에는 후기를 작성할 수 없습니다.");
+  }
+
+  const review = await db.breweryReview.upsert({
+    where: {
+      breweryId_authorId: { breweryId, authorId: session.user.id },
+    },
+    create: { breweryId, authorId: session.user.id, rating, content },
+    update: { rating, content },
+    select: {
+      id: true,
+      rating: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  revalidatePath(`/map/brewery/${breweryId}`);
+
+  return { review };
+}
+
+// ── updateBrewery ────────────────────────────────────────────────────────────
+
+export type UpdateBreweryInput = {
+  description?: string | null;
+  operatingHours?: Record<string, { open: string; close: string } | null> | null;
+  tourAvailable?: boolean;
+  tourBookingMethod?: string | null;
+  tastingAvailable?: boolean;
+  tastingPriceInfo?: string | null;
+  parkingInfo?: string | null;
+  website?: string | null;
+};
+
+const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const DAY_KEYS = new Set(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]);
+
+function normalizeWebsite(input: string | null | undefined): string | null {
+  if (input === null || input === undefined) return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const u = new URL(withScheme);
+    if (u.protocol !== "http:" && u.protocol !== "https:") {
+      throw new Error("웹사이트 주소 형식이 올바르지 않습니다.");
+    }
+    return u.toString();
+  } catch {
+    throw new Error("웹사이트 주소 형식이 올바르지 않습니다.");
+  }
+}
+
+function validateOperatingHours(
+  input: UpdateBreweryInput["operatingHours"],
+): Prisma.InputJsonValue | null {
+  if (input === null || input === undefined) return null;
+  if (typeof input !== "object" || Array.isArray(input)) {
+    throw new Error("영업시간 형식이 올바르지 않습니다.");
+  }
+
+  const result: Record<string, { open: string; close: string } | null> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (!DAY_KEYS.has(key)) {
+      throw new Error("영업시간 요일 키가 올바르지 않습니다.");
+    }
+    if (value === null) {
+      result[key] = null;
+      continue;
+    }
+    if (
+      typeof value !== "object" ||
+      typeof (value as { open?: unknown }).open !== "string" ||
+      typeof (value as { close?: unknown }).close !== "string"
+    ) {
+      throw new Error("영업시간 값 형식이 올바르지 않습니다.");
+    }
+    const { open, close } = value as { open: string; close: string };
+    if (!HHMM_RE.test(open) || !HHMM_RE.test(close)) {
+      throw new Error("영업시간은 HH:MM 형식이어야 합니다.");
+    }
+    result[key] = { open, close };
+  }
+  return result as Prisma.InputJsonValue;
+}
+
+function trimOrNull(input: string | null | undefined, max: number, label: string): string | null {
+  if (input === null || input === undefined) return null;
+  if (typeof input !== "string") throw new Error(`${label} 형식이 올바르지 않습니다.`);
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > max) throw new Error(`${label}은(는) ${max}자 이내로 작성해주세요.`);
+  return trimmed;
+}
+
+export async function updateBrewery(
+  breweryId: string,
+  data: UpdateBreweryInput,
+): Promise<{ brewery: Awaited<ReturnType<typeof db.brewery.update>> }> {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  if (typeof breweryId !== "string" || !breweryId.trim()) {
+    throw new Error("양조장 ID가 올바르지 않습니다.");
+  }
+  if (!session.user.tenantId) {
+    throw new Error("양조장 정보가 없는 계정은 수정할 수 없습니다.");
+  }
+
+  const brewery = await db.brewery.findUnique({
+    where: { id: breweryId },
+    select: { id: true, tenantId: true },
+  });
+  if (!brewery) throw new Error("양조장을 찾을 수 없습니다.");
+
+  if (brewery.tenantId !== session.user.tenantId) {
+    throw new Error("본인 양조장만 수정할 수 있습니다.");
+  }
+
+  const updateData: Prisma.BreweryUpdateInput = {};
+
+  if (data.description !== undefined) {
+    updateData.description = trimOrNull(data.description, 1000, "소개");
+  }
+  if (data.operatingHours !== undefined) {
+    const hours = validateOperatingHours(data.operatingHours);
+    updateData.operatingHours = hours === null ? Prisma.JsonNull : hours;
+  }
+  if (data.tourAvailable !== undefined) {
+    if (typeof data.tourAvailable !== "boolean") {
+      throw new Error("투어 가능 여부 형식이 올바르지 않습니다.");
+    }
+    updateData.tourAvailable = data.tourAvailable;
+  }
+  if (data.tourBookingMethod !== undefined) {
+    updateData.tourBookingMethod = trimOrNull(data.tourBookingMethod, 200, "투어 예약 방법");
+  }
+  if (data.tastingAvailable !== undefined) {
+    if (typeof data.tastingAvailable !== "boolean") {
+      throw new Error("시음 가능 여부 형식이 올바르지 않습니다.");
+    }
+    updateData.tastingAvailable = data.tastingAvailable;
+  }
+  if (data.tastingPriceInfo !== undefined) {
+    updateData.tastingPriceInfo = trimOrNull(data.tastingPriceInfo, 200, "시음 가격 정보");
+  }
+  if (data.parkingInfo !== undefined) {
+    updateData.parkingInfo = trimOrNull(data.parkingInfo, 200, "주차 정보");
+  }
+  if (data.website !== undefined) {
+    updateData.website = normalizeWebsite(data.website);
+  }
+
+  const updated = await db.brewery.update({
+    where: { id: breweryId },
+    data: updateData,
+  });
+
+  revalidatePath("/map");
+  revalidatePath(`/map/brewery/${breweryId}`);
+  revalidatePath("/dashboard/my-brewery");
+
+  return { brewery: updated };
 }
