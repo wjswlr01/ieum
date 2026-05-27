@@ -114,7 +114,7 @@ export async function getBreweries(
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const limit = Math.min(Math.max(params.limit ?? 50, 1), 100);
+  const limit = Math.min(Math.max(params.limit ?? 50, 1), 1000);
   const offset = Math.max(params.offset ?? 0, 0);
   const sortBy: GetBreweriesParams["sortBy"] = params.sortBy ?? "name";
 

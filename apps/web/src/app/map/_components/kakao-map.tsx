@@ -1,22 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { Map, ZoomControl } from "react-kakao-maps-sdk";
+import { useMemo, useState } from "react";
+import { Map, MapMarker, MarkerClusterer, ZoomControl } from "react-kakao-maps-sdk";
 import { useKakaoMapLoader } from "@/components/map/use-kakao-map-loader";
+import type { BreweryCard } from "@/lib/actions/brewery";
 
 type Props = {
+  breweries?: BreweryCard[];
   breweryCount?: number;
 };
+
+type BreweryWithCoords = BreweryCard & { latitude: number; longitude: number };
 
 const KOREA_CENTER = { lat: 36.5, lng: 127.8 };
 const KOREA_ZOOM_LEVEL = 13;
 const MY_LOCATION_ZOOM_LEVEL = 6;
 
-export function KakaoMap({ breweryCount }: Props) {
+export function KakaoMap({ breweries = [], breweryCount }: Props) {
   const [loading, error] = useKakaoMapLoader();
   const [center, setCenter] = useState(KOREA_CENTER);
   const [level, setLevel] = useState(KOREA_ZOOM_LEVEL);
   const [locating, setLocating] = useState(false);
+
+  const breweriesWithCoords = useMemo<BreweryWithCoords[]>(
+    () =>
+      breweries.filter(
+        (b): b is BreweryWithCoords => b.latitude !== null && b.longitude !== null,
+      ),
+    [breweries],
+  );
 
   if (loading) {
     return (
@@ -69,6 +81,17 @@ export function KakaoMap({ breweryCount }: Props) {
         className="h-full w-full"
       >
         <ZoomControl position="RIGHT" />
+        <MarkerClusterer averageCenter minLevel={5} gridSize={60} disableClickZoom={false}>
+          {breweriesWithCoords.map((brewery) => (
+            <MapMarker
+              key={brewery.id}
+              position={{ lat: brewery.latitude, lng: brewery.longitude }}
+              onClick={() => {
+                console.log("[brewery-marker]", brewery.id, brewery.name);
+              }}
+            />
+          ))}
+        </MarkerClusterer>
       </Map>
 
       <button

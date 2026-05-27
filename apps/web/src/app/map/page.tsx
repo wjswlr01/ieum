@@ -28,7 +28,7 @@ export default async function MapPage({
     ...(brewTypeList.length > 0 ? { brewType: brewTypeList } : {}),
     ...(searchParams.region ? { region: searchParams.region } : {}),
     hasCoordinates: true,
-    limit: 100,
+    limit: 1000,
   });
 
   return (
@@ -40,7 +40,7 @@ export default async function MapPage({
         userName={session.user.name ?? ""}
         userEmail={session.user.email ?? ""}
       />
-      <KakaoMap breweryCount={result.total} />
+      <KakaoMap breweries={result.breweries} breweryCount={result.total} />
     </div>
   );
 }
