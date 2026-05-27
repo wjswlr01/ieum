@@ -2,8 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { Map, MapMarker, MarkerClusterer, ZoomControl } from "react-kakao-maps-sdk";
+import type { BrewType } from "@ieum/db";
 import { useKakaoMapLoader } from "@/components/map/use-kakao-map-loader";
 import type { BreweryCard } from "@/lib/actions/brewery";
+import {
+  buildMarkerImageCache,
+  getMarkerImageKey,
+  getPrimaryBrewType,
+} from "./brewery-marker-icons";
 
 type Props = {
   breweries?: BreweryCard[];
@@ -11,16 +17,21 @@ type Props = {
 };
 
 type BreweryWithCoords = BreweryCard & { latitude: number; longitude: number };
+type BreweryWithPrimary = BreweryWithCoords & { primaryBrewType: BrewType | null };
 
 const KOREA_CENTER = { lat: 36.5, lng: 127.8 };
 const KOREA_ZOOM_LEVEL = 13;
 const MY_LOCATION_ZOOM_LEVEL = 6;
+const MARKER_SIZE = 36;
 
+// TODO: Phase 4에서 Brewery 테이블에 primaryBrewType 필드 추가하여
+// 대표 brewType을 명시적으로 관리. 현재는 products 배열에서 우선순위 기반 추출.
 export function KakaoMap({ breweries = [], breweryCount }: Props) {
   const [loading, error] = useKakaoMapLoader();
   const [center, setCenter] = useState(KOREA_CENTER);
   const [level, setLevel] = useState(KOREA_ZOOM_LEVEL);
   const [locating, setLocating] = useState(false);
+  const [activeBreweryId, setActiveBreweryId] = useState<string | null>(null);
 
   const breweriesWithCoords = useMemo<BreweryWithCoords[]>(
     () =>
@@ -29,6 +40,17 @@ export function KakaoMap({ breweries = [], breweryCount }: Props) {
       ),
     [breweries],
   );
+
+  const breweriesWithPrimary = useMemo<BreweryWithPrimary[]>(
+    () =>
+      breweriesWithCoords.map((b) => ({
+        ...b,
+        primaryBrewType: getPrimaryBrewType(b.products),
+      })),
+    [breweriesWithCoords],
+  );
+
+  const markerImageCache = useMemo(() => buildMarkerImageCache(), []);
 
   if (loading) {
     return (
@@ -82,15 +104,32 @@ export function KakaoMap({ breweries = [], breweryCount }: Props) {
       >
         <ZoomControl position="RIGHT" />
         <MarkerClusterer averageCenter minLevel={5} gridSize={60} disableClickZoom={false}>
-          {breweriesWithCoords.map((brewery) => (
-            <MapMarker
-              key={brewery.id}
-              position={{ lat: brewery.latitude, lng: brewery.longitude }}
-              onClick={() => {
-                console.log("[brewery-marker]", brewery.id, brewery.name);
-              }}
-            />
-          ))}
+          {breweriesWithPrimary.map((brewery) => {
+            const isActive = brewery.id === activeBreweryId;
+            const imageKey = getMarkerImageKey(brewery.primaryBrewType, isActive);
+            return (
+              <MapMarker
+                key={brewery.id}
+                position={{ lat: brewery.latitude, lng: brewery.longitude }}
+                image={{
+                  src: markerImageCache[imageKey],
+                  size: { width: MARKER_SIZE, height: MARKER_SIZE },
+                  options: {
+                    offset: { x: MARKER_SIZE / 2, y: MARKER_SIZE / 2 },
+                    alt: brewery.name,
+                  },
+                }}
+                title={brewery.name}
+                zIndex={isActive ? 10 : 1}
+                onClick={() => {
+                  setActiveBreweryId((prev) =>
+                    prev === brewery.id ? null : brewery.id,
+                  );
+                  console.log("[brewery-marker]", brewery.id, brewery.name);
+                }}
+              />
+            );
+          })}
         </MarkerClusterer>
       </Map>
 
