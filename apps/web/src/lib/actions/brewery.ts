@@ -230,6 +230,93 @@ export async function getBreweries(
   };
 }
 
+// ── getBreweriesForMap ───────────────────────────────────────────────────────
+// 마커 렌더링 전용 최소 페이로드. BreweryCard 대비 ~12배 가벼움.
+// 검색/필터 옵션은 getBreweries와 동일하게 받되, 좌표 있는 양조장만 반환.
+
+export type BreweryMapMarker = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  primaryBrewType: BrewType | null;
+};
+
+export type GetBreweriesForMapParams = {
+  search?: string;
+  brewType?: string[];
+  region?: string;
+};
+
+export type GetBreweriesForMapResult = {
+  breweries: BreweryMapMarker[];
+  total: number;
+};
+
+const MAP_MARKER_PRIORITY: BrewType[] = [
+  "MAKGEOLLI",
+  "CHEONGJU",
+  "SOJU",
+  "FRUIT_WINE",
+  "BEER",
+];
+
+export async function getBreweriesForMap(
+  params: GetBreweriesForMapParams = {},
+): Promise<GetBreweriesForMapResult> {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  // buildBreweryWhere 재활용 + 좌표 강제
+  const where = buildBreweryWhere({
+    ...params,
+    hasCoordinates: true,
+  });
+
+  const rows = await db.brewery.findMany({
+    where,
+    select: {
+      id: true,
+      name: true,
+      latitude: true,
+      longitude: true,
+      products: {
+        select: { brewType: true },
+        where: { brewType: { not: null } },
+      },
+    },
+    take: 1000,
+    orderBy: { name: "asc" },
+  });
+
+  const markers: BreweryMapMarker[] = [];
+  for (const b of rows) {
+    if (b.latitude === null || b.longitude === null) continue;
+
+    const types = new Set<BrewType>();
+    for (const p of b.products) {
+      if (p.brewType) types.add(p.brewType);
+    }
+    let primary: BrewType | null = null;
+    for (const t of MAP_MARKER_PRIORITY) {
+      if (types.has(t)) {
+        primary = t;
+        break;
+      }
+    }
+
+    markers.push({
+      id: b.id,
+      name: b.name,
+      latitude: b.latitude,
+      longitude: b.longitude,
+      primaryBrewType: primary,
+    });
+  }
+
+  return { breweries: markers, total: markers.length };
+}
+
 // ── getBreweryById ───────────────────────────────────────────────────────────
 
 export type BreweryDetail = {

@@ -3,15 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   getBreweryById,
-  type BreweryCard,
   type BreweryDetail,
+  type BreweryMapMarker,
 } from "@/lib/actions/brewery";
 import { KakaoMap } from "./kakao-map";
 import BrewerySheet from "./brewery-sheet";
 import BrewerySidePanel from "./brewery-side-panel";
 
 type Props = {
-  breweries: BreweryCard[];
+  breweries: BreweryMapMarker[];
   breweryCount: number;
   initialBreweryId: string | null;
   initialBrewery: BreweryDetail | null;

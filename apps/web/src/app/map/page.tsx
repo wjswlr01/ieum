@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getBreweries, getBreweryById } from "@/lib/actions/brewery";
+import { getBreweriesForMap, getBreweryById } from "@/lib/actions/brewery";
 import { MapHeader } from "./_components/map-header";
 import MapPageClient from "./_components/map-page-client";
 
@@ -25,12 +25,10 @@ export default async function MapPage({
     : [];
 
   const [result, selected] = await Promise.all([
-    getBreweries({
+    getBreweriesForMap({
       ...(searchParams.q ? { search: searchParams.q } : {}),
       ...(brewTypeList.length > 0 ? { brewType: brewTypeList } : {}),
       ...(searchParams.region ? { region: searchParams.region } : {}),
-      hasCoordinates: true,
-      limit: 1000,
     }),
     searchParams.brewery
       ? getBreweryById(searchParams.brewery)

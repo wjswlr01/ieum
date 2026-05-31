@@ -2,33 +2,29 @@
 
 import { useMemo, useState } from "react";
 import { Map, MapMarker, MarkerClusterer, ZoomControl } from "react-kakao-maps-sdk";
-import type { BrewType } from "@ieum/db";
 import { useKakaoMapLoader } from "@/components/map/use-kakao-map-loader";
-import type { BreweryCard } from "@/lib/actions/brewery";
+import type { BreweryMapMarker } from "@/lib/actions/brewery";
 import {
   buildMarkerImageCache,
   getMarkerImageKey,
-  getPrimaryBrewType,
   MARKER_SIZE_ACTIVE,
   MARKER_SIZE_INACTIVE,
 } from "./brewery-marker-icons";
 
 type Props = {
-  breweries?: BreweryCard[];
+  breweries?: BreweryMapMarker[];
   breweryCount?: number;
   selectedBreweryId?: string | null;
   onMarkerClick?: (breweryId: string) => void;
 };
 
-type BreweryWithCoords = BreweryCard & { latitude: number; longitude: number };
-type BreweryWithPrimary = BreweryWithCoords & { primaryBrewType: BrewType | null };
-
 const KOREA_CENTER = { lat: 36.5, lng: 127.8 };
 const KOREA_ZOOM_LEVEL = 13;
 const MY_LOCATION_ZOOM_LEVEL = 6;
 
-// TODO: Phase 4에서 Brewery 테이블에 primaryBrewType 필드 추가하여
-// 대표 brewType을 명시적으로 관리. 현재는 products 배열에서 우선순위 기반 추출.
+// TODO: Phase 4-future에서 Brewery 테이블에 primaryBrewType 필드 추가하여
+// 대표 brewType을 명시적으로 관리. 현재는 서버 측 getBreweriesForMap()이
+// products 배열에서 우선순위 기반으로 미리 계산해 전달.
 export function KakaoMap({
   breweries = [],
   breweryCount,
@@ -39,23 +35,6 @@ export function KakaoMap({
   const [center, setCenter] = useState(KOREA_CENTER);
   const [level, setLevel] = useState(KOREA_ZOOM_LEVEL);
   const [locating, setLocating] = useState(false);
-
-  const breweriesWithCoords = useMemo<BreweryWithCoords[]>(
-    () =>
-      breweries.filter(
-        (b): b is BreweryWithCoords => b.latitude !== null && b.longitude !== null,
-      ),
-    [breweries],
-  );
-
-  const breweriesWithPrimary = useMemo<BreweryWithPrimary[]>(
-    () =>
-      breweriesWithCoords.map((b) => ({
-        ...b,
-        primaryBrewType: getPrimaryBrewType(b.products),
-      })),
-    [breweriesWithCoords],
-  );
 
   const markerImageCache = useMemo(() => buildMarkerImageCache(), []);
 
@@ -111,7 +90,7 @@ export function KakaoMap({
       >
         <ZoomControl position="RIGHT" />
         <MarkerClusterer averageCenter minLevel={5} gridSize={60} disableClickZoom={false}>
-          {breweriesWithPrimary.map((brewery) => {
+          {breweries.map((brewery) => {
             const isActive = brewery.id === selectedBreweryId;
             const imageKey = getMarkerImageKey(brewery.primaryBrewType, isActive);
             const markerSize = isActive ? MARKER_SIZE_ACTIVE : MARKER_SIZE_INACTIVE;
