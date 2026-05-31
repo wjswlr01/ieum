@@ -96,7 +96,13 @@ async function main() {
             durationMin: 10080, targetTemp: 25,
             extraParams: { durationDays: 7, measureInterval: "매일", targetAcidity: 0.5 },
           },
-          { order: 4, nodeType: "PACKAGING", name: "거름 및 병입", durationMin: 120 },
+          { order: 4, nodeType: "FILTERING", name: "거르기", durationMin: 120 },
+          {
+            order: 5, nodeType: "CONDITIONING", name: "숙성",
+            durationMin: 10080, targetTemp: 4,
+            extraParams: { durationDays: 7 },
+          },
+          { order: 6, nodeType: "PACKAGING", name: "병입", durationMin: 60 },
         ],
       },
       ingredients: {
@@ -139,11 +145,17 @@ async function main() {
             extraParams: { waterL: 7, waterTemp: 20 },
           },
           {
-            order: 6, nodeType: "FERMENTATION", name: "2차 발효",
+            order: 6, nodeType: "FERMENTATION", name: "발효",
             durationMin: 7200, targetTemp: 23,
             extraParams: { durationDays: 5, measureInterval: "매일", targetAcidity: 0.4 },
           },
-          { order: 7, nodeType: "PACKAGING", name: "거름 및 병입", durationMin: 120 },
+          { order: 7, nodeType: "FILTERING", name: "거르기", durationMin: 120 },
+          {
+            order: 8, nodeType: "CONDITIONING", name: "숙성",
+            durationMin: 10080, targetTemp: 4,
+            extraParams: { durationDays: 7 },
+          },
+          { order: 9, nodeType: "PACKAGING", name: "병입", durationMin: 60 },
         ],
       },
       ingredients: {

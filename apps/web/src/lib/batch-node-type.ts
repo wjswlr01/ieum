@@ -22,7 +22,7 @@ export const NODE_CATEGORY_LABEL: Record<NodeCategory, string> = {
 // 키워드 매칭 — 키워드는 노드명에 포함되면 매칭. 순서대로 평가.
 const KEYWORD_RULES: Array<{ cat: NodeCategory; keywords: string[] }> = [
   { cat: "FERMENTATION", keywords: ["발효", "숙성"] },
-  { cat: "BOTTLING", keywords: ["병입", "포장", "패키징", "보틀"] },
+  { cat: "BOTTLING", keywords: ["거르기", "여과", "걸러", "압착", "병입", "포장", "패키징", "보틀"] },
   { cat: "MIXING", keywords: ["담기", "덧술", "당화", "끓이기", "혼합", "넣기"] },
   { cat: "PREPARATION", keywords: ["고두밥", "세미", "침지", "증자", "냉각", "준비"] },
 ];
@@ -43,6 +43,7 @@ export function classifyNode(
     case "FERMENTATION":
     case "CONDITIONING":
       return "FERMENTATION";
+    case "FILTERING":
     case "PACKAGING":
       return "BOTTLING";
   }
