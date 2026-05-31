@@ -59,15 +59,25 @@ function normalizeHours(raw: unknown): Hours | null {
   return Object.values(out).some((v) => v != null) ? out : null;
 }
 
+let __opHoursInstanceSeq = 0;
+
 export default function OperatingHoursPanel({ raw }: { raw: unknown }) {
   const hours = normalizeHours(raw);
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    const instanceId = ++__opHoursInstanceSeq;
+    // [DEBUG-PHASE-5-DESKTOP-FREEZE] 마운트/언마운트/틱 추적
+    console.log(`[OpHours#${instanceId}] mounted`);
     setNow(new Date());
-    // 1분마다 갱신
-    const t = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(t);
+    const t = setInterval(() => {
+      console.log(`[OpHours#${instanceId}] tick`);
+      setNow(new Date());
+    }, 60_000);
+    return () => {
+      console.log(`[OpHours#${instanceId}] unmounted`);
+      clearInterval(t);
+    };
   }, []);
 
   if (!hours) {

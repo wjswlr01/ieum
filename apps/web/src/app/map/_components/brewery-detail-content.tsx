@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { BrewType } from "@ieum/db";
 import type { BreweryDetail } from "@/lib/actions/brewery";
 import OperatingHoursPanel from "../brewery/[id]/_components/operating-hours";
@@ -39,7 +40,7 @@ type Props = {
   variant: Variant;
 };
 
-export default function BreweryDetailContent({
+function BreweryDetailContent({
   brewery,
   isFetching,
   variant,
@@ -276,3 +277,5 @@ export default function BreweryDetailContent({
     </div>
   );
 }
+
+export default memo(BreweryDetailContent);

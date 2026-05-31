@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { BreweryDetail } from "@/lib/actions/brewery";
 import BreweryDetailContent from "./brewery-detail-content";
 
@@ -10,7 +11,7 @@ type Props = {
   onClose: () => void;
 };
 
-export default function BrewerySidePanel({
+function BrewerySidePanel({
   isOpen,
   brewery,
   isFetching,
@@ -66,3 +67,5 @@ export default function BrewerySidePanel({
     </aside>
   );
 }
+
+export default memo(BrewerySidePanel);
