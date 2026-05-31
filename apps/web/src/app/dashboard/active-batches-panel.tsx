@@ -387,7 +387,7 @@ export default function ActiveBatchesPanel({
       {batches.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-brew-text">진행 중인 배치</h2>
+            <h2 className="text-sm font-semibold text-brew-text">진행 중인 술빚기</h2>
             <Link href="/dashboard/batches" className="text-xs text-brew-accent hover:text-brew-accent-hover transition-colors">
               전체 보기 →
             </Link>
@@ -404,7 +404,7 @@ export default function ActiveBatchesPanel({
       {recentlyCompleted.length > 0 && (
         <div className={batches.length > 0 ? "mt-8" : ""}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-brew-text">최근 완료된 배치</h2>
+            <h2 className="text-sm font-semibold text-brew-text">최근 빚은 술</h2>
             <span className="text-[10px] text-brew-faint">7일 이내</span>
           </div>
           <div className="flex flex-col gap-3">

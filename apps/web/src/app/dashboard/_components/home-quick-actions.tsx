@@ -56,7 +56,7 @@ const IconCamera = (
 );
 
 const ACTIONS: Action[] = [
-  { kind: "link", href: "/dashboard/batches/new", label: "새 배치", tone: "cream", icon: IconPlus },
+  { kind: "link", href: "/dashboard/batches/new", label: "새로 술빚기", tone: "cream", icon: IconPlus },
   { kind: "link", href: "/dashboard/recipes/new", label: "새 레시피", tone: "green", icon: IconBook },
   { kind: "modal", mode: "measure", label: "간편 측정", tone: "neutral", icon: IconThermo },
   { kind: "modal", mode: "photos", label: "사진 기록", tone: "neutral", icon: IconCamera, adminOnly: true },

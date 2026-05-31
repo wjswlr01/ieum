@@ -50,7 +50,7 @@ export default async function MeasurementsPage({ params }: Props) {
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-brew-subtle mb-8">
         <Link href="/dashboard/batches" className="hover:text-brew-text transition-colors">
-          배치
+          내 술빚기
         </Link>
         <span>/</span>
         <Link

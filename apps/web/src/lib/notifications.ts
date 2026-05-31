@@ -95,7 +95,7 @@ export async function checkFermentationReminders(tenantId: string, userId: strin
         tenantId, userId,
         type: "FERMENTATION_REMINDER",
         title: "발효 측정 리마인더",
-        message: `배치 ${batch.batchNumber} 측정값을 입력해주세요 (마지막 기록: ${timeStr})`,
+        message: `술빚기 ${batch.batchNumber} 측정값을 입력해주세요 (마지막 기록: ${timeStr})`,
         referenceId: batch.id,
       },
     });

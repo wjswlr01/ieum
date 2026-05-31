@@ -153,7 +153,7 @@ export default function GanttChart({ batches }: { batches: GanttBatch[] }) {
       {/* Gantt 본체 */}
       {batches.length === 0 ? (
         <div className="rounded-xl border border-brew-border bg-brew-surface p-12 text-center">
-          <p className="text-sm text-brew-subtle">이 기간에 진행된 배치가 없습니다.</p>
+          <p className="text-sm text-brew-subtle">이 기간에 진행된 술빚기가 없습니다.</p>
         </div>
       ) : (
         <div className="rounded-xl border border-brew-border overflow-hidden">
@@ -164,7 +164,7 @@ export default function GanttChart({ batches }: { batches: GanttBatch[] }) {
                 className="border-b border-brew-border flex items-end px-3 pb-2"
                 style={{ height: HEADER_HEIGHT }}
               >
-                <span className="text-xs text-brew-subtle font-medium">배치</span>
+                <span className="text-xs text-brew-subtle font-medium">술빚기</span>
               </div>
               {batches.map((b) => (
                 <div

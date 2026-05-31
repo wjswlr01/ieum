@@ -220,7 +220,7 @@ export async function getTodayTasks(tenantId: string): Promise<TodayTask[]> {
   const tasks: TodayTask[] = [];
   for (const b of batches) {
     const snap = b.recipeSnapshot as { name?: string } | null;
-    const recipeName = snap?.name ?? b.recipe?.name ?? "배치";
+    const recipeName = snap?.name ?? b.recipe?.name ?? "술빚기";
     for (const bn of b.batchNodes) {
       if (!bn.startedAt) continue;
       tasks.push({

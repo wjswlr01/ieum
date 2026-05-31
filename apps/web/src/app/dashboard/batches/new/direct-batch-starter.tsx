@@ -262,16 +262,16 @@ export default function DirectBatchStarter({
 
         {rows.length === 0 && (
           <p className="text-xs text-brew-muted text-center py-4">
-            재료 없이 배치를 시작하면 재고 차감은 일어나지 않습니다.
+            재료 없이 술빚기를 시작하면 재고 차감은 일어나지 않습니다.
           </p>
         )}
       </div>
 
       <div className="rounded-xl border border-brew-border bg-brew-surface px-5 py-4 text-sm text-brew-muted space-y-1">
-        <p>• 배치번호는 오늘 날짜 기준으로 자동 생성됩니다.</p>
-        <p>• 레시피 스냅샷이 저장되어 레시피가 수정돼도 배치 기록이 유지됩니다.</p>
-        <p>• 재고 차감은 배치 활성화 시 진행됩니다.</p>
-        <p>• 배치 삭제/취소 시 차감된 재고는 자동 복원됩니다.</p>
+        <p>• 양조 번호는 오늘 날짜 기준으로 자동 생성됩니다.</p>
+        <p>• 레시피 스냅샷이 저장되어 레시피가 수정돼도 술빚기 기록이 유지됩니다.</p>
+        <p>• 재고 차감은 술빚기 활성화 시 진행됩니다.</p>
+        <p>• 술빚기 삭제/취소 시 차감된 재고는 자동 복원됩니다.</p>
       </div>
 
       {error && (
@@ -286,7 +286,7 @@ export default function DirectBatchStarter({
         disabled={isPending || !allOk}
         className="w-full rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isPending ? "배치 생성 중..." : "배치 생성하기"}
+        {isPending ? "술빚기 시작 중..." : "술빚기 시작하기"}
       </button>
     </div>
   );

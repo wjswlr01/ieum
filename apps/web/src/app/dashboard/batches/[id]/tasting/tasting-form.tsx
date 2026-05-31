@@ -213,7 +213,7 @@ export default function TastingForm({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={4}
-          placeholder="전반적인 인상, 개선점, 다음 배치를 위한 메모..."
+          placeholder="전반적인 인상, 개선점, 다음 술빚기를 위한 메모..."
           className="w-full rounded-lg border border-brew-border bg-white px-3 py-2 text-sm text-brew-text placeholder-brew-faint focus:border-brew-accent focus:outline-none resize-none"
         />
       </div>

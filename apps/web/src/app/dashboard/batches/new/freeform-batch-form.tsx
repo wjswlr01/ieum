@@ -149,7 +149,7 @@ export default function FreeformBatchForm() {
       {/* 배치 이름 */}
       <div>
         <label className="block text-sm font-medium text-brew-text mb-1.5">
-          배치 이름 <span className="text-red-500">*</span>
+          술빚기 이름 <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -180,7 +180,7 @@ export default function FreeformBatchForm() {
         disabled={isPending || !name.trim()}
         className="w-full rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isPending ? "배치 생성 중..." : "자유 양조 배치 시작하기"}
+        {isPending ? "술빚기 시작 중..." : "자유 양조로 술빚기 시작"}
       </button>
     </form>
   );

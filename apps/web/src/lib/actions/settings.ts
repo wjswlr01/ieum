@@ -108,7 +108,7 @@ export async function removeMember(userId: string) {
 
   const batchCount = await db.batch.count({ where: { brewerId: userId } });
   if (batchCount > 0)
-    throw new Error(`이 멤버가 참여한 배치 ${batchCount}개가 있어 제거할 수 없습니다. 배치를 먼저 삭제해주세요.`);
+    throw new Error(`이 멤버가 참여한 술빚기 ${batchCount}개가 있어 제거할 수 없습니다. 술빚기를 먼저 삭제해주세요.`);
 
   await db.user.delete({ where: { id: userId } });
   revalidatePath("/dashboard/settings");
@@ -125,7 +125,7 @@ export async function deleteAccount(confirmText: string) {
 
   const batchCount = await db.batch.count({ where: { brewerId: session.user.id } });
   if (batchCount > 0)
-    throw new Error(`${batchCount}개의 배치 기록이 있어 계정을 삭제할 수 없습니다. 배치를 먼저 삭제해주세요.`);
+    throw new Error(`${batchCount}개의 술빚기 기록이 있어 계정을 삭제할 수 없습니다. 술빚기를 먼저 삭제해주세요.`);
 
   await db.user.delete({ where: { id: session.user.id } });
   redirect("/");

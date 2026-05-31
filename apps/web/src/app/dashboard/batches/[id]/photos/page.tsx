@@ -63,7 +63,7 @@ export default async function BatchPhotosPage({ params }: Props) {
           className="inline-flex items-center gap-1 transition-colors hover:text-brew-text"
         >
           <span aria-hidden="true">←</span>
-          <span>배치 상세로</span>
+          <span>술빚기 상세로</span>
         </Link>
       </nav>
 

@@ -39,7 +39,7 @@ const STEPS: Step[] = [
     body: (
       <>
         <p>여기서 모든 메뉴를 이동할 수 있어요.</p>
-        <p className="mt-1.5 text-brew-muted">홈 · 레시피 · 배치 · 재고 · 더보기</p>
+        <p className="mt-1.5 text-brew-muted">홈 · 레시피 · 술빚기 · 재고 · 더보기</p>
       </>
     ),
   },
@@ -61,10 +61,10 @@ const STEPS: Step[] = [
     id: 4,
     kind: "highlight",
     selector: '[data-onboarding-step="4"]',
-    title: "배치 시작",
+    title: "술빚기 시작",
     body: (
       <>
-        <p>레시피를 선택하면 '배치(양조 1회)'를 시작할 수 있어요.</p>
+        <p>레시피를 선택하면 '술빚기(양조 1회)'를 시작할 수 있어요.</p>
         <p className="mt-1.5 text-brew-muted">
           각 공정 단계를 순서대로 진행하며 실제값을 기록하세요.
         </p>
@@ -94,7 +94,7 @@ const STEPS: Step[] = [
       <>
         <p>재료를 등록하고 재고를 관리하세요.</p>
         <p className="mt-1.5 text-brew-muted">
-          배치 시작 시 자동으로 재고가 차감됩니다. 재고가 부족하면 알림을 보내드려요. 🔔
+          술빚기 시작 시 자동으로 재고가 차감됩니다. 재고가 부족하면 알림을 보내드려요. 🔔
         </p>
       </>
     ),

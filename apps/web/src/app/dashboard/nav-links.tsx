@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/dashboard", label: "홈", exact: true },
   { href: "/dashboard/recipes", label: "레시피" },
-  { href: "/dashboard/batches", label: "배치" },
+  { href: "/dashboard/batches", label: "술빚기" },
   { href: "/map", label: "지도" },
   { href: "/dashboard/inventory", label: "재고" },
 ];

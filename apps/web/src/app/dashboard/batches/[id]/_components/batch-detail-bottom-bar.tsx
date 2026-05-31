@@ -28,7 +28,7 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
         setReason("");
         router.refresh();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "배치 폐기 중 오류가 발생했습니다.";
+        const msg = e instanceof Error ? e.message : "술빚기 중단 중 오류가 발생했습니다.";
         setError(msg);
       }
     });
@@ -38,7 +38,7 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
     <>
       <nav
         className="sticky bottom-0 z-30 border-t border-brew-border bg-brew-surface/95 backdrop-blur supports-[backdrop-filter]:bg-brew-surface/75"
-        aria-label="배치 액션"
+        aria-label="술빚기 액션"
       >
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-2.5 md:px-12">
           <button
@@ -59,7 +59,7 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
               className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
             >
               <span aria-hidden="true">🗑️</span>
-              <span>폐기</span>
+              <span>중단</span>
             </button>
           )}
         </div>
@@ -75,11 +75,11 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-bold text-brew-text">
-              {step === "confirm" ? "배치를 폐기하시겠습니까?" : "폐기 사유 (선택)"}
+              {step === "confirm" ? "이 술빚기를 중단하시겠습니까?" : "중단 사유 (선택)"}
             </h2>
             <p className="mt-2 text-sm text-brew-muted">
-              배치 <span className="font-mono font-semibold text-brew-text">{batchNumber}</span>를
-              폐기하면 차감된 재고가 자동 복원되고 진행 중 공정이 종료됩니다.
+              술빚기 <span className="font-mono font-semibold text-brew-text">{batchNumber}</span>를
+              중단하면 차감된 재고가 자동 복원되고 진행 중 공정이 종료됩니다.
             </p>
 
             {step === "reason" && (
@@ -123,7 +123,7 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
                   disabled={isPending}
                   className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50"
                 >
-                  {isPending ? "폐기 중..." : "폐기 확정"}
+                  {isPending ? "중단 중..." : "중단 확정"}
                 </button>
               )}
             </div>

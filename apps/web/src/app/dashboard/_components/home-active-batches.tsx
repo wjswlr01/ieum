@@ -257,14 +257,14 @@ export default function HomeActiveBatches({ batches }: { batches: ActiveBatchSum
   if (batches.length === 0) {
     return (
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg md:text-xl font-bold text-brew-text">진행 중인 배치</h2>
+        <h2 className="text-lg md:text-xl font-bold text-brew-text">진행 중인 술빚기</h2>
         <div className="rounded-2xl border border-dashed border-brew-border bg-brew-surface px-6 py-10 text-center">
-          <p className="text-sm text-brew-muted">진행 중인 배치가 없습니다</p>
+          <p className="text-sm text-brew-muted">진행 중인 술빚기가 없습니다</p>
           <Link
             href="/dashboard/batches/new"
             className="mt-3 inline-block text-sm font-medium text-brew-accent hover:text-brew-accent-hover transition-colors"
           >
-            새 배치 시작하기 →
+            새로 술빚기 시작 →
           </Link>
         </div>
       </section>
@@ -274,7 +274,7 @@ export default function HomeActiveBatches({ batches }: { batches: ActiveBatchSum
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg md:text-xl font-bold text-brew-text">진행 중인 배치</h2>
+        <h2 className="text-lg md:text-xl font-bold text-brew-text">진행 중인 술빚기</h2>
         <Link
           href="/dashboard/batches"
           className="text-xs md:text-sm text-brew-accent hover:text-brew-accent-hover transition-colors"

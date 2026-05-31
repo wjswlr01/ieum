@@ -115,7 +115,7 @@ export async function createPhoto(formData: FormData): Promise<CreatePhotoResult
 
     if (!(file instanceof File)) return { success: false, error: "파일이 없습니다." };
     if (typeof batchId !== "string" || !batchId)
-      return { success: false, error: "배치 ID가 누락되었습니다." };
+      return { success: false, error: "술빚기 ID가 누락되었습니다." };
     if (typeof capturedAtRaw !== "string" || !capturedAtRaw)
       return { success: false, error: "촬영일이 누락되었습니다." };
 
@@ -134,7 +134,7 @@ export async function createPhoto(formData: FormData): Promise<CreatePhotoResult
       where: { id: batchId, tenantId: admin.tenantId },
       select: { id: true },
     });
-    if (!batch) return { success: false, error: "배치를 찾을 수 없습니다." };
+    if (!batch) return { success: false, error: "술빚기를 찾을 수 없습니다." };
 
     // batchNodeId 검증 (제공된 경우)
     let batchNodeId: string | null = null;

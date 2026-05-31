@@ -16,12 +16,12 @@ type Props = {
 const MODE_META: Record<BatchPickerMode, { title: string; subtitle: string; pathSegment: string }> = {
   measure: {
     title: "측정값 입력",
-    subtitle: "어느 배치에 기록하시겠어요?",
+    subtitle: "어느 술빚기에 기록하시겠어요?",
     pathSegment: "measurements",
   },
   photos: {
     title: "사진 기록",
-    subtitle: "어느 배치에 기록하시겠어요?",
+    subtitle: "어느 술빚기에 기록하시겠어요?",
     pathSegment: "photos",
   },
 };
@@ -89,13 +89,13 @@ export default function BatchPickerModal({ mode, batches, onClose }: Props) {
         <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4">
           {batches.length === 0 ? (
             <div className="rounded-xl border border-dashed border-brew-border bg-brew-bg px-6 py-10 text-center">
-              <p className="text-sm text-brew-muted">진행 중인 배치가 없습니다</p>
+              <p className="text-sm text-brew-muted">진행 중인 술빚기가 없습니다</p>
               <Link
                 href="/dashboard/batches/new"
                 onClick={onClose}
                 className="mt-3 inline-block text-sm font-medium text-brew-accent transition-colors hover:text-brew-accent-hover"
               >
-                새 배치 시작하기 →
+                새로 술빚기 시작 →
               </Link>
             </div>
           ) : (

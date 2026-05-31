@@ -74,7 +74,7 @@ export default function RecipeSelector({
         disabled={!selected || isPending}
         className="w-full rounded-lg bg-brew-accent py-3 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isPending ? "배치 생성 중..." : "배치 시작하기"}
+        {isPending ? "술빚기 시작 중..." : "술빚기 시작"}
       </button>
     </div>
   );

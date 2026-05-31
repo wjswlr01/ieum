@@ -121,7 +121,7 @@ export async function activateBatch(batchId: string) {
       batchIngredients: { where: { inventoryId: { not: null } } },
     },
   });
-  if (!batch) throw new Error("배치를 찾을 수 없거나 이미 시작되었습니다.");
+  if (!batch) throw new Error("술빚기를 찾을 수 없거나 이미 시작되었습니다.");
 
   const inventoryIds = batch.batchIngredients
     .map((bi) => bi.inventoryId)
@@ -190,7 +190,7 @@ export async function activateBatch(batchId: string) {
           batchId,
           type: "BATCH_DEDUCT",
           quantity: decrementInStockUnit,
-          notes: `배치 ${batch.batchNumber} 투입`,
+          notes: `술빚기 ${batch.batchNumber} 투입`,
         },
       });
       await tx.inventory.update({
@@ -258,8 +258,8 @@ export async function completeNode(batchNodeId: string) {
         tenantId: node.batch.tenantId,
         userId: session.user.id,
         type: "BATCH_STATUS",
-        title: "배치 완료",
-        message: `배치 ${node.batch.batchNumber} 발효가 완료되었습니다! 시음 기록을 남겨보세요.`,
+        title: "술이 완성되었습니다 🎉",
+        message: `${node.batch.batchNumber} 술빚기가 끝났어요! 시음 기록을 남겨보세요.`,
         referenceId: node.batchId,
       });
     } catch {}
@@ -351,7 +351,7 @@ export async function saveActualParams(
           batchId: node.batch.id,
           type: "BATCH_DEDUCT",
           quantity: decInStockUnit,
-          notes: `배치 ${node.batch.batchNumber} 노드 투입`,
+          notes: `술빚기 ${node.batch.batchNumber} 노드 투입`,
         },
       });
       await tx.inventory.update({
@@ -468,7 +468,7 @@ async function restoreBatchInventory(
         batchId,
         type: "RESTORE",
         quantity: t.quantity,
-        notes: `배치 ${batchNumber} 취소/삭제로 복원`,
+        notes: `술빚기 ${batchNumber} 취소/삭제로 복원`,
       },
     });
     await tx.inventory.update({
@@ -492,7 +492,7 @@ export async function deleteBatch(batchId: string) {
     where: { id: batchId, tenantId: session.user.tenantId },
     select: { id: true, batchNumber: true },
   });
-  if (!batch) throw new Error("배치를 찾을 수 없습니다.");
+  if (!batch) throw new Error("술빚기를 찾을 수 없습니다.");
 
   await db.$transaction(async (tx) => {
     // 차감되었던 재고 복원 (RESTORE 트랜잭션 + restoredAt 마킹)
@@ -520,9 +520,9 @@ export async function abortBatch(batchId: string, reason?: string) {
     where: { id: batchId, tenantId: session.user.tenantId },
     select: { id: true, batchNumber: true, status: true },
   });
-  if (!batch) throw new Error("배치를 찾을 수 없습니다.");
+  if (!batch) throw new Error("술빚기를 찾을 수 없습니다.");
   if (batch.status === "ABORTED" || batch.status === "COMPLETED") {
-    throw new Error("이미 종료된 배치입니다.");
+    throw new Error("이미 종료된 술빚기입니다.");
   }
 
   await db.$transaction(async (tx) => {
@@ -642,7 +642,7 @@ export async function addMeasurement(input: {
   const batch = await db.batch.findFirst({
     where: { id: input.batchId, tenantId: session.user.tenantId },
   });
-  if (!batch) throw new Error("배치를 찾을 수 없습니다.");
+  if (!batch) throw new Error("술빚기를 찾을 수 없습니다.");
 
   await db.measurement.create({
     data: {

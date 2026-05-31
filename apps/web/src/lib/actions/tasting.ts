@@ -32,9 +32,9 @@ export async function createTastingNote(batchId: string, data: TastingNoteInput)
     where: { id: batchId, tenantId: session.user.tenantId },
     select: { id: true, status: true },
   });
-  if (!batch) throw new Error("배치를 찾을 수 없습니다.");
+  if (!batch) throw new Error("술빚기를 찾을 수 없습니다.");
   if (batch.status !== "COMPLETED") {
-    throw new Error("시음 기록은 모든 공정이 완료된 배치에서만 작성할 수 있습니다.");
+    throw new Error("시음 기록은 모든 공정이 완료된 술빚기에서만 작성할 수 있습니다.");
   }
 
   await db.tastingNote.create({

@@ -248,7 +248,7 @@ export default async function BatchDetailPage({ params }: Props) {
           <section className="rounded-2xl border border-brew-border bg-brew-surface p-6">
             <h2 className="text-lg font-semibold text-brew-text">시작 대기 중</h2>
             <p className="mt-1 text-sm text-brew-muted">
-              배치를 시작하면 첫 공정이 자동으로 진행되고, 재료가 차감됩니다.
+              술빚기를 시작하면 첫 공정이 자동으로 진행되고, 재료가 차감됩니다.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <BatchStartButton batchId={batch.id} />
@@ -257,7 +257,7 @@ export default async function BatchDetailPage({ params }: Props) {
           </section>
         ) : isAborted ? (
           <section className="rounded-2xl border border-red-200 bg-red-50/50 p-6">
-            <h2 className="text-lg font-semibold text-red-700">폐기된 배치</h2>
+            <h2 className="text-lg font-semibold text-red-700">중단된 술빚기</h2>
             {batch.finishedAt && (
               <p className="mt-1 text-sm text-red-600">
                 폐기 시각: {new Date(batch.finishedAt).toLocaleString("ko-KR")}
@@ -299,7 +299,7 @@ export default async function BatchDetailPage({ params }: Props) {
                 </Link>
               ) : (
                 <span className="text-xs text-brew-faint">
-                  {isAborted ? "폐기된 배치 — 추가 불가" : "공정 완료 후 추가 가능"}
+                  {isAborted ? "중단된 술빚기 — 추가 불가" : "공정 완료 후 추가 가능"}
                 </span>
               )}
             </div>
@@ -308,7 +308,7 @@ export default async function BatchDetailPage({ params }: Props) {
               <div className="rounded-xl border border-brew-border bg-brew-surface p-6 text-center">
                 <p className="mb-3 text-sm text-brew-subtle">
                   {isAborted
-                    ? "이 배치에 남겨진 시음 기록이 없습니다."
+                    ? "이 술빚기에 남겨진 시음 기록이 없습니다."
                     : isCompleted
                     ? "아직 시음 기록이 없습니다. 첫 시음을 기록해보세요!"
                     : "모든 공정이 완료되면 시음 기록을 남길 수 있습니다."}

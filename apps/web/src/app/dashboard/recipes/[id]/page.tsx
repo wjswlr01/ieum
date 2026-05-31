@@ -59,7 +59,7 @@ export default async function RecipeDetailPage({ params }: Props) {
             href={`/dashboard/batches/new?recipeId=${recipe.id}`}
             className="rounded-lg bg-brew-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors"
           >
-            배치 시작하기
+            술빚기 시작
           </Link>
         </div>
       </div>

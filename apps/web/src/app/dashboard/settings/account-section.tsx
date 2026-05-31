@@ -208,7 +208,7 @@ export function AccountSection() {
       <div className="flex items-center justify-between py-3 border-b border-brew-border">
         <div>
           <p className="text-sm text-brew-text">데이터 내보내기</p>
-          <p className="text-xs text-brew-subtle mt-0.5">배치, 레시피, 측정 데이터를 CSV로 내보냅니다.</p>
+          <p className="text-xs text-brew-subtle mt-0.5">술빚기, 레시피, 측정 데이터를 CSV로 내보냅니다.</p>
         </div>
         <button
           type="button"

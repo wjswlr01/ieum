@@ -45,8 +45,8 @@ export default async function NewBatchPage({ searchParams }: Props) {
         >
           ← 레시피로 돌아가기
         </Link>
-        <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">배치 시작</h1>
-        <p className="text-sm text-brew-muted mb-8">아래 레시피로 새 배치를 생성합니다.</p>
+        <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">술빚기 시작</h1>
+        <p className="text-sm text-brew-muted mb-8">아래 레시피로 새 술빚기를 시작합니다.</p>
         <DirectBatchStarter recipe={recipe} inventory={inventory} />
       </main>
     );
@@ -67,12 +67,12 @@ export default async function NewBatchPage({ searchParams }: Props) {
         >
           ← 뒤로
         </Link>
-        <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">레시피 기반 배치</h1>
+        <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">레시피 기반 술빚기</h1>
         <p className="text-sm text-brew-muted mb-8">사용할 레시피를 선택하세요.</p>
 
         {recipes.length === 0 ? (
           <div className="rounded-xl border border-brew-border bg-brew-surface p-10 text-center">
-            <p className="text-brew-muted mb-4">먼저 레시피를 만들어야 배치를 시작할 수 있습니다.</p>
+            <p className="text-brew-muted mb-4">먼저 레시피를 만들어야 술빚기를 시작할 수 있습니다.</p>
             <Link href="/dashboard/recipes/new" className="text-sm text-brew-accent hover:text-brew-accent-hover">
               레시피 만들기 →
             </Link>
@@ -107,10 +107,10 @@ export default async function NewBatchPage({ searchParams }: Props) {
         href="/dashboard/batches"
         className="mb-6 inline-block text-sm text-brew-muted hover:text-brew-text transition-colors"
       >
-        ← 배치 목록
+        ← 내 술빚기
       </Link>
-      <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">새 배치 시작</h1>
-      <p className="text-sm text-brew-muted mb-8">배치를 시작하는 방식을 선택하세요.</p>
+      <h1 className="text-xl md:text-2xl font-bold mt-2 mb-2">새로 술빚기 시작</h1>
+      <p className="text-sm text-brew-muted mb-8">술빚기를 시작하는 방식을 선택하세요.</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Link

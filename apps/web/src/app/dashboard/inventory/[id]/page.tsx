@@ -27,7 +27,7 @@ const UNIT_LABEL: Record<string, string> = {
 const TX_META: Record<string, { label: string; color: string; sign: string }> = {
   PURCHASE: { label: "입고", color: "text-green-700", sign: "+" },
   IN: { label: "입고", color: "text-green-700", sign: "+" },
-  BATCH_DEDUCT: { label: "배치 차감", color: "text-red-600", sign: "−" },
+  BATCH_DEDUCT: { label: "양조 차감", color: "text-red-600", sign: "−" },
   OUT: { label: "출고", color: "text-red-600", sign: "−" },
   RESTORE: { label: "복원", color: "text-blue-700", sign: "+" },
   ADJUST: { label: "조정", color: "text-blue-700", sign: "±" },

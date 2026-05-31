@@ -68,8 +68,8 @@ export default function DeleteRecipeButton({
             </p>
             {batchCount > 0 ? (
               <p className="text-xs text-brew-subtle mb-4">
-                연결된 배치 <span className="font-semibold text-brew-text">{batchCount}개</span>의
-                레시피 연결이 해제됩니다. 배치 데이터는 보존됩니다.
+                연결된 술빚기 <span className="font-semibold text-brew-text">{batchCount}개</span>의
+                레시피 연결이 해제됩니다. 술빚기 데이터는 보존됩니다.
               </p>
             ) : (
               <p className="text-xs text-brew-subtle mb-4">

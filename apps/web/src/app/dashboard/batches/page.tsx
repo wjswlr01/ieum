@@ -70,12 +70,12 @@ export default async function BatchesPage({ searchParams }: Props) {
   return (
     <main className="px-4 py-6 md:px-12 md:py-10 max-w-5xl mx-auto w-full">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl md:text-2xl font-bold">배치</h1>
+        <h1 className="text-xl md:text-2xl font-bold">내 술빚기</h1>
         <Link
           href="/dashboard/batches/new"
           className="rounded-lg bg-brew-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors"
         >
-          + 새 배치 시작
+          + 새로 술빚기 시작
         </Link>
       </div>
 
@@ -98,12 +98,12 @@ export default async function BatchesPage({ searchParams }: Props) {
 
       {batches.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="text-brew-subtle mb-4">배치가 없습니다.</p>
+          <p className="text-brew-subtle mb-4">아직 시작한 술빚기가 없습니다.</p>
           <Link
             href="/dashboard/batches/new"
             className="text-sm text-brew-accent hover:text-brew-accent-hover transition-colors"
           >
-            첫 번째 배치를 시작해보세요 →
+            첫 술빚기 시작하기 →
           </Link>
         </div>
       ) : (

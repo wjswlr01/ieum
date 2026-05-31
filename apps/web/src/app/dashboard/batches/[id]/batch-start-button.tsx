@@ -19,7 +19,7 @@ export default function BatchStartButton({ batchId }: { batchId: string }) {
       }
       className="shrink-0 rounded-lg bg-brew-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-brew-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {isPending ? "시작 중..." : "배치 시작"}
+      {isPending ? "시작 중..." : "술빚기 시작"}
     </button>
   );
 }
