@@ -186,6 +186,8 @@ export default async function BatchDetailPage({ params }: Props) {
           finishedAt: n.finishedAt,
           actualParams: (n.actualParams as Record<string, unknown> | null) ?? null,
           notes: n.notes,
+          waterAddedMl: n.waterAddedMl ?? null,
+          agingDays: n.agingDays ?? null,
         }}
         recipeNode={
           n.recipeNode
@@ -281,31 +283,37 @@ export default async function BatchDetailPage({ params }: Props) {
 
         {!isPlanned && <BatchIngredientsTable rows={ingredientRows} />}
 
-        {!isPlanned && (
+        {!isPlanned && (isCompleted || batch.tastingNotes.length > 0) && (
           <section className="mt-10">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-1.5 text-sm font-semibold text-brew-text">
                 <span aria-hidden="true">🍶</span>
                 <span>시음 기록</span>
               </h2>
-              {isAborted ? (
-                <span className="text-xs text-brew-faint">폐기된 배치 — 추가 불가</span>
-              ) : (
+              {isCompleted && !isAborted ? (
                 <Link
                   href={`/dashboard/batches/${batch.id}/tasting`}
                   className="text-xs text-brew-accent transition-colors hover:text-brew-accent-hover"
                 >
                   + 시음 추가
                 </Link>
+              ) : (
+                <span className="text-xs text-brew-faint">
+                  {isAborted ? "폐기된 배치 — 추가 불가" : "공정 완료 후 추가 가능"}
+                </span>
               )}
             </div>
 
             {batch.tastingNotes.length === 0 ? (
               <div className="rounded-xl border border-brew-border bg-brew-surface p-6 text-center">
                 <p className="mb-3 text-sm text-brew-subtle">
-                  {isAborted ? "이 배치에 남겨진 시음 기록이 없습니다." : "아직 시음 기록이 없습니다. 첫 시음을 기록해보세요!"}
+                  {isAborted
+                    ? "이 배치에 남겨진 시음 기록이 없습니다."
+                    : isCompleted
+                    ? "아직 시음 기록이 없습니다. 첫 시음을 기록해보세요!"
+                    : "모든 공정이 완료되면 시음 기록을 남길 수 있습니다."}
                 </p>
-                {!isAborted && (
+                {isCompleted && !isAborted && (
                   <Link
                     href={`/dashboard/batches/${batch.id}/tasting`}
                     className="text-xs text-brew-accent transition-colors hover:text-brew-accent-hover"
@@ -322,6 +330,7 @@ export default async function BatchDetailPage({ params }: Props) {
                     note={note}
                     index={idx + 1}
                     brewType={brewType}
+                    readOnly={!isCompleted}
                   />
                 ))}
               </div>

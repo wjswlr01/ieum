@@ -30,9 +30,12 @@ export async function createTastingNote(batchId: string, data: TastingNoteInput)
 
   const batch = await db.batch.findFirst({
     where: { id: batchId, tenantId: session.user.tenantId },
-    select: { id: true },
+    select: { id: true, status: true },
   });
   if (!batch) throw new Error("배치를 찾을 수 없습니다.");
+  if (batch.status !== "COMPLETED") {
+    throw new Error("시음 기록은 모든 공정이 완료된 배치에서만 작성할 수 있습니다.");
+  }
 
   await db.tastingNote.create({
     data: {

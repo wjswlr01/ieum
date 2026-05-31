@@ -24,6 +24,11 @@ export default async function TastingPage({ params }: Props) {
   ]);
   if (!batch) notFound();
 
+  // 시음 기록은 모든 공정이 완료된(COMPLETED) 배치에서만 가능.
+  if (batch.status !== "COMPLETED") {
+    redirect(`/dashboard/batches/${batch.id}`);
+  }
+
   const snapshot = batch.recipeSnapshot as { name?: string; brewType?: string } | null;
   const recipeName = snapshot?.name ?? batch.recipe?.name ?? "삭제된 레시피";
   const brewType = ((snapshot?.brewType ?? batch.recipe?.brewType) ?? "BEER") as "BEER" | "MAKGEOLLI";

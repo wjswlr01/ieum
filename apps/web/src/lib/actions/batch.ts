@@ -402,6 +402,48 @@ export async function updateBatchNodeNotes(
   revalidatePath(`/dashboard/batches/${node.batchId}`);
 }
 
+// ── saveFilteringInputs — 거르기 노드 전용 입력 (waterAddedMl, agingDays) ────
+
+export async function saveFilteringInputs(
+  batchNodeId: string,
+  input: { waterAddedMl?: number | null; agingDays?: number | null },
+): Promise<void> {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const node = await db.batchNode.findFirst({
+    where: { id: batchNodeId },
+    select: {
+      id: true,
+      batchId: true,
+      batch: { select: { tenantId: true } },
+      recipeNode: { select: { nodeType: true } },
+    },
+  });
+  if (!node || node.batch.tenantId !== session.user.tenantId) {
+    throw new Error("노드를 찾을 수 없습니다.");
+  }
+  if (node.recipeNode && node.recipeNode.nodeType !== "FILTERING") {
+    throw new Error("거르기 단계가 아닙니다.");
+  }
+
+  const waterAddedMl =
+    input.waterAddedMl == null || Number.isNaN(input.waterAddedMl)
+      ? null
+      : Math.max(0, Math.round(input.waterAddedMl));
+  const agingDays =
+    input.agingDays == null || Number.isNaN(input.agingDays)
+      ? null
+      : Math.max(1, Math.round(input.agingDays));
+
+  await db.batchNode.update({
+    where: { id: batchNodeId },
+    data: { waterAddedMl, agingDays },
+  });
+
+  revalidatePath(`/dashboard/batches/${node.batchId}`);
+}
+
 // ── deleteBatch ──────────────────────────────────────────────────────────────
 
 async function restoreBatchInventory(

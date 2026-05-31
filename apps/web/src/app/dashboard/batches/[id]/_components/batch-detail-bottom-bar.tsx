@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { abortBatch } from "@/lib/actions/batch";
 
@@ -19,7 +18,6 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
   const [isPending, startTransition] = useTransition();
 
   const canAbort = status === "PLANNED" || status === "IN_PROGRESS";
-  const tastingHref = `/dashboard/batches/${batchId}/tasting`;
 
   function handleAbort() {
     setError(null);
@@ -43,20 +41,12 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
         aria-label="배치 액션"
       >
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-2.5 md:px-12">
-          <Link
-            href={tastingHref}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brew-accent px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brew-accent-hover"
-          >
-            <span aria-hidden="true">🍷</span>
-            <span>시음 기록</span>
-          </Link>
-
           <button
             type="button"
             disabled
             aria-disabled="true"
             title="준비 중"
-            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-brew-border px-3 py-2.5 text-sm font-medium text-brew-muted opacity-60"
+            className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-brew-border px-3 py-2.5 text-sm font-medium text-brew-muted opacity-60"
           >
             <span aria-hidden="true">⏸</span>
             <span>일시정지</span>
@@ -66,7 +56,7 @@ export default function BatchDetailBottomBar({ batchId, batchNumber, status }: P
             <button
               type="button"
               onClick={() => { setStep("confirm"); setError(null); }}
-              className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
+              className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
             >
               <span aria-hidden="true">🗑️</span>
               <span>폐기</span>

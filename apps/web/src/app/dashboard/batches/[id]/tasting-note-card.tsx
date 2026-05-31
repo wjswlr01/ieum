@@ -61,8 +61,14 @@ function RadarChart({
   const dataPath =
     dataPoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ") + " Z";
 
+  // viewBox로 반응형 — 좁은 화면에서 자동 축소되어 우측 잘림 방지
   return (
-    <svg width={size} height={size} className="shrink-0">
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      className="w-full max-w-[180px] h-auto shrink-0 mx-auto md:mx-0"
+      role="img"
+      aria-label="시음 점수 레이더 차트"
+    >
       {/* grid */}
       {bgLevels.map((scale) => (
         <polygon
@@ -133,10 +139,12 @@ export default function TastingNoteCard({
   note,
   index,
   brewType,
+  readOnly = false,
 }: {
   note: TastingNote;
   index: number;
   brewType: string;
+  readOnly?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -184,42 +192,44 @@ export default function TastingNoteCard({
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/dashboard/batches/${note.batchId}/tasting?edit=${note.id}`}
-            className="text-xs text-brew-subtle hover:text-brew-text transition-colors"
-          >
-            수정
-          </Link>
-          {confirmDelete ? (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isPending}
-                className="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
-              >
-                {isPending ? "삭제 중" : "확인"}
-              </button>
-              <span className="text-brew-faint text-xs">/</span>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="text-xs text-brew-subtle hover:text-brew-text transition-colors"
-              >
-                취소
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="text-xs text-brew-subtle hover:text-red-500 transition-colors"
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/dashboard/batches/${note.batchId}/tasting?edit=${note.id}`}
+              className="text-xs text-brew-subtle hover:text-brew-text transition-colors"
             >
-              삭제
-            </button>
-          )}
-        </div>
+              수정
+            </Link>
+            {confirmDelete ? (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                >
+                  {isPending ? "삭제 중" : "확인"}
+                </button>
+                <span className="text-brew-faint text-xs">/</span>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs text-brew-subtle hover:text-brew-text transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="text-xs text-brew-subtle hover:text-red-500 transition-colors"
+              >
+                삭제
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 외관 */}
@@ -243,8 +253,8 @@ export default function TastingNoteCard({
         </div>
       )}
 
-      {/* 레이더 차트 + 점수 상세 */}
-      <div className="flex gap-6 items-start">
+      {/* 레이더 차트 + 점수 상세 — 모바일은 세로, md 이상은 가로 */}
+      <div className="flex flex-col md:flex-row md:gap-6 gap-4 md:items-start items-stretch">
         <RadarChart axes={radarAxes} />
 
         <div className="flex-1 space-y-1.5 min-w-0">

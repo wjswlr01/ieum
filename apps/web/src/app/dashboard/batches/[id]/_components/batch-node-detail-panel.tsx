@@ -7,6 +7,7 @@ import { calcFermentStats, calcTrend } from "@/lib/batch-stats";
 import type { NodeCategory } from "@/lib/batch-node-type";
 import type { PhotoWithUrls } from "@/lib/actions/photo";
 import NodeActualForm from "../node-actual-form";
+import NodeFilteringForm from "../node-filtering-form";
 import NodeActions from "../node-actions";
 import BatchNodeNotesTextarea from "./batch-node-notes-textarea";
 import NodeCharts, { type MeasurementRow } from "./node-charts";
@@ -519,6 +520,8 @@ export type BatchNodeDetailPanelProps = {
     finishedAt: Date | null;
     actualParams: Record<string, unknown> | null;
     notes: string | null;
+    waterAddedMl: number | null;
+    agingDays: number | null;
   };
   recipeNode: {
     description: string | null;
@@ -560,6 +563,8 @@ export default function BatchNodeDetailPanel({
 
   const isFermentation = category === "FERMENTATION";
   const isMixing = category === "MIXING";
+  // 거르기 단계 입력: FILTERING 노드는 진행/완료 후에도 값 수정 가능 (실측 입력 성격).
+  const showFilteringForm = batchNode.nodeType === "FILTERING";
 
   return (
     <div className="flex flex-col gap-5">
@@ -604,6 +609,16 @@ export default function BatchNodeDetailPanel({
       )}
 
       {showActualParamsDisplay && <ActualParamsDisplay actualParams={batchNode.actualParams} />}
+
+      {showFilteringForm && (
+        <NodeFilteringForm
+          nodeId={batchNode.id}
+          initial={{
+            waterAddedMl: batchNode.waterAddedMl,
+            agingDays: batchNode.agingDays,
+          }}
+        />
+      )}
 
       {isMixing && <IngredientsSection ingredients={ingredients} />}
 
