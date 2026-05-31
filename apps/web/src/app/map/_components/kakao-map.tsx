@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Map, MapMarker, MarkerClusterer, ZoomControl } from "react-kakao-maps-sdk";
 import type { BrewType } from "@ieum/db";
 import { useKakaoMapLoader } from "@/components/map/use-kakao-map-loader";
@@ -15,6 +15,7 @@ import {
 type Props = {
   breweries?: BreweryCard[];
   breweryCount?: number;
+  selectedBreweryId?: string | null;
 };
 
 type BreweryWithCoords = BreweryCard & { latitude: number; longitude: number };
@@ -27,13 +28,17 @@ const MARKER_SIZE = 36;
 
 // TODO: Phase 4에서 Brewery 테이블에 primaryBrewType 필드 추가하여
 // 대표 brewType을 명시적으로 관리. 현재는 products 배열에서 우선순위 기반 추출.
-export function KakaoMap({ breweries = [], breweryCount }: Props) {
+export function KakaoMap({
+  breweries = [],
+  breweryCount,
+  selectedBreweryId = null,
+}: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, error] = useKakaoMapLoader();
   const [center, setCenter] = useState(KOREA_CENTER);
   const [level, setLevel] = useState(KOREA_ZOOM_LEVEL);
   const [locating, setLocating] = useState(false);
-  const [activeBreweryId, setActiveBreweryId] = useState<string | null>(null);
 
   const breweriesWithCoords = useMemo<BreweryWithCoords[]>(
     () =>
@@ -107,7 +112,7 @@ export function KakaoMap({ breweries = [], breweryCount }: Props) {
         <ZoomControl position="RIGHT" />
         <MarkerClusterer averageCenter minLevel={5} gridSize={60} disableClickZoom={false}>
           {breweriesWithPrimary.map((brewery) => {
-            const isActive = brewery.id === activeBreweryId;
+            const isActive = brewery.id === selectedBreweryId;
             const imageKey = getMarkerImageKey(brewery.primaryBrewType, isActive);
             return (
               <MapMarker
@@ -124,8 +129,9 @@ export function KakaoMap({ breweries = [], breweryCount }: Props) {
                 title={brewery.name}
                 zIndex={isActive ? 10 : 1}
                 onClick={() => {
-                  setActiveBreweryId(brewery.id);
-                  router.push(`/map/brewery/${brewery.id}`);
+                  const next = new URLSearchParams(searchParams.toString());
+                  next.set("brewery", brewery.id);
+                  router.replace(`/map?${next.toString()}`);
                 }}
               />
             );
