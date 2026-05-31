@@ -200,8 +200,8 @@ export default function BreweryDetailContent({
           </section>
         )}
 
-        {/* 위치 미니맵 */}
-        {brewery.latitude != null && brewery.longitude != null && (
+        {/* 위치 미니맵 — sheet only (데스크탑 panel은 메인 지도와 중복되어 Kakao Map 2개 인스턴스가 렉을 유발) */}
+        {!isPanel && brewery.latitude != null && brewery.longitude != null && (
           <section className="mt-8 px-4 pb-6">
             <h3 className="mb-3 text-sm font-semibold text-brew-text">위치</h3>
             <MiniMap
@@ -234,6 +234,34 @@ export default function BreweryDetailContent({
                 </div>
               </div>
             )}
+          </section>
+        )}
+
+        {/* panel은 미니맵 생략 + parking 정보만 별도 노출 */}
+        {isPanel && brewery.parkingInfo && (
+          <section className="mt-8 px-4 pb-6">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-brew-text">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M19 17h2v-5a2 2 0 0 0-1.4-1.9l-2.6-.8-2-3.5A2 2 0 0 0 13.2 5H7a2 2 0 0 0-2 1.4L3 12v5h2" />
+                <circle cx="7" cy="17" r="2" />
+                <circle cx="17" cy="17" r="2" />
+              </svg>
+              <span>주차 정보</span>
+            </h3>
+            <p className="text-sm leading-relaxed text-brew-text">
+              {brewery.parkingInfo}
+            </p>
           </section>
         )}
       </div>
