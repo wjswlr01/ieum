@@ -50,6 +50,7 @@ enum NodeType {
   MASH_BEER
   BOIL
   FERMENTATION
+  FILTERING
   CONDITIONING
   PACKAGING
   CUSTOM
@@ -417,6 +418,8 @@ model BatchNode {
   actualTemp   Float?
   actualParams Json?
   notes        String?
+  waterAddedMl Int?
+  agingDays    Int?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
