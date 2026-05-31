@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Drawer } from "vaul";
 import type { BreweryDetail } from "@/lib/actions/brewery";
@@ -11,14 +12,29 @@ type Props = {
   onClose: () => void;
 };
 
+const SNAP_PEEK = 0.3;
+const SNAP_FULL = 0.95;
+const SNAP_POINTS: (number | string)[] = [SNAP_PEEK, SNAP_FULL];
+
 export default function BrewerySheet({ open, brewery, isFetching, onClose }: Props) {
+  // Vaul snapPoints 사용 시 controlled activeSnapPoint 필수 — uncontrolled 모드에서
+  // modal=false + snapPoints 조합이 모바일에서 안정적으로 mount 안 되는 이슈.
+  const [snap, setSnap] = useState<number | string | null>(SNAP_PEEK);
+
+  // 새로 열릴 때마다 peek(30%) 상태로 초기화
+  useEffect(() => {
+    if (open) setSnap(SNAP_PEEK);
+  }, [open]);
+
   return (
     <Drawer.Root
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();
       }}
-      snapPoints={[0.3, 0.95]}
+      snapPoints={SNAP_POINTS}
+      activeSnapPoint={snap}
+      setActiveSnapPoint={setSnap}
       modal={false}
     >
       <Drawer.Portal>
