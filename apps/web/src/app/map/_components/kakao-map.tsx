@@ -62,7 +62,7 @@ export function KakaoMap({
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-brew-surface">
+      <div className="flex h-full w-full items-center justify-center bg-brew-surface">
         <p className="text-sm text-brew-muted">지도 로딩 중...</p>
       </div>
     );
@@ -70,7 +70,7 @@ export function KakaoMap({
 
   if (error) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-brew-surface">
+      <div className="flex h-full w-full items-center justify-center bg-brew-surface">
         <div className="text-center">
           <p className="font-medium text-brew-text">지도를 불러올 수 없습니다</p>
           <p className="mt-2 text-xs text-brew-muted">잠시 후 다시 시도해주세요</p>
@@ -102,7 +102,7 @@ export function KakaoMap({
   };
 
   return (
-    <div className="relative flex-1">
+    <div className="relative h-full w-full">
       <Map
         center={center}
         level={level}
