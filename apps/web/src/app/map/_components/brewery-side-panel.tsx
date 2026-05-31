@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import type { BreweryDetail } from "@/lib/actions/brewery";
+import BreweryDetailContent from "./brewery-detail-content";
 
 type Props = {
   isOpen: boolean;
@@ -25,7 +25,7 @@ export default function BrewerySidePanel({
         brewery ? `${brewery.name} 정보 패널` : "양조장 정보 패널"
       }
     >
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-brew-border bg-white px-5 py-4">
+      <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-brew-border bg-white px-5 py-4">
         <h2
           className="min-w-0 truncate font-serif text-xl font-bold text-brew-text"
           style={{ fontFamily: "'Nanum Myeongjo', serif" }}
@@ -56,29 +56,13 @@ export default function BrewerySidePanel({
         </button>
       </div>
 
-      {brewery ? (
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <p className="text-sm text-brew-muted">{brewery.address}</p>
-
-          <div className="mt-5 rounded-lg border border-dashed border-brew-border bg-brew-surface px-4 py-3 text-xs text-brew-muted">
-            💡 Phase 4-revisit 예정: 사진 갤러리, 제품, 운영 정보, 스토리, 미니맵
-          </div>
-
-          <Link
-            href={`/map/brewery/${brewery.id}/reviews`}
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brew-accent hover:text-brew-accent-hover"
-          >
-            <span>후기 보기 / 작성하기</span>
-            <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-      ) : (
-        <div className="flex flex-1 items-center justify-center px-5 py-10">
-          <p className="text-sm text-brew-muted">
-            {isFetching ? "불러오는 중..." : "양조장 정보를 찾을 수 없습니다"}
-          </p>
-        </div>
-      )}
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        <BreweryDetailContent
+          brewery={brewery}
+          isFetching={isFetching}
+          variant="panel"
+        />
+      </div>
     </aside>
   );
 }
