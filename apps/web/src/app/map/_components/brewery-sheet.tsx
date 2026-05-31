@@ -7,10 +7,11 @@ import type { BreweryDetail } from "@/lib/actions/brewery";
 type Props = {
   open: boolean;
   brewery: BreweryDetail | null;
+  isFetching: boolean;
   onClose: () => void;
 };
 
-export default function BrewerySheet({ open, brewery, onClose }: Props) {
+export default function BrewerySheet({ open, brewery, isFetching, onClose }: Props) {
   return (
     <Drawer.Root
       open={open}
@@ -53,7 +54,9 @@ export default function BrewerySheet({ open, brewery, onClose }: Props) {
             </div>
           ) : (
             <div className="flex flex-1 items-center justify-center px-5 py-10">
-              <p className="text-sm text-brew-muted">불러오는 중...</p>
+              <p className="text-sm text-brew-muted">
+                {isFetching ? "불러오는 중..." : "양조장 정보를 찾을 수 없습니다"}
+              </p>
             </div>
           )}
         </Drawer.Content>

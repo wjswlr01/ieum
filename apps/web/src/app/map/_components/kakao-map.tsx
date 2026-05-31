@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Map, MapMarker, MarkerClusterer, ZoomControl } from "react-kakao-maps-sdk";
 import type { BrewType } from "@ieum/db";
 import { useKakaoMapLoader } from "@/components/map/use-kakao-map-loader";
@@ -18,6 +17,7 @@ type Props = {
   breweries?: BreweryCard[];
   breweryCount?: number;
   selectedBreweryId?: string | null;
+  onMarkerClick?: (breweryId: string) => void;
 };
 
 type BreweryWithCoords = BreweryCard & { latitude: number; longitude: number };
@@ -33,9 +33,8 @@ export function KakaoMap({
   breweries = [],
   breweryCount,
   selectedBreweryId = null,
+  onMarkerClick,
 }: Props) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [loading, error] = useKakaoMapLoader();
   const [center, setCenter] = useState(KOREA_CENTER);
   const [level, setLevel] = useState(KOREA_ZOOM_LEVEL);
@@ -131,9 +130,7 @@ export function KakaoMap({
                 title={brewery.name}
                 zIndex={isActive ? 10 : 1}
                 onClick={() => {
-                  const next = new URLSearchParams(searchParams.toString());
-                  next.set("brewery", brewery.id);
-                  router.replace(`/map?${next.toString()}`);
+                  onMarkerClick?.(brewery.id);
                 }}
               />
             );

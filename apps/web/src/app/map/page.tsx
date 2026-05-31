@@ -2,9 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getBreweries, getBreweryById } from "@/lib/actions/brewery";
-import { KakaoMap } from "./_components/kakao-map";
 import { MapHeader } from "./_components/map-header";
-import BreweryOverlay from "./_components/brewery-overlay";
+import MapPageClient from "./_components/map-page-client";
 
 type SearchParams = {
   q?: string;
@@ -47,14 +46,12 @@ export default async function MapPage({
         userName={session.user.name ?? ""}
         userEmail={session.user.email ?? ""}
       />
-      <div className="relative min-h-0 flex-1">
-        <KakaoMap
-          breweries={result.breweries}
-          breweryCount={result.total}
-          selectedBreweryId={searchParams.brewery ?? null}
-        />
-        <BreweryOverlay brewery={selected.brewery} />
-      </div>
+      <MapPageClient
+        breweries={result.breweries}
+        breweryCount={result.total}
+        initialBreweryId={searchParams.brewery ?? null}
+        initialBrewery={selected.brewery}
+      />
     </>
   );
 }
