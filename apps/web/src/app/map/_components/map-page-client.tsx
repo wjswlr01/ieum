@@ -6,6 +6,7 @@ import {
   type BreweryDetail,
   type BreweryMapMarker,
 } from "@/lib/actions/brewery";
+import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { KakaoMap } from "./kakao-map";
 import { MapHeader } from "./map-header";
 import BrewerySheet from "./brewery-sheet";
@@ -46,6 +47,10 @@ export default function MapPageClient({
     initialBrewery,
   );
   const [isFetching, setIsFetching] = useState(false);
+
+  // ── viewport (sheet vs panel 분기) ───────────────────────
+  // SSR/CSR mismatch 회피: mounted=false면 둘 다 렌더 X
+  const { isDesktop, mounted } = useIsDesktop();
 
   // ── 클라이언트 필터링 ────────────────────────────────────
   const filteredBreweries = useMemo<BreweryMapMarker[]>(() => {
@@ -174,18 +179,25 @@ export default function MapPageClient({
           selectedBreweryId={selectedBreweryId}
           onMarkerClick={handleMarkerClick}
         />
-        <BrewerySheet
-          open={selectedBreweryId !== null}
-          brewery={selectedBrewery}
-          isFetching={isFetching}
-          onClose={handleClose}
-        />
-        <BrewerySidePanel
-          isOpen={selectedBreweryId !== null}
-          brewery={selectedBrewery}
-          isFetching={isFetching}
-          onClose={handleClose}
-        />
+        {/* viewport 분기: 데스크탑은 panel, 모바일은 sheet만 마운트.
+            mounted=false (SSR 직후 첫 렌더) 시 둘 다 렌더 X — hydration mismatch 방지.
+            Tailwind md:hidden/md:flex만으로는 두 컴포넌트가 React 마운트되어 vaul Drawer 사이드이펙트 + 이중 페치/페인팅이 데스크탑에서 메인 스레드 점유 (Phase 5-debug-4차 확정). */}
+        {mounted && !isDesktop && (
+          <BrewerySheet
+            open={selectedBreweryId !== null}
+            brewery={selectedBrewery}
+            isFetching={isFetching}
+            onClose={handleClose}
+          />
+        )}
+        {mounted && isDesktop && (
+          <BrewerySidePanel
+            isOpen={selectedBreweryId !== null}
+            brewery={selectedBrewery}
+            isFetching={isFetching}
+            onClose={handleClose}
+          />
+        )}
       </div>
     </>
   );
