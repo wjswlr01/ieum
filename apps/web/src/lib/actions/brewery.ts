@@ -231,21 +231,21 @@ export async function getBreweries(
 }
 
 // ── getBreweriesForMap ───────────────────────────────────────────────────────
-// 마커 렌더링 전용 최소 페이로드. BreweryCard 대비 ~12배 가벼움.
-// 검색/필터 옵션은 getBreweries와 동일하게 받되, 좌표 있는 양조장만 반환.
+// 마커 렌더링 + 클라이언트 검색/필터 전용 페이로드.
+// 좌표 있는 양조장 전체를 한 번에 반환. 필터링은 클라이언트에서 useMemo로 처리.
 
 export type BreweryMapMarker = {
   id: string;
   name: string;
+  address: string;
+  region: string;
   latitude: number;
   longitude: number;
   primaryBrewType: BrewType | null;
-};
-
-export type GetBreweriesForMapParams = {
-  search?: string;
-  brewType?: string[];
-  region?: string;
+  // 클라이언트 brewType 필터용 (중복 제거된 제품 brewType 목록)
+  productBrewTypes: BrewType[];
+  // 클라이언트 텍스트 검색용 (제품명)
+  productNames: string[];
 };
 
 export type GetBreweriesForMapResult = {
@@ -261,28 +261,21 @@ const MAP_MARKER_PRIORITY: BrewType[] = [
   "BEER",
 ];
 
-export async function getBreweriesForMap(
-  params: GetBreweriesForMapParams = {},
-): Promise<GetBreweriesForMapResult> {
+export async function getBreweriesForMap(): Promise<GetBreweriesForMapResult> {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  // buildBreweryWhere 재활용 + 좌표 강제
-  const where = buildBreweryWhere({
-    ...params,
-    hasCoordinates: true,
-  });
-
   const rows = await db.brewery.findMany({
-    where,
+    where: { latitude: { not: null }, longitude: { not: null } },
     select: {
       id: true,
       name: true,
+      address: true,
+      region: true,
       latitude: true,
       longitude: true,
       products: {
-        select: { brewType: true },
-        where: { brewType: { not: null } },
+        select: { brewType: true, name: true },
       },
     },
     take: 1000,
@@ -293,13 +286,15 @@ export async function getBreweriesForMap(
   for (const b of rows) {
     if (b.latitude === null || b.longitude === null) continue;
 
-    const types = new Set<BrewType>();
+    const typeSet = new Set<BrewType>();
+    const productNames: string[] = [];
     for (const p of b.products) {
-      if (p.brewType) types.add(p.brewType);
+      if (p.brewType) typeSet.add(p.brewType);
+      productNames.push(p.name);
     }
     let primary: BrewType | null = null;
     for (const t of MAP_MARKER_PRIORITY) {
-      if (types.has(t)) {
+      if (typeSet.has(t)) {
         primary = t;
         break;
       }
@@ -308,9 +303,13 @@ export async function getBreweriesForMap(
     markers.push({
       id: b.id,
       name: b.name,
+      address: b.address,
+      region: b.region,
       latitude: b.latitude,
       longitude: b.longitude,
       primaryBrewType: primary,
+      productBrewTypes: Array.from(typeSet),
+      productNames,
     });
   }
 

@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getBreweryById,
   type BreweryDetail,
   type BreweryMapMarker,
 } from "@/lib/actions/brewery";
 import { KakaoMap } from "./kakao-map";
+import { MapHeader } from "./map-header";
 import BrewerySheet from "./brewery-sheet";
 import BrewerySidePanel from "./brewery-side-panel";
 
@@ -15,14 +16,29 @@ type Props = {
   breweryCount: number;
   initialBreweryId: string | null;
   initialBrewery: BreweryDetail | null;
+  initialSearch: string;
+  initialBrewType: string[];
+  initialRegion: string;
+  userName: string;
+  userEmail: string;
 };
 
 export default function MapPageClient({
   breweries,
-  breweryCount,
   initialBreweryId,
   initialBrewery,
+  initialSearch,
+  initialBrewType,
+  initialRegion,
+  userName,
+  userEmail,
 }: Props) {
+  // ── 검색/필터 state ─────────────────────────────────────
+  const [search, setSearch] = useState(initialSearch);
+  const [brewTypeFilter, setBrewTypeFilter] = useState<string[]>(initialBrewType);
+  const [region, setRegion] = useState(initialRegion);
+
+  // ── 선택 양조장 state ────────────────────────────────────
   const [selectedBreweryId, setSelectedBreweryId] = useState<string | null>(
     initialBreweryId,
   );
@@ -31,7 +47,52 @@ export default function MapPageClient({
   );
   const [isFetching, setIsFetching] = useState(false);
 
-  // selectedBreweryId 변경 시: 다른 양조장이면 client fetch, null이면 비우기
+  // ── 클라이언트 필터링 ────────────────────────────────────
+  const filteredBreweries = useMemo<BreweryMapMarker[]>(() => {
+    const q = search.trim().toLowerCase();
+    const brewTypeSet = new Set(brewTypeFilter);
+    return breweries.filter((b) => {
+      if (q) {
+        const inName = b.name.toLowerCase().includes(q);
+        const inAddress = b.address.toLowerCase().includes(q);
+        const inProducts = b.productNames.some((n) =>
+          n.toLowerCase().includes(q),
+        );
+        if (!inName && !inAddress && !inProducts) return false;
+      }
+      if (brewTypeSet.size > 0) {
+        const hasMatch = b.productBrewTypes.some((t) => brewTypeSet.has(t));
+        if (!hasMatch) return false;
+      }
+      if (region && b.region !== region) return false;
+      return true;
+    });
+  }, [breweries, search, brewTypeFilter, region]);
+
+  // ── URL 동기화 (검색/필터/선택) — history.replaceState로 페이지 재실행 차단 ─
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (search.trim()) url.searchParams.set("q", search.trim());
+    else url.searchParams.delete("q");
+
+    if (brewTypeFilter.length > 0) {
+      url.searchParams.set("brewType", brewTypeFilter.join(","));
+    } else {
+      url.searchParams.delete("brewType");
+    }
+
+    if (region) url.searchParams.set("region", region);
+    else url.searchParams.delete("region");
+
+    if (selectedBreweryId) url.searchParams.set("brewery", selectedBreweryId);
+    else url.searchParams.delete("brewery");
+
+    if (url.toString() !== window.location.href) {
+      window.history.replaceState(null, "", url.toString());
+    }
+  }, [search, brewTypeFilter, region, selectedBreweryId]);
+
+  // ── 선택 양조장 client fetch ─────────────────────────────
   useEffect(() => {
     if (selectedBreweryId === null) {
       setSelectedBrewery(null);
@@ -39,7 +100,6 @@ export default function MapPageClient({
       return;
     }
     if (selectedBrewery?.id === selectedBreweryId) {
-      // 이미 가지고 있는 데이터 — 불필요한 fetch 스킵
       setIsFetching(false);
       return;
     }
@@ -61,33 +121,25 @@ export default function MapPageClient({
     return () => {
       cancelled = true;
     };
-    // selectedBrewery는 의도적으로 의존성에서 제외 (자기 자신 set → 재실행 방지).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBreweryId]);
 
-  // URL 동기화 — history.replaceState로 Next.js 페이지 재실행 차단
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const current = url.searchParams.get("brewery");
-    if (selectedBreweryId === current) return;
-    if (selectedBreweryId) {
-      url.searchParams.set("brewery", selectedBreweryId);
-    } else {
-      url.searchParams.delete("brewery");
-    }
-    window.history.replaceState(null, "", url.toString());
-  }, [selectedBreweryId]);
-
-  // 뒤로가기/앞으로가기 처리
+  // ── 뒤로가기/앞으로가기 ──────────────────────────────────
   useEffect(() => {
     const handler = () => {
       const params = new URLSearchParams(window.location.search);
+      setSearch(params.get("q") ?? "");
+      setBrewTypeFilter(
+        params.get("brewType")?.split(",").filter(Boolean) ?? [],
+      );
+      setRegion(params.get("region") ?? "");
       setSelectedBreweryId(params.get("brewery"));
     };
     window.addEventListener("popstate", handler);
     return () => window.removeEventListener("popstate", handler);
   }, []);
 
+  // ── 핸들러 ──────────────────────────────────────────────
   const handleMarkerClick = useCallback((breweryId: string) => {
     setSelectedBreweryId(breweryId);
   }, []);
@@ -97,25 +149,37 @@ export default function MapPageClient({
   }, []);
 
   return (
-    <div className="relative min-h-0 flex-1">
-      <KakaoMap
-        breweries={breweries}
-        breweryCount={breweryCount}
-        selectedBreweryId={selectedBreweryId}
-        onMarkerClick={handleMarkerClick}
+    <>
+      <MapHeader
+        search={search}
+        brewTypeFilter={brewTypeFilter}
+        region={region}
+        onSearchChange={setSearch}
+        onBrewTypeChange={setBrewTypeFilter}
+        onRegionChange={setRegion}
+        userName={userName}
+        userEmail={userEmail}
       />
-      <BrewerySheet
-        open={selectedBreweryId !== null}
-        brewery={selectedBrewery}
-        isFetching={isFetching}
-        onClose={handleClose}
-      />
-      <BrewerySidePanel
-        isOpen={selectedBreweryId !== null}
-        brewery={selectedBrewery}
-        isFetching={isFetching}
-        onClose={handleClose}
-      />
-    </div>
+      <div className="relative min-h-0 flex-1">
+        <KakaoMap
+          breweries={filteredBreweries}
+          breweryCount={filteredBreweries.length}
+          selectedBreweryId={selectedBreweryId}
+          onMarkerClick={handleMarkerClick}
+        />
+        <BrewerySheet
+          open={selectedBreweryId !== null}
+          brewery={selectedBrewery}
+          isFetching={isFetching}
+          onClose={handleClose}
+        />
+        <BrewerySidePanel
+          isOpen={selectedBreweryId !== null}
+          brewery={selectedBrewery}
+          isFetching={isFetching}
+          onClose={handleClose}
+        />
+      </div>
+    </>
   );
 }

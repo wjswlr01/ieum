@@ -17,10 +17,10 @@ export function SearchBar({ initialValue, onSubmit, placeholder }: Props) {
 
   useEffect(() => {
     if (value === initialValue) return;
-    const timeout = setTimeout(() => onSubmit(value), 500);
+    // 클라이언트 필터링이라 짧은 디바운스로 충분 (입력 중 매 키 입력마다 612개 filter 재계산 부담 완화).
+    const timeout = setTimeout(() => onSubmit(value), 100);
     return () => clearTimeout(timeout);
     // onSubmit는 부모에서 매 렌더 새 함수일 수 있으므로 deps에서 제외.
-    // 의도: value 또는 initialValue 변화 시에만 디바운스.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, initialValue]);
 
