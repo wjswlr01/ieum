@@ -1,7 +1,7 @@
 import type { BrewType } from "@ieum/db";
 import type { BreweryCard } from "@/lib/actions/brewery";
 
-// TODO: Phase 4에서 Brewery 테이블에 primaryBrewType 필드 추가하여
+// TODO: Phase 4-future에서 Brewery 테이블에 primaryBrewType 필드 추가하여
 // 대표 brewType을 명시적으로 관리. 현재는 products 배열에서 우선순위 기반 추출.
 const PRIORITY_ORDER: BrewType[] = ["MAKGEOLLI", "CHEONGJU", "SOJU", "FRUIT_WINE", "BEER"];
 
@@ -22,63 +22,70 @@ type IconKey = BrewType | "FALLBACK";
 type ActiveState = "active" | "inactive";
 export type MarkerImageKey = `${IconKey}-${ActiveState}`;
 
+// 활성/비활성 상태별 디자인 토큰
+export const MARKER_SIZE_ACTIVE = 40;
+export const MARKER_SIZE_INACTIVE = 32;
+
 // 24x24 viewBox 안에 그리는 라인 일러스트. stroke/fill은 wrapper <g>에서 지정.
+// fill="currentColor" 사용 시 <g color="..."> 로 색이 전달됨.
 const ICON_PATHS: Record<IconKey, string> = {
-  // 막걸리 — 전통 호리병 (둥근 몸체 + 좁은 목 + 뚜껑)
+  // 막걸리 — 옹기 항아리 (둥근 몸체 + 어깨 + 좁은 입구)
   MAKGEOLLI: `
-    <path d="M10 4h4v2.5" />
-    <path d="M9.2 6.5h5.6" />
-    <path d="M9.2 6.5L7 12.5a5 5 0 0 0 10 0L14.8 6.5" />
+    <ellipse cx="12" cy="14" rx="7" ry="6" />
+    <ellipse cx="12" cy="8" rx="4" ry="1.5" />
+    <path d="M8 8 Q7 11 5 14" />
+    <path d="M16 8 Q17 11 19 14" />
   `,
-  // 청주 — 길쭉한 백자 술병 (어깨 있음)
+  // 청주 — 도자기 술병 (좁은 목 + 둥근 몸체)
   CHEONGJU: `
-    <path d="M11 4h2v2.4" />
-    <path d="M10 6.4h4l1 3.2v9a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-9z" />
+    <line x1="10" y1="4" x2="10" y2="9" />
+    <line x1="14" y1="4" x2="14" y2="9" />
+    <line x1="10" y1="4" x2="14" y2="4" />
+    <path d="M10 9 Q7 10 6 14 Q6 19 12 20 Q18 19 18 14 Q17 10 14 9" />
   `,
-  // 소주 — 어깨 짧고 원통형 (현대 소주병)
+  // 증류주 — 소주잔 (단순)
   SOJU: `
-    <path d="M11 4h2v3" />
-    <path d="M10 7h4l.5 2.2h-5z" />
-    <path d="M9.5 9.2h5v10a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1z" />
+    <path d="M7 6 L17 6 L15 18 L9 18 Z" />
+    <line x1="6" y1="20" x2="18" y2="20" />
+    <line x1="12" y1="18" x2="12" y2="20" />
   `,
   // 과실주 — 와인잔 (컵 + 줄기 + 받침)
   FRUIT_WINE: `
-    <path d="M7 5h10l-1 5.5a4 4 0 0 1-8 0z" />
-    <path d="M12 14v6" />
-    <path d="M9 20h6" />
+    <path d="M7 4 Q7 12 12 13 Q17 12 17 4 Z" />
+    <line x1="12" y1="13" x2="12" y2="19" />
+    <line x1="8" y1="20" x2="16" y2="20" />
   `,
   // 맥주 — 호프잔 (잔 + 손잡이 + 거품)
   BEER: `
-    <path d="M7.5 9h7v10a1 1 0 0 1-1 1H8.5a1 1 0 0 1-1-1z" />
-    <path d="M14.5 11h2a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-2" />
-    <path d="M7.5 9c0-1.2 1-2 2-1.6c.3-1.1 1.7-1.3 2.4-.4c.5-.9 2.1-.8 2.3.4c1 0 1.3.9 1.3 1.6" />
+    <path d="M7 6 L7 19 L15 19 L15 6 Z" />
+    <path d="M15 9 Q19 9 19 13 Q19 17 15 17" />
+    <path d="M7 6 Q9 4 11 6 Q13 4 15 6" />
   `,
   // Fallback — 중립 원형 + 중앙 점 (위치 표시 의미)
   FALLBACK: `
-    <circle cx="12" cy="12" r="5.5" />
-    <circle cx="12" cy="12" r="1" data-fill="true" />
+    <circle cx="12" cy="12" r="6" fill="none" />
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
   `,
 };
 
 function makeMarkerSvg(brewType: BrewType | null, isActive: boolean): string {
   const iconKey: IconKey = brewType ?? "FALLBACK";
 
-  // 활성: 진한 채움 + 흰색 아이콘  /  비활성: 흰 배경 + 회색 아이콘
-  const bg = isActive ? "#2D2A22" : "#FFFFFF";
-  const ring = isActive ? "#2D2A22" : "#D4D0C8";
-  const stroke = isActive ? "#FFFFFF" : "#6B6560";
+  const size = isActive ? MARKER_SIZE_ACTIVE : MARKER_SIZE_INACTIVE;
+  const bg = isActive ? "#f8e155" : "#ffffff";
+  const ring = isActive ? "#ffffff" : "#c4c7c4";
+  const stroke = isActive ? "#706300" : "#1a1c1b";
 
-  // FALLBACK의 중앙 점은 stroke 색으로 채워야 함 → data-fill 속성 → 실제 fill 치환
-  const paths = ICON_PATHS[iconKey].replace(
-    /data-fill="true"/g,
-    `fill="${stroke}" stroke="none"`,
-  );
+  const half = size / 2;
+  const radius = half - 2;
+  // 24x24 viewBox 아이콘을 중앙에 위치
+  const iconOffset = (size - 24) / 2;
 
   return [
-    '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">',
-    `<circle cx="18" cy="18" r="16" fill="${bg}" stroke="${ring}" stroke-width="1.5"/>`,
-    `<g transform="translate(6 6)" stroke="${stroke}" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">`,
-    paths,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`,
+    `<circle cx="${half}" cy="${half}" r="${radius}" fill="${bg}" stroke="${ring}" stroke-width="2"/>`,
+    `<g transform="translate(${iconOffset} ${iconOffset})" color="${stroke}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">`,
+    ICON_PATHS[iconKey],
     "</g>",
     "</svg>",
   ].join("");

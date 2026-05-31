@@ -10,6 +10,8 @@ import {
   buildMarkerImageCache,
   getMarkerImageKey,
   getPrimaryBrewType,
+  MARKER_SIZE_ACTIVE,
+  MARKER_SIZE_INACTIVE,
 } from "./brewery-marker-icons";
 
 type Props = {
@@ -24,7 +26,6 @@ type BreweryWithPrimary = BreweryWithCoords & { primaryBrewType: BrewType | null
 const KOREA_CENTER = { lat: 36.5, lng: 127.8 };
 const KOREA_ZOOM_LEVEL = 13;
 const MY_LOCATION_ZOOM_LEVEL = 6;
-const MARKER_SIZE = 36;
 
 // TODO: Phase 4에서 Brewery 테이블에 primaryBrewType 필드 추가하여
 // 대표 brewType을 명시적으로 관리. 현재는 products 배열에서 우선순위 기반 추출.
@@ -114,15 +115,16 @@ export function KakaoMap({
           {breweriesWithPrimary.map((brewery) => {
             const isActive = brewery.id === selectedBreweryId;
             const imageKey = getMarkerImageKey(brewery.primaryBrewType, isActive);
+            const markerSize = isActive ? MARKER_SIZE_ACTIVE : MARKER_SIZE_INACTIVE;
             return (
               <MapMarker
                 key={brewery.id}
                 position={{ lat: brewery.latitude, lng: brewery.longitude }}
                 image={{
                   src: markerImageCache[imageKey],
-                  size: { width: MARKER_SIZE, height: MARKER_SIZE },
+                  size: { width: markerSize, height: markerSize },
                   options: {
-                    offset: { x: MARKER_SIZE / 2, y: MARKER_SIZE / 2 },
+                    offset: { x: markerSize / 2, y: markerSize / 2 },
                     alt: brewery.name,
                   },
                 }}
