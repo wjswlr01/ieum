@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Map, MapMarker, MarkerClusterer, ZoomControl } from "react-kakao-maps-sdk";
 import type { BrewType } from "@ieum/db";
 import { useKakaoMapLoader } from "@/components/map/use-kakao-map-loader";
@@ -27,6 +28,7 @@ const MARKER_SIZE = 36;
 // TODO: Phase 4에서 Brewery 테이블에 primaryBrewType 필드 추가하여
 // 대표 brewType을 명시적으로 관리. 현재는 products 배열에서 우선순위 기반 추출.
 export function KakaoMap({ breweries = [], breweryCount }: Props) {
+  const router = useRouter();
   const [loading, error] = useKakaoMapLoader();
   const [center, setCenter] = useState(KOREA_CENTER);
   const [level, setLevel] = useState(KOREA_ZOOM_LEVEL);
@@ -122,10 +124,8 @@ export function KakaoMap({ breweries = [], breweryCount }: Props) {
                 title={brewery.name}
                 zIndex={isActive ? 10 : 1}
                 onClick={() => {
-                  setActiveBreweryId((prev) =>
-                    prev === brewery.id ? null : brewery.id,
-                  );
-                  console.log("[brewery-marker]", brewery.id, brewery.name);
+                  setActiveBreweryId(brewery.id);
+                  router.push(`/map/brewery/${brewery.id}`);
                 }}
               />
             );
