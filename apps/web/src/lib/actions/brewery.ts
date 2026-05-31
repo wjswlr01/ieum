@@ -663,6 +663,8 @@ export async function createReview(input: CreateReviewInput): Promise<{
 // ── updateBrewery ────────────────────────────────────────────────────────────
 
 export type UpdateBreweryInput = {
+  name?: string;
+  tagline?: string | null;
   description?: string | null;
   operatingHours?: Record<string, { open: string; close: string } | null> | null;
   tourAvailable?: boolean;
@@ -760,6 +762,20 @@ export async function updateBrewery(
 
   const updateData: Prisma.BreweryUpdateInput = {};
 
+  if (data.name !== undefined) {
+    if (typeof data.name !== "string") {
+      throw new Error("양조장 이름 형식이 올바르지 않습니다.");
+    }
+    const trimmed = data.name.trim();
+    if (!trimmed) throw new Error("양조장 이름을 입력해주세요.");
+    if (trimmed.length > 50) {
+      throw new Error("양조장 이름은 50자 이내로 작성해주세요.");
+    }
+    updateData.name = trimmed;
+  }
+  if (data.tagline !== undefined) {
+    updateData.tagline = trimOrNull(data.tagline, 80, "한 줄 소개");
+  }
   if (data.description !== undefined) {
     updateData.description = trimOrNull(data.description, 1000, "소개");
   }

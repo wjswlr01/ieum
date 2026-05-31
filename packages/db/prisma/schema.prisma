@@ -627,6 +627,7 @@ model Brewery {
   tenant   Tenant? @relation(fields: [tenantId], references: [id])
 
   // 양조사 자체 입력
+  tagline           String? @db.VarChar(80)
   description       String? @db.Text
   operatingHours    Json?
   tourAvailable     Boolean @default(false)
