@@ -17,11 +17,6 @@ export default function BreweryActionBar({
   isFavorited,
   isOwnBrewery,
 }: Props) {
-  function handleEditOwn() {
-    // TODO: Phase 5-B에서 /dashboard/my-brewery 라우트 구현 시 router.push 교체
-    alert("양조장 정보 수정 페이지는 Phase 5-B에서 제공 예정입니다.");
-  }
-
   return (
     <div
       className="sticky bottom-0 z-10 border-t border-brew-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/75"
@@ -30,9 +25,8 @@ export default function BreweryActionBar({
       <div className="flex items-center gap-2 px-4 py-3">
         <FavoriteButton breweryId={breweryId} initialFavorited={isFavorited} />
         {isOwnBrewery ? (
-          <button
-            type="button"
-            onClick={handleEditOwn}
+          <Link
+            href="/dashboard/my-brewery"
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-brew-text px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brew-dark"
           >
             <svg
@@ -51,7 +45,7 @@ export default function BreweryActionBar({
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
             <span>정보 수정</span>
-          </button>
+          </Link>
         ) : (
           <Link
             href={`/map/brewery/${breweryId}/reviews`}

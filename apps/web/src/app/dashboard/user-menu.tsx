@@ -8,10 +8,12 @@ export default function UserMenu({
   userName,
   userEmail,
   isAdmin = false,
+  hasBrewery = false,
 }: {
   userName: string;
   userEmail: string;
   isAdmin?: boolean;
+  hasBrewery?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -54,6 +56,15 @@ export default function UserMenu({
             <p className="text-xs text-[#B0A080] truncate mt-0.5">{userEmail}</p>
           </div>
           <div className="py-1">
+            {hasBrewery && (
+              <Link
+                href="/dashboard/my-brewery"
+                onClick={() => setOpen(false)}
+                className="flex items-center px-4 py-2.5 text-sm text-[#B0A080] hover:text-brew-text-light hover:bg-white/5 transition-colors"
+              >
+                내 양조장 관리
+              </Link>
+            )}
             <Link
               href="/dashboard/calendar"
               onClick={() => setOpen(false)}

@@ -18,11 +18,20 @@ export default async function DashboardLayout({
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const userRow = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { hasCompletedOnboarding: true },
-  });
+  const [userRow, breweryRow] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { hasCompletedOnboarding: true },
+    }),
+    session.user.tenantId
+      ? db.brewery.findUnique({
+          where: { tenantId: session.user.tenantId },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+  ]);
   const showOnboarding = !userRow?.hasCompletedOnboarding;
+  const hasBrewery = breweryRow !== null;
 
   return (
     <div className="min-h-screen bg-brew-bg text-brew-text flex flex-col">
@@ -53,11 +62,12 @@ export default async function DashboardLayout({
             userName={session.user.name ?? ""}
             userEmail={session.user.email ?? ""}
             isAdmin={session.user.isAdmin}
+            hasBrewery={hasBrewery}
           />
         </div>
       </header>
       <div className="flex-1 pb-16 md:pb-0">{children}</div>
-      <MobileBottomNav isAdmin={session.user.isAdmin} />
+      <MobileBottomNav isAdmin={session.user.isAdmin} hasBrewery={hasBrewery} />
       <OnboardingProvider initialOpen={showOnboarding} />
     </div>
   );

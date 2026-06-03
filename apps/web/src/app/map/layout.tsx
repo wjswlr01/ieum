@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { db } from "@/lib/db";
 import UserMenu from "../dashboard/user-menu";
 import NavLinks from "../dashboard/nav-links";
 import NotificationBell from "../dashboard/notification-bell";
@@ -15,6 +16,14 @@ export default async function MapLayout({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+
+  const breweryRow = session.user.tenantId
+    ? await db.brewery.findUnique({
+        where: { tenantId: session.user.tenantId },
+        select: { id: true },
+      })
+    : null;
+  const hasBrewery = breweryRow !== null;
 
   return (
     <div className="flex h-screen flex-col bg-brew-bg text-brew-text">
@@ -45,13 +54,14 @@ export default async function MapLayout({
             userName={session.user.name ?? ""}
             userEmail={session.user.email ?? ""}
             isAdmin={session.user.isAdmin}
+            hasBrewery={hasBrewery}
           />
         </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col pb-14 md:pb-0">
         {children}
       </div>
-      <MobileBottomNav isAdmin={session.user.isAdmin} />
+      <MobileBottomNav isAdmin={session.user.isAdmin} hasBrewery={hasBrewery} />
     </div>
   );
 }

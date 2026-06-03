@@ -65,7 +65,13 @@ const MORE_LINKS = [
 
 const MORE_PATHS = MORE_LINKS.map((l) => l.href);
 
-export default function MobileBottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
+export default function MobileBottomNav({
+  isAdmin = false,
+  hasBrewery = false,
+}: {
+  isAdmin?: boolean;
+  hasBrewery?: boolean;
+}) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -150,6 +156,21 @@ export default function MobileBottomNav({ isAdmin = false }: { isAdmin?: boolean
               <div className="h-1 w-10 rounded-full bg-[#5A5246]" />
             </div>
             <ul className="px-2 pb-2">
+              {hasBrewery && (
+                <li>
+                  <Link
+                    href="/dashboard/my-brewery"
+                    onClick={() => setMoreOpen(false)}
+                    className={`block rounded-lg px-4 py-3 text-sm transition-colors ${
+                      pathname.startsWith("/dashboard/my-brewery")
+                        ? "bg-white/5 text-brew-accent"
+                        : "text-[#B0A080] hover:bg-white/5"
+                    }`}
+                  >
+                    내 양조장 관리
+                  </Link>
+                </li>
+              )}
               {MORE_LINKS.map((l) => {
                 const onboardStep =
                   l.href === "/dashboard/inventory" ? "6" : undefined;
