@@ -3,13 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
+import { BREW_TYPE_LABEL } from "@/lib/brewery-labels";
 import DeleteRecipeButton from "../delete-recipe-button";
 import RecipeNodeList from "./recipe-node-list";
-
-const BREW_TYPE_LABEL: Record<string, string> = {
-  BEER: "맥주",
-  MAKGEOLLI: "막걸리",
-};
 
 type Props = { params: { id: string } };
 

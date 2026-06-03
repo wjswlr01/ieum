@@ -3,33 +3,18 @@
 import { memo } from "react";
 import type { BrewType } from "@ieum/db";
 import type { BreweryDetail } from "@/lib/actions/brewery";
+import { BREW_TYPE_LABEL, BREW_TYPE_ORDER } from "@/lib/brewery-labels";
 import OperatingHoursPanel from "../brewery/[id]/_components/operating-hours";
 import MiniMap from "../brewery/[id]/_components/mini-map";
 import BreweryHeroGallery from "./brewery-hero-gallery";
 import BreweryActionBar from "./brewery-action-bar";
-
-const BREW_TYPE_LABEL: Record<BrewType, string> = {
-  BEER: "맥주",
-  MAKGEOLLI: "막걸리",
-  CHEONGJU: "청주",
-  SOJU: "증류주",
-  FRUIT_WINE: "과실주",
-};
-
-const PRIORITY_ORDER: BrewType[] = [
-  "MAKGEOLLI",
-  "CHEONGJU",
-  "SOJU",
-  "FRUIT_WINE",
-  "BEER",
-];
 
 function getUniqueBrewTypes(
   products: { brewType: BrewType | null }[],
 ): BrewType[] {
   const set = new Set<BrewType>();
   for (const p of products) if (p.brewType) set.add(p.brewType);
-  return PRIORITY_ORDER.filter((t) => set.has(t));
+  return BREW_TYPE_ORDER.filter((t) => set.has(t));
 }
 
 type Variant = "sheet" | "panel" | "preview";

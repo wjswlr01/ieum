@@ -1,10 +1,9 @@
 import type { BrewType } from "@ieum/db";
 import type { BreweryCard } from "@/lib/actions/brewery";
+import { BREW_TYPE_ORDER } from "@/lib/brewery-labels";
 
 // TODO: Phase 4-future에서 Brewery 테이블에 primaryBrewType 필드 추가하여
 // 대표 brewType을 명시적으로 관리. 현재는 products 배열에서 우선순위 기반 추출.
-const PRIORITY_ORDER: BrewType[] = ["MAKGEOLLI", "CHEONGJU", "SOJU", "FRUIT_WINE", "BEER"];
-
 export function getPrimaryBrewType(
   products: BreweryCard["products"],
 ): BrewType | null {
@@ -12,7 +11,7 @@ export function getPrimaryBrewType(
   for (const p of products) {
     if (p.brewType) types.add(p.brewType);
   }
-  for (const t of PRIORITY_ORDER) {
+  for (const t of BREW_TYPE_ORDER) {
     if (types.has(t)) return t;
   }
   return null;

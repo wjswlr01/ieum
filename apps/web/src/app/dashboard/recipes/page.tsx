@@ -4,12 +4,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { NODE_TYPE_META } from "@/lib/recipe-templates";
+import { BREW_TYPE_LABEL } from "@/lib/brewery-labels";
 import DeleteRecipeButton from "./delete-recipe-button";
-
-const BREW_TYPE_LABEL: Record<string, string> = {
-  BEER: "맥주",
-  MAKGEOLLI: "막걸리",
-};
 
 const BREW_TYPE_COLOR: Record<string, string> = {
   BEER: "text-amber-800 bg-amber-50 border-amber-200",
