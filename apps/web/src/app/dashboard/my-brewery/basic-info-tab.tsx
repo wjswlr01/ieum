@@ -31,9 +31,11 @@ function toFormState(b: MyBreweryData): FormState {
 export default function BasicInfoTab({
   brewery,
   onSaved,
+  onGoToPhotos,
 }: {
   brewery: MyBreweryData;
   onSaved: (msg: string) => void;
+  onGoToPhotos: () => void;
 }) {
   const router = useRouter();
   const [initial, setInitial] = useState<FormState>(() => toFormState(brewery));
@@ -108,10 +110,20 @@ export default function BasicInfoTab({
   return (
     <div className="flex flex-col gap-6 pb-32">
       <section className="rounded-2xl border border-brew-border bg-brew-surface p-5">
-        <h2 className="text-sm font-semibold text-brew-text mb-4">대표 사진 / 로고</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <PhotoSlot label="커버 사진" />
-          <PhotoSlot label="로고" aspect="square" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <h2 className="text-sm font-semibold text-brew-text">양조장 사진</h2>
+            <p className="mt-1 text-xs text-brew-muted">
+              사진과 대표 사진은 사진 탭에서 관리합니다
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onGoToPhotos}
+            className="rounded-lg bg-brew-accent-light px-4 py-2 text-sm font-semibold text-brew-accent-light-text hover:brightness-95 transition"
+          >
+            사진 관리
+          </button>
         </div>
       </section>
 
@@ -277,41 +289,6 @@ function Field({
       {children}
       {helper && <p className="mt-1.5 text-xs text-brew-muted">{helper}</p>}
     </label>
-  );
-}
-
-function PhotoSlot({
-  label,
-  aspect = "video",
-}: {
-  label: string;
-  aspect?: "video" | "square";
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => window.alert("Phase 5-B-2에서 구현 예정")}
-      className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-brew-border bg-brew-bg text-brew-muted hover:border-brew-accent hover:text-brew-text transition-colors ${
-        aspect === "square" ? "aspect-square" : "aspect-video"
-      }`}
-    >
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <rect width="18" height="18" x="3" y="3" rx="2" />
-        <circle cx="9" cy="9" r="2" />
-        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-      </svg>
-      <span className="text-xs font-medium">{label} 추가</span>
-    </button>
   );
 }
 

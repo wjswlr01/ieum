@@ -96,7 +96,11 @@ export default function MyBreweryClient({
       </div>
 
       {tab === "basic" ? (
-        <BasicInfoTab brewery={brewery} onSaved={showToast} />
+        <BasicInfoTab
+          brewery={brewery}
+          onSaved={showToast}
+          onGoToPhotos={() => setTab("photos")}
+        />
       ) : tab === "photos" ? (
         <PhotosTab
           breweryId={brewery.id}
