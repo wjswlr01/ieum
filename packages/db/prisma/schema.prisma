@@ -639,6 +639,8 @@ model Brewery {
   parkingAvailable  Boolean @default(false)
   parkingInfo       String?
 
+  isPublished Boolean @default(true)
+
   products  BreweryProduct[]
   photos    BreweryPhoto[]
   reviews   BreweryReview[]
@@ -650,6 +652,7 @@ model Brewery {
   @@index([region])
   @@index([latitude, longitude])
   @@index([name])
+  @@index([isPublished])
 }
 
 // 22. brewery_products — 양조장 제품

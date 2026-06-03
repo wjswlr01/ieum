@@ -32,7 +32,7 @@ function getUniqueBrewTypes(
   return PRIORITY_ORDER.filter((t) => set.has(t));
 }
 
-type Variant = "sheet" | "panel";
+type Variant = "sheet" | "panel" | "preview";
 
 type Props = {
   brewery: BreweryDetail | null;
@@ -45,6 +45,7 @@ function BreweryDetailContent({
   isFetching,
   variant,
 }: Props) {
+  const isPreview = variant === "preview";
   if (!brewery) {
     return (
       <div className="flex flex-1 flex-col gap-3 px-5 py-8">
@@ -267,13 +268,15 @@ function BreweryDetailContent({
         )}
       </div>
 
-      {/* 하단 액션바 (sheet/panel 공통, sticky bottom-0) */}
-      <BreweryActionBar
-        breweryId={brewery.id}
-        breweryName={brewery.name}
-        isFavorited={brewery.isFavorited}
-        isOwnBrewery={brewery.isOwnBrewery}
-      />
+      {/* 하단 액션바 (sheet/panel 공통, sticky bottom-0) — preview는 자체 CTA 사용 */}
+      {!isPreview && (
+        <BreweryActionBar
+          breweryId={brewery.id}
+          breweryName={brewery.name}
+          isFavorited={brewery.isFavorited}
+          isOwnBrewery={brewery.isOwnBrewery}
+        />
+      )}
     </div>
   );
 }

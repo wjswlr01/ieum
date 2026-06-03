@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getBreweryPhotos } from "@/lib/actions/brewery-photo";
 import { getBreweryProducts } from "@/lib/actions/brewery-product";
+import { getBreweryById } from "@/lib/actions/brewery";
 import MyBreweryClient from "./my-brewery-client";
 import NoBreweryView from "./no-brewery-view";
 
@@ -38,6 +39,7 @@ export default async function MyBreweryPage() {
       tastingNote: true,
       parkingAvailable: true,
       parkingInfo: true,
+      isPublished: true,
     },
   });
 
@@ -45,9 +47,10 @@ export default async function MyBreweryPage() {
     return <NoBreweryView />;
   }
 
-  const [photos, products] = await Promise.all([
+  const [photos, products, previewResult] = await Promise.all([
     getBreweryPhotos(brewery.id),
     getBreweryProducts(brewery.id),
+    getBreweryById(brewery.id),
   ]);
 
   return (
@@ -71,9 +74,11 @@ export default async function MyBreweryPage() {
         tastingNote: brewery.tastingNote,
         parkingAvailable: brewery.parkingAvailable,
         parkingInfo: brewery.parkingInfo,
+        isPublished: brewery.isPublished,
       }}
       photos={photos}
       products={products}
+      previewBrewery={previewResult.brewery}
     />
   );
 }

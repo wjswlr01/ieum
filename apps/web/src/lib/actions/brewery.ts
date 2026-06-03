@@ -75,7 +75,7 @@ const VALID_BREW_TYPES = new Set<BrewType>([
 ]);
 
 function buildBreweryWhere(params: GetBreweriesParams): Prisma.BreweryWhereInput {
-  const AND: Prisma.BreweryWhereInput[] = [];
+  const AND: Prisma.BreweryWhereInput[] = [{ isPublished: true }];
 
   if (params.search && params.search.trim()) {
     const q = params.search.trim();
@@ -272,7 +272,11 @@ export async function getBreweriesForMap(): Promise<GetBreweriesForMapResult> {
   if (!session) redirect("/login");
 
   const rows = await db.brewery.findMany({
-    where: { latitude: { not: null }, longitude: { not: null } },
+    where: {
+      isPublished: true,
+      latitude: { not: null },
+      longitude: { not: null },
+    },
     select: {
       id: true,
       name: true,
@@ -345,6 +349,7 @@ export type BreweryDetail = {
   tastingNote: string | null;
   parkingAvailable: boolean;
   parkingInfo: string | null;
+  isPublished: boolean;
   createdAt: Date;
   updatedAt: Date;
   products: Array<{
@@ -439,6 +444,7 @@ export async function getBreweryById(
     tastingNote: brewery.tastingNote,
     parkingAvailable: brewery.parkingAvailable,
     parkingInfo: brewery.parkingInfo,
+    isPublished: brewery.isPublished,
     createdAt: brewery.createdAt,
     updatedAt: brewery.updatedAt,
     products: brewery.products.map((p) => ({
@@ -710,6 +716,7 @@ export type UpdateBreweryInput = {
   parkingAvailable?: boolean;
   parkingInfo?: string | null;
   website?: string | null;
+  isPublished?: boolean;
 };
 
 const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -879,6 +886,12 @@ export async function updateBrewery(
   }
   if (data.website !== undefined) {
     updateData.website = normalizeWebsite(data.website);
+  }
+  if (data.isPublished !== undefined) {
+    if (typeof data.isPublished !== "boolean") {
+      throw new Error("공개 상태 형식이 올바르지 않습니다.");
+    }
+    updateData.isPublished = data.isPublished;
   }
 
   const updated = await db.brewery.update({

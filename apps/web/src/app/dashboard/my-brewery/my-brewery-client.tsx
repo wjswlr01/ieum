@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BreweryPhotoItem } from "@/lib/actions/brewery-photo";
 import type { BreweryProductItem } from "@/lib/actions/brewery-product";
+import type { BreweryDetail } from "@/lib/actions/brewery";
 import BasicInfoTab from "./basic-info-tab";
 import PhotosTab from "./photos-tab";
 import ProductsTab from "./products-tab";
@@ -28,6 +29,7 @@ export type MyBreweryData = {
   tastingNote: string | null;
   parkingAvailable: boolean;
   parkingInfo: string | null;
+  isPublished: boolean;
 };
 
 type TabKey = "basic" | "photos" | "products" | "hours" | "preview";
@@ -44,10 +46,12 @@ export default function MyBreweryClient({
   brewery,
   photos,
   products,
+  previewBrewery,
 }: {
   brewery: MyBreweryData;
   photos: BreweryPhotoItem[];
   products: BreweryProductItem[];
+  previewBrewery: BreweryDetail | null;
 }) {
   const [tab, setTab] = useState<TabKey>("basic");
   const [toast, setToast] = useState<string | null>(null);
@@ -108,7 +112,12 @@ export default function MyBreweryClient({
       ) : tab === "hours" ? (
         <HoursTab brewery={brewery} onSaved={showToast} />
       ) : (
-        <PreviewTab />
+        <PreviewTab
+          breweryId={brewery.id}
+          initialIsPublished={brewery.isPublished}
+          previewBrewery={previewBrewery}
+          onToast={showToast}
+        />
       )}
 
       {toast && (
