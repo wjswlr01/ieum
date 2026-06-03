@@ -153,17 +153,8 @@ export async function createPhoto(formData: FormData): Promise<CreatePhotoResult
     const filename = `${Date.now()}-${crypto.randomUUID()}.${safeExt}`;
     const storagePath = `${admin.tenantId}/${batchId}/${filename}`;
 
-    console.log("[photo:debug] tenantId:", admin.tenantId);
-    console.log("[photo:debug] batchId:", batchId);
-    console.log("[photo:debug] file.name:", file.name);
-    console.log("[photo:debug] file.type:", file.type);
-    console.log("[photo:debug] file.size:", file.size);
-    console.log("[photo:debug] final storagePath:", storagePath);
-    console.log("[photo:debug] storagePath length:", storagePath.length);
-
     // 검증: storagePath에 ASCII 외 문자나 공백이 있으면 차단
     if (/[^\x00-\x7F]/.test(storagePath) || /\s/.test(storagePath)) {
-      console.error("[photo:debug] storagePath 검증 실패:", storagePath);
       return {
         success: false,
         error: `Invalid storagePath: contains non-ASCII or whitespace: ${storagePath}`,
@@ -171,7 +162,6 @@ export async function createPhoto(formData: FormData): Promise<CreatePhotoResult
     }
 
     const buffer = await file.arrayBuffer();
-    console.log("[photo:debug] buffer byteLength:", buffer.byteLength);
 
     try {
       await uploadPhoto(storagePath, buffer, file.type);

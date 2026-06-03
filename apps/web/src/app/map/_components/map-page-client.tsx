@@ -99,8 +99,6 @@ export default function MapPageClient({
 
   // ── 선택 양조장 client fetch ─────────────────────────────
   useEffect(() => {
-    // [DEBUG-PHASE-5-DESKTOP-FREEZE] fetch effect 호출 추적
-    console.log("[MapPage] fetch effect triggered, id:", selectedBreweryId);
     if (selectedBreweryId === null) {
       setSelectedBrewery(null);
       setIsFetching(false);
@@ -112,14 +110,9 @@ export default function MapPageClient({
     }
     let cancelled = false;
     setIsFetching(true);
-    const t0 = performance.now();
     getBreweryById(selectedBreweryId)
       .then((res) => {
         if (cancelled) return;
-        console.log(
-          `[MapPage] fetch resolved in ${Math.round(performance.now() - t0)}ms, id:`,
-          selectedBreweryId,
-        );
         setSelectedBrewery(res.brewery);
       })
       .catch(() => {
