@@ -339,8 +339,11 @@ export type BreweryDetail = {
   operatingHours: unknown;
   tourAvailable: boolean;
   tourBookingMethod: string | null;
+  tourTimeInfo: string | null;
   tastingAvailable: boolean;
   tastingPriceInfo: string | null;
+  tastingNote: string | null;
+  parkingAvailable: boolean;
   parkingInfo: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -430,8 +433,11 @@ export async function getBreweryById(
     operatingHours: brewery.operatingHours,
     tourAvailable: brewery.tourAvailable,
     tourBookingMethod: brewery.tourBookingMethod,
+    tourTimeInfo: brewery.tourTimeInfo,
     tastingAvailable: brewery.tastingAvailable,
     tastingPriceInfo: brewery.tastingPriceInfo,
+    tastingNote: brewery.tastingNote,
+    parkingAvailable: brewery.parkingAvailable,
     parkingInfo: brewery.parkingInfo,
     createdAt: brewery.createdAt,
     updatedAt: brewery.updatedAt,
@@ -679,15 +685,29 @@ export async function createReview(input: CreateReviewInput): Promise<{
 
 // ── updateBrewery ────────────────────────────────────────────────────────────
 
+export type OperatingHoursInput = {
+  mon?: { open: string; close: string } | null;
+  tue?: { open: string; close: string } | null;
+  wed?: { open: string; close: string } | null;
+  thu?: { open: string; close: string } | null;
+  fri?: { open: string; close: string } | null;
+  sat?: { open: string; close: string } | null;
+  sun?: { open: string; close: string } | null;
+  breakTime?: { start: string; end: string } | null;
+};
+
 export type UpdateBreweryInput = {
   name?: string;
   tagline?: string | null;
   description?: string | null;
-  operatingHours?: Record<string, { open: string; close: string } | null> | null;
+  operatingHours?: OperatingHoursInput | null;
   tourAvailable?: boolean;
   tourBookingMethod?: string | null;
+  tourTimeInfo?: string | null;
   tastingAvailable?: boolean;
   tastingPriceInfo?: string | null;
+  tastingNote?: string | null;
+  parkingAvailable?: boolean;
   parkingInfo?: string | null;
   website?: string | null;
 };
@@ -719,8 +739,32 @@ function validateOperatingHours(
     throw new Error("영업시간 형식이 올바르지 않습니다.");
   }
 
-  const result: Record<string, { open: string; close: string } | null> = {};
+  const result: Record<
+    string,
+    { open: string; close: string } | { start: string; end: string } | null
+  > = {};
+
   for (const [key, value] of Object.entries(input)) {
+    if (key === "breakTime") {
+      if (value === null) {
+        result[key] = null;
+        continue;
+      }
+      if (
+        typeof value !== "object" ||
+        typeof (value as { start?: unknown }).start !== "string" ||
+        typeof (value as { end?: unknown }).end !== "string"
+      ) {
+        throw new Error("휴게시간 값 형식이 올바르지 않습니다.");
+      }
+      const { start, end } = value as { start: string; end: string };
+      if (!HHMM_RE.test(start) || !HHMM_RE.test(end)) {
+        throw new Error("휴게시간은 HH:MM 형식이어야 합니다.");
+      }
+      result[key] = { start, end };
+      continue;
+    }
+
     if (!DAY_KEYS.has(key)) {
       throw new Error("영업시간 요일 키가 올바르지 않습니다.");
     }
@@ -809,6 +853,9 @@ export async function updateBrewery(
   if (data.tourBookingMethod !== undefined) {
     updateData.tourBookingMethod = trimOrNull(data.tourBookingMethod, 200, "투어 예약 방법");
   }
+  if (data.tourTimeInfo !== undefined) {
+    updateData.tourTimeInfo = trimOrNull(data.tourTimeInfo, 200, "투어 시간");
+  }
   if (data.tastingAvailable !== undefined) {
     if (typeof data.tastingAvailable !== "boolean") {
       throw new Error("시음 가능 여부 형식이 올바르지 않습니다.");
@@ -818,8 +865,17 @@ export async function updateBrewery(
   if (data.tastingPriceInfo !== undefined) {
     updateData.tastingPriceInfo = trimOrNull(data.tastingPriceInfo, 200, "시음 가격 정보");
   }
+  if (data.tastingNote !== undefined) {
+    updateData.tastingNote = trimOrNull(data.tastingNote, 500, "시음 안내");
+  }
+  if (data.parkingAvailable !== undefined) {
+    if (typeof data.parkingAvailable !== "boolean") {
+      throw new Error("주차 가능 여부 형식이 올바르지 않습니다.");
+    }
+    updateData.parkingAvailable = data.parkingAvailable;
+  }
   if (data.parkingInfo !== undefined) {
-    updateData.parkingInfo = trimOrNull(data.parkingInfo, 200, "주차 정보");
+    updateData.parkingInfo = trimOrNull(data.parkingInfo, 500, "주차 정보");
   }
   if (data.website !== undefined) {
     updateData.website = normalizeWebsite(data.website);

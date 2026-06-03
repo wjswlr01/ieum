@@ -632,8 +632,11 @@ model Brewery {
   operatingHours    Json?
   tourAvailable     Boolean @default(false)
   tourBookingMethod String?
+  tourTimeInfo      String?
   tastingAvailable  Boolean @default(false)
   tastingPriceInfo  String?
+  tastingNote       String?
+  parkingAvailable  Boolean @default(false)
   parkingInfo       String?
 
   products  BreweryProduct[]

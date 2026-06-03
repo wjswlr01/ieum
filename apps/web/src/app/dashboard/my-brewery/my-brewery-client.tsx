@@ -6,6 +6,8 @@ import type { BreweryProductItem } from "@/lib/actions/brewery-product";
 import BasicInfoTab from "./basic-info-tab";
 import PhotosTab from "./photos-tab";
 import ProductsTab from "./products-tab";
+import HoursTab from "./hours-tab";
+import PreviewTab from "./preview-tab";
 
 export type MyBreweryData = {
   id: string;
@@ -17,22 +19,26 @@ export type MyBreweryData = {
   city: string | null;
   website: string | null;
   businessNumber: string | null;
+  operatingHours: unknown;
+  tourAvailable: boolean;
+  tourBookingMethod: string | null;
+  tourTimeInfo: string | null;
+  tastingAvailable: boolean;
+  tastingPriceInfo: string | null;
+  tastingNote: string | null;
+  parkingAvailable: boolean;
+  parkingInfo: string | null;
 };
 
-type TabKey = "basic" | "products" | "tour" | "tasting" | "photos";
+type TabKey = "basic" | "photos" | "products" | "hours" | "preview";
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "basic", label: "기본 정보" },
-  { key: "products", label: "제품" },
-  { key: "tour", label: "투어" },
-  { key: "tasting", label: "시음" },
   { key: "photos", label: "사진" },
+  { key: "products", label: "제품" },
+  { key: "hours", label: "운영 정보" },
+  { key: "preview", label: "미리보기" },
 ];
-
-const PLACEHOLDER_PHASE: Record<Exclude<TabKey, "basic" | "photos" | "products">, string> = {
-  tour: "Phase 5-B-4에서 구현 예정",
-  tasting: "Phase 5-B-4에서 구현 예정",
-};
 
 export default function MyBreweryClient({
   brewery,
@@ -99,8 +105,10 @@ export default function MyBreweryClient({
           initialProducts={products}
           onToast={showToast}
         />
+      ) : tab === "hours" ? (
+        <HoursTab brewery={brewery} onSaved={showToast} />
       ) : (
-        <PlaceholderTab message={PLACEHOLDER_PHASE[tab]} />
+        <PreviewTab />
       )}
 
       {toast && (
@@ -115,10 +123,3 @@ export default function MyBreweryClient({
   );
 }
 
-function PlaceholderTab({ message }: { message: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-brew-border bg-brew-surface px-6 py-12 text-center">
-      <p className="text-sm text-brew-muted">{message}</p>
-    </div>
-  );
-}

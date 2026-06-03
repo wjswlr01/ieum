@@ -29,6 +29,15 @@ export default async function MyBreweryPage() {
       city: true,
       website: true,
       businessNumber: true,
+      operatingHours: true,
+      tourAvailable: true,
+      tourBookingMethod: true,
+      tourTimeInfo: true,
+      tastingAvailable: true,
+      tastingPriceInfo: true,
+      tastingNote: true,
+      parkingAvailable: true,
+      parkingInfo: true,
     },
   });
 
@@ -53,6 +62,15 @@ export default async function MyBreweryPage() {
         city: brewery.city,
         website: brewery.website,
         businessNumber: brewery.businessNumber,
+        operatingHours: brewery.operatingHours,
+        tourAvailable: brewery.tourAvailable,
+        tourBookingMethod: brewery.tourBookingMethod,
+        tourTimeInfo: brewery.tourTimeInfo,
+        tastingAvailable: brewery.tastingAvailable,
+        tastingPriceInfo: brewery.tastingPriceInfo,
+        tastingNote: brewery.tastingNote,
+        parkingAvailable: brewery.parkingAvailable,
+        parkingInfo: brewery.parkingInfo,
       }}
       photos={photos}
       products={products}
