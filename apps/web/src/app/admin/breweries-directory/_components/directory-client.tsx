@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { unlinkBrewery } from "@/lib/actions/admin-brewery";
 import LinkModal from "./link-modal";
 
@@ -176,23 +177,31 @@ export default function DirectoryClient() {
                     {b.isPublished ? "공개" : "비공개"}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {b.tenantId ? (
-                      <button
-                        type="button"
-                        onClick={() => onUnlink(b)}
-                        className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 transition-colors"
+                    <div className="inline-flex items-center gap-1.5">
+                      <Link
+                        href={`/admin/breweries-directory/${b.id}/edit`}
+                        className="rounded-md border border-brew-border bg-white px-3 py-1.5 text-xs font-medium text-brew-text hover:bg-brew-bg transition-colors"
                       >
-                        연결 해제
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setLinkTarget(b)}
-                        className="rounded-md bg-brew-text px-3 py-1.5 text-xs font-semibold text-white hover:bg-brew-dark transition-colors"
-                      >
-                        owner 연결
-                      </button>
-                    )}
+                        편집
+                      </Link>
+                      {b.tenantId ? (
+                        <button
+                          type="button"
+                          onClick={() => onUnlink(b)}
+                          className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 transition-colors"
+                        >
+                          연결 해제
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setLinkTarget(b)}
+                          className="rounded-md bg-brew-text px-3 py-1.5 text-xs font-semibold text-white hover:bg-brew-dark transition-colors"
+                        >
+                          owner 연결
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

@@ -1,15 +1,16 @@
 "use server";
 
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   uploadPhoto,
   deletePhotoFromStorage,
   getPhotoUrl,
 } from "@/lib/supabase/storage";
+import {
+  requireBreweryAccess,
+  requireBreweryAccessByPhotoId,
+} from "@/lib/brewery-access";
 
 const BUCKET = "brewery-photos";
 const MAX_PHOTOS = 12;
@@ -33,79 +34,6 @@ export type BreweryPhotoItem = {
   thumbUrl: string;
   fullUrl: string;
 };
-
-type OwnerCtx = {
-  userId: string;
-  tenantId: string;
-  brewery: { id: string; tenantId: string };
-};
-
-async function requireBreweryOwnerByBreweryId(breweryId: string): Promise<OwnerCtx> {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
-  if (typeof breweryId !== "string" || !breweryId.trim()) {
-    throw new Error("양조장 ID가 올바르지 않습니다.");
-  }
-  if (!session.user.tenantId) {
-    throw new Error("양조장 정보가 없는 계정은 사진을 관리할 수 없습니다.");
-  }
-  const brewery = await db.brewery.findUnique({
-    where: { id: breweryId },
-    select: { id: true, tenantId: true },
-  });
-  if (!brewery) throw new Error("양조장을 찾을 수 없습니다.");
-  if (brewery.tenantId !== session.user.tenantId) {
-    throw new Error("본인 양조장만 관리할 수 있습니다.");
-  }
-  return {
-    userId: session.user.id,
-    tenantId: session.user.tenantId,
-    brewery: { id: brewery.id, tenantId: brewery.tenantId },
-  };
-}
-
-async function requireBreweryOwnerByPhotoId(photoId: string): Promise<
-  OwnerCtx & { photo: { id: string; breweryId: string; originalPath: string; isPrimary: boolean; sortOrder: number } }
-> {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
-  if (typeof photoId !== "string" || !photoId.trim()) {
-    throw new Error("사진 ID가 올바르지 않습니다.");
-  }
-  if (!session.user.tenantId) {
-    throw new Error("양조장 정보가 없는 계정은 사진을 관리할 수 없습니다.");
-  }
-  const photo = await db.breweryPhoto.findUnique({
-    where: { id: photoId },
-    select: {
-      id: true,
-      breweryId: true,
-      originalPath: true,
-      isPrimary: true,
-      sortOrder: true,
-      brewery: { select: { id: true, tenantId: true } },
-    },
-  });
-  if (!photo) throw new Error("사진을 찾을 수 없습니다.");
-  if (photo.brewery.tenantId !== session.user.tenantId) {
-    throw new Error("본인 양조장 사진만 관리할 수 있습니다.");
-  }
-  if (!photo.brewery.tenantId) {
-    throw new Error("양조장 소유자 정보가 없습니다.");
-  }
-  return {
-    userId: session.user.id,
-    tenantId: session.user.tenantId,
-    brewery: { id: photo.brewery.id, tenantId: photo.brewery.tenantId },
-    photo: {
-      id: photo.id,
-      breweryId: photo.breweryId,
-      originalPath: photo.originalPath,
-      isPrimary: photo.isPrimary,
-      sortOrder: photo.sortOrder,
-    },
-  };
-}
 
 function safeExt(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
@@ -151,7 +79,7 @@ async function withSignedUrls(
 // ── 조회 ─────────────────────────────────────────────────────────────────────
 
 export async function getBreweryPhotos(breweryId: string): Promise<BreweryPhotoItem[]> {
-  const { brewery } = await requireBreweryOwnerByBreweryId(breweryId);
+  const { brewery } = await requireBreweryAccess(breweryId);
   const rows = await db.breweryPhoto.findMany({
     where: { breweryId: brewery.id },
     orderBy: [{ sortOrder: "asc" }, { uploadedAt: "desc" }],
@@ -177,9 +105,9 @@ export async function uploadBreweryPhoto(
   breweryId: string,
   formData: FormData,
 ): Promise<UploadBreweryPhotoResult> {
-  let ctx: OwnerCtx;
+  let ctx;
   try {
-    ctx = await requireBreweryOwnerByBreweryId(breweryId);
+    ctx = await requireBreweryAccess(breweryId);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
   }
@@ -202,7 +130,7 @@ export async function uploadBreweryPhoto(
 
     const ext = safeExt(file.name);
     const filename = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const storagePath = `${ctx.tenantId}/${ctx.brewery.id}/${filename}`;
+    const storagePath = `${ctx.brewery.id}/${filename}`;
 
     if (/[^\x00-\x7F]/.test(storagePath) || /\s/.test(storagePath)) {
       return { success: false, error: "Storage 경로 검증 실패" };
@@ -276,7 +204,7 @@ export type DeleteBreweryPhotoResult =
 export async function deleteBreweryPhoto(photoId: string): Promise<DeleteBreweryPhotoResult> {
   let ctx;
   try {
-    ctx = await requireBreweryOwnerByPhotoId(photoId);
+    ctx = await requireBreweryAccessByPhotoId(photoId);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
   }
@@ -290,7 +218,6 @@ export async function deleteBreweryPhoto(photoId: string): Promise<DeleteBrewery
 
     await db.$transaction(async (tx) => {
       await tx.breweryPhoto.delete({ where: { id: ctx.photo.id } });
-      // 대표였으면 다음 사진(sortOrder asc)을 대표로 승격
       if (ctx.photo.isPrimary) {
         const next = await tx.breweryPhoto.findFirst({
           where: { breweryId: ctx.brewery.id },
@@ -325,7 +252,7 @@ export type SetPrimaryResult =
 export async function setPrimaryBreweryPhoto(photoId: string): Promise<SetPrimaryResult> {
   let ctx;
   try {
-    ctx = await requireBreweryOwnerByPhotoId(photoId);
+    ctx = await requireBreweryAccessByPhotoId(photoId);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
   }
@@ -363,7 +290,7 @@ export async function reorderBreweryPhotos(
 ): Promise<ReorderResult> {
   let ctx;
   try {
-    ctx = await requireBreweryOwnerByBreweryId(breweryId);
+    ctx = await requireBreweryAccess(breweryId);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
   }

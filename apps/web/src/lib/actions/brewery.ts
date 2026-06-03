@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@ieum/db";
 import type { BrewType } from "@ieum/db";
+import { requireBreweryAccess } from "@/lib/brewery-access";
 
 // ── 공통 타입 ────────────────────────────────────────────────────────────────
 
@@ -808,25 +809,7 @@ export async function updateBrewery(
   breweryId: string,
   data: UpdateBreweryInput,
 ): Promise<{ brewery: Awaited<ReturnType<typeof db.brewery.update>> }> {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
-
-  if (typeof breweryId !== "string" || !breweryId.trim()) {
-    throw new Error("양조장 ID가 올바르지 않습니다.");
-  }
-  if (!session.user.tenantId) {
-    throw new Error("양조장 정보가 없는 계정은 수정할 수 없습니다.");
-  }
-
-  const brewery = await db.brewery.findUnique({
-    where: { id: breweryId },
-    select: { id: true, tenantId: true },
-  });
-  if (!brewery) throw new Error("양조장을 찾을 수 없습니다.");
-
-  if (brewery.tenantId !== session.user.tenantId) {
-    throw new Error("본인 양조장만 수정할 수 있습니다.");
-  }
+  await requireBreweryAccess(breweryId);
 
   const updateData: Prisma.BreweryUpdateInput = {};
 
