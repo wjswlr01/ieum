@@ -659,6 +659,9 @@ model BreweryProduct {
   brewType       BrewType?
   alcoholContent Float?
   volume         String?
+  price          Int?
+  imagePath      String?
+  sortOrder      Int       @default(0)
   ingredients    String?   @db.Text
   features       String?   @db.Text
   awards         String?   @db.Text
@@ -668,6 +671,7 @@ model BreweryProduct {
   updatedAt DateTime @updatedAt
 
   @@index([breweryId])
+  @@index([breweryId, sortOrder])
   @@index([brewType])
 }
 

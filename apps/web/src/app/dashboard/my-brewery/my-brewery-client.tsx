@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import type { BreweryPhotoItem } from "@/lib/actions/brewery-photo";
+import type { BreweryProductItem } from "@/lib/actions/brewery-product";
 import BasicInfoTab from "./basic-info-tab";
 import PhotosTab from "./photos-tab";
+import ProductsTab from "./products-tab";
 
 export type MyBreweryData = {
   id: string;
@@ -27,8 +29,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "photos", label: "사진" },
 ];
 
-const PLACEHOLDER_PHASE: Record<Exclude<TabKey, "basic" | "photos">, string> = {
-  products: "Phase 5-B-3에서 구현 예정",
+const PLACEHOLDER_PHASE: Record<Exclude<TabKey, "basic" | "photos" | "products">, string> = {
   tour: "Phase 5-B-4에서 구현 예정",
   tasting: "Phase 5-B-4에서 구현 예정",
 };
@@ -36,9 +37,11 @@ const PLACEHOLDER_PHASE: Record<Exclude<TabKey, "basic" | "photos">, string> = {
 export default function MyBreweryClient({
   brewery,
   photos,
+  products,
 }: {
   brewery: MyBreweryData;
   photos: BreweryPhotoItem[];
+  products: BreweryProductItem[];
 }) {
   const [tab, setTab] = useState<TabKey>("basic");
   const [toast, setToast] = useState<string | null>(null);
@@ -88,6 +91,12 @@ export default function MyBreweryClient({
         <PhotosTab
           breweryId={brewery.id}
           initialPhotos={photos}
+          onToast={showToast}
+        />
+      ) : tab === "products" ? (
+        <ProductsTab
+          breweryId={brewery.id}
+          initialProducts={products}
           onToast={showToast}
         />
       ) : (

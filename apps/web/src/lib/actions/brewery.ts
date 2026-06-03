@@ -136,7 +136,10 @@ export async function getBreweries(
     const all = await db.brewery.findMany({
       where,
       include: {
-        products: { take: 3, orderBy: { createdAt: "asc" } },
+        products: {
+          take: 3,
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        },
         photos: { where: { isPrimary: true }, take: 1 },
       },
       take: DISTANCE_FETCH_CAP,
@@ -160,7 +163,10 @@ export async function getBreweries(
     breweries = await db.brewery.findMany({
       where,
       include: {
-        products: { take: 3, orderBy: { createdAt: "asc" } },
+        products: {
+          take: 3,
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        },
         photos: { where: { isPrimary: true }, take: 1 },
       },
       orderBy,
@@ -344,6 +350,9 @@ export type BreweryDetail = {
     brewType: BrewType | null;
     alcoholContent: number | null;
     volume: string | null;
+    price: number | null;
+    imagePath: string | null;
+    sortOrder: number;
     ingredients: string | null;
     features: string | null;
     awards: string | null;
@@ -380,7 +389,7 @@ export async function getBreweryById(
   const brewery = await db.brewery.findUnique({
     where: { id },
     include: {
-      products: { orderBy: { createdAt: "asc" } },
+      products: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       photos: {
         orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }, { uploadedAt: "desc" }],
       },
@@ -432,6 +441,9 @@ export async function getBreweryById(
       brewType: p.brewType,
       alcoholContent: p.alcoholContent,
       volume: p.volume,
+      price: p.price,
+      imagePath: p.imagePath,
+      sortOrder: p.sortOrder,
       ingredients: p.ingredients,
       features: p.features,
       awards: p.awards,
@@ -475,7 +487,10 @@ export async function getFavorites(): Promise<{ favorites: BreweryCard[] }> {
     include: {
       brewery: {
         include: {
-          products: { take: 3, orderBy: { createdAt: "asc" } },
+          products: {
+            take: 3,
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          },
           photos: { where: { isPrimary: true }, take: 1 },
         },
       },

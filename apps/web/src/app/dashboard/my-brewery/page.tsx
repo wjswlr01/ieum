@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getBreweryPhotos } from "@/lib/actions/brewery-photo";
+import { getBreweryProducts } from "@/lib/actions/brewery-product";
 import MyBreweryClient from "./my-brewery-client";
 import NoBreweryView from "./no-brewery-view";
 
@@ -35,7 +36,10 @@ export default async function MyBreweryPage() {
     return <NoBreweryView />;
   }
 
-  const photos = await getBreweryPhotos(brewery.id);
+  const [photos, products] = await Promise.all([
+    getBreweryPhotos(brewery.id),
+    getBreweryProducts(brewery.id),
+  ]);
 
   return (
     <MyBreweryClient
@@ -51,6 +55,7 @@ export default async function MyBreweryPage() {
         businessNumber: brewery.businessNumber,
       }}
       photos={photos}
+      products={products}
     />
   );
 }
