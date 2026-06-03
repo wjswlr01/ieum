@@ -680,12 +680,14 @@ model BreweryPhoto {
   originalPath String
   caption      String?
   isPrimary    Boolean @default(false)
+  sortOrder    Int     @default(0)
 
   uploadedById String
   uploadedBy   User     @relation(fields: [uploadedById], references: [id])
   uploadedAt   DateTime @default(now())
 
   @@index([breweryId])
+  @@index([breweryId, sortOrder])
   @@index([uploadedById])
 }
 

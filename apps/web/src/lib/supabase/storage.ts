@@ -1,6 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const BUCKET = "batch-photos";
 const SIGNED_URL_EXPIRES_SEC = 60 * 60 * 24; // 24h — 페이지 로드마다 새로 발급
 
 const useTransform = process.env.USE_IMAGE_TRANSFORM !== "false";
@@ -22,18 +21,22 @@ function getClient(): SupabaseClient {
 }
 
 export async function uploadPhoto(
+  bucket: string,
   path: string,
   body: ArrayBuffer | Buffer,
   contentType: string
 ): Promise<void> {
   const { error } = await getClient()
-    .storage.from(BUCKET)
+    .storage.from(bucket)
     .upload(path, body, { contentType, upsert: false });
   if (error) throw error;
 }
 
-export async function deletePhotoFromStorage(path: string): Promise<void> {
-  const { error } = await getClient().storage.from(BUCKET).remove([path]);
+export async function deletePhotoFromStorage(
+  bucket: string,
+  path: string
+): Promise<void> {
+  const { error } = await getClient().storage.from(bucket).remove([path]);
   if (error) throw error;
 }
 
@@ -44,13 +47,17 @@ const TRANSFORM_OPTS: Record<Size, { width: number; height?: number; quality: nu
   full: { width: 1920, quality: 90 },
 };
 
-export async function getPhotoUrl(path: string, size: Size): Promise<string> {
+export async function getPhotoUrl(
+  bucket: string,
+  path: string,
+  size: Size
+): Promise<string> {
   const client = getClient();
 
   if (useTransform) {
     try {
       const opts = TRANSFORM_OPTS[size];
-      const { data, error } = await client.storage.from(BUCKET).createSignedUrl(
+      const { data, error } = await client.storage.from(bucket).createSignedUrl(
         path,
         SIGNED_URL_EXPIRES_SEC,
         {
@@ -71,7 +78,7 @@ export async function getPhotoUrl(path: string, size: Size): Promise<string> {
 
   // 폴백: transform 없이 원본 signed URL
   const { data, error } = await client.storage
-    .from(BUCKET)
+    .from(bucket)
     .createSignedUrl(path, SIGNED_URL_EXPIRES_SEC);
   if (error || !data?.signedUrl) {
     throw new Error(`signed URL 생성 실패: ${error?.message ?? "unknown"}`);

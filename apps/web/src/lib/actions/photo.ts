@@ -62,8 +62,8 @@ export async function getPhotosByBatch(batchId: string): Promise<PhotoWithUrls[]
         let fullUrl = "";
         try {
           [thumbUrl, fullUrl] = await Promise.all([
-            getPhotoUrl(p.originalPath, "thumb"),
-            getPhotoUrl(p.originalPath, "full"),
+            getPhotoUrl("batch-photos", p.originalPath, "thumb"),
+            getPhotoUrl("batch-photos", p.originalPath, "full"),
           ]);
         } catch (e) {
           console.error("[photo] signed URL 생성 실패:", p.id, e);
@@ -164,7 +164,7 @@ export async function createPhoto(formData: FormData): Promise<CreatePhotoResult
     const buffer = await file.arrayBuffer();
 
     try {
-      await uploadPhoto(storagePath, buffer, file.type);
+      await uploadPhoto("batch-photos", storagePath, buffer, file.type);
     } catch (e) {
       console.error("[photo] Storage 업로드 실패:", e);
       return { success: false, error: "Storage 업로드 실패" };
@@ -191,7 +191,7 @@ export async function createPhoto(formData: FormData): Promise<CreatePhotoResult
       // DB 실패 시 Storage 정리
       console.error("[photo] DB 생성 실패, Storage 롤백:", e);
       try {
-        await deletePhotoFromStorage(storagePath);
+        await deletePhotoFromStorage("batch-photos", storagePath);
       } catch (cleanup) {
         console.error("[photo] Storage 롤백 실패:", cleanup);
       }
@@ -230,7 +230,7 @@ export async function deletePhoto(photoId: string): Promise<DeletePhotoResult> {
 
     // Storage 먼저 삭제 시도 (실패해도 DB는 삭제 — orphan은 admin이 수동 정리)
     try {
-      await deletePhotoFromStorage(photo.originalPath);
+      await deletePhotoFromStorage("batch-photos", photo.originalPath);
     } catch (e) {
       console.error("[photo] Storage 삭제 실패 (DB는 계속 삭제):", e);
     }

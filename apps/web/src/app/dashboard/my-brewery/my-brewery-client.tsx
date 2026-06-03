@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import type { BreweryPhotoItem } from "@/lib/actions/brewery-photo";
 import BasicInfoTab from "./basic-info-tab";
+import PhotosTab from "./photos-tab";
 
 export type MyBreweryData = {
   id: string;
@@ -25,14 +27,19 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "photos", label: "사진" },
 ];
 
-const PLACEHOLDER_PHASE: Record<Exclude<TabKey, "basic">, string> = {
+const PLACEHOLDER_PHASE: Record<Exclude<TabKey, "basic" | "photos">, string> = {
   products: "Phase 5-B-3에서 구현 예정",
   tour: "Phase 5-B-4에서 구현 예정",
   tasting: "Phase 5-B-4에서 구현 예정",
-  photos: "Phase 5-B-2에서 구현 예정",
 };
 
-export default function MyBreweryClient({ brewery }: { brewery: MyBreweryData }) {
+export default function MyBreweryClient({
+  brewery,
+  photos,
+}: {
+  brewery: MyBreweryData;
+  photos: BreweryPhotoItem[];
+}) {
   const [tab, setTab] = useState<TabKey>("basic");
   const [toast, setToast] = useState<string | null>(null);
 
@@ -77,6 +84,12 @@ export default function MyBreweryClient({ brewery }: { brewery: MyBreweryData })
 
       {tab === "basic" ? (
         <BasicInfoTab brewery={brewery} onSaved={showToast} />
+      ) : tab === "photos" ? (
+        <PhotosTab
+          breweryId={brewery.id}
+          initialPhotos={photos}
+          onToast={showToast}
+        />
       ) : (
         <PlaceholderTab message={PLACEHOLDER_PHASE[tab]} />
       )}

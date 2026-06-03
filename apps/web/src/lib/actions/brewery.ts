@@ -381,7 +381,9 @@ export async function getBreweryById(
     where: { id },
     include: {
       products: { orderBy: { createdAt: "asc" } },
-      photos: { orderBy: [{ isPrimary: "desc" }, { uploadedAt: "desc" }] },
+      photos: {
+        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }, { uploadedAt: "desc" }],
+      },
       reviews: {
         orderBy: { createdAt: "desc" },
         include: { author: { select: { id: true, name: true } } },

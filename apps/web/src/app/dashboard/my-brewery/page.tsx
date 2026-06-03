@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getBreweryPhotos } from "@/lib/actions/brewery-photo";
 import MyBreweryClient from "./my-brewery-client";
 import NoBreweryView from "./no-brewery-view";
 
@@ -34,6 +35,8 @@ export default async function MyBreweryPage() {
     return <NoBreweryView />;
   }
 
+  const photos = await getBreweryPhotos(brewery.id);
+
   return (
     <MyBreweryClient
       brewery={{
@@ -47,6 +50,7 @@ export default async function MyBreweryPage() {
         website: brewery.website,
         businessNumber: brewery.businessNumber,
       }}
+      photos={photos}
     />
   );
 }
