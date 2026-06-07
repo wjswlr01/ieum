@@ -118,6 +118,7 @@ export async function getBreweries(
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
+  try {
   const limit = Math.min(Math.max(params.limit ?? 50, 1), 1000);
   const offset = Math.max(params.offset ?? 0, 0);
   const sortBy: GetBreweriesParams["sortBy"] = params.sortBy ?? "name";
@@ -238,6 +239,10 @@ export async function getBreweries(
     total,
     hasMore: total > offset + limit,
   };
+  } catch (e) {
+    console.error("[brewery] getBreweries 실패:", e);
+    return { breweries: [], total: 0, hasMore: false };
+  }
 }
 
 // ── getBreweriesForMap ───────────────────────────────────────────────────────
@@ -401,6 +406,7 @@ export async function getBreweryById(
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
+  try {
   const brewery = await db.brewery.findUnique({
     where: { id },
     include: {
@@ -497,6 +503,10 @@ export async function getBreweryById(
   };
 
   return { brewery: detail };
+  } catch (e) {
+    console.error("[brewery] getBreweryById 실패:", e);
+    return { brewery: null };
+  }
 }
 
 // ── getFavorites ─────────────────────────────────────────────────────────────
@@ -505,6 +515,7 @@ export async function getFavorites(): Promise<{ favorites: BreweryCard[] }> {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
+  try {
   const favorites = await db.breweryFavorite.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
@@ -574,6 +585,10 @@ export async function getFavorites(): Promise<{ favorites: BreweryCard[] }> {
   });
 
   return { favorites: cards };
+  } catch (e) {
+    console.error("[brewery] getFavorites 실패:", e);
+    return { favorites: [] };
+  }
 }
 
 // ── toggleFavorite ───────────────────────────────────────────────────────────

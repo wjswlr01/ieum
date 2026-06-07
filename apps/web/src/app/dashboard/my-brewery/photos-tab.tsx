@@ -58,8 +58,8 @@ export default function PhotosTab({
         const fd = new FormData();
         fd.append("file", file);
         const res = await uploadBreweryPhoto(breweryId, fd);
-        if (!res.success) {
-          onToast(res.error);
+        if (!res?.success) {
+          onToast(res?.error ?? "업로드에 실패했습니다. 파일 크기를 확인해주세요.");
           break;
         }
         setPhotos((prev) => [...prev, res.photo]);
@@ -74,8 +74,8 @@ export default function PhotosTab({
     if (!window.confirm("이 사진을 삭제하시겠습니까?")) return;
     startTransition(async () => {
       const res = await deleteBreweryPhoto(photoId);
-      if (!res.success) {
-        onToast(res.error);
+      if (!res?.success) {
+        onToast(res?.error ?? "삭제 중 오류가 발생했습니다.");
         return;
       }
       setPhotos((prev) => {
@@ -98,8 +98,8 @@ export default function PhotosTab({
   const handleSetPrimary = (photoId: string) => {
     startTransition(async () => {
       const res = await setPrimaryBreweryPhoto(photoId);
-      if (!res.success) {
-        onToast(res.error);
+      if (!res?.success) {
+        onToast(res?.error ?? "대표 사진 지정 중 오류가 발생했습니다.");
         return;
       }
       setPhotos((prev) =>
@@ -113,8 +113,8 @@ export default function PhotosTab({
   const persistOrder = (orderedIds: string[]) => {
     startTransition(async () => {
       const res = await reorderBreweryPhotos(breweryId, orderedIds);
-      if (!res.success) {
-        onToast(res.error);
+      if (!res?.success) {
+        onToast(res?.error ?? "순서 변경 중 오류가 발생했습니다.");
         refreshPhotos();
         return;
       }

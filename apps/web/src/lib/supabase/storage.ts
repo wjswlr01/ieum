@@ -4,6 +4,9 @@ const SIGNED_URL_EXPIRES_SEC = 60 * 60 * 24; // 24h — 페이지 로드마다 �
 
 const useTransform = process.env.USE_IMAGE_TRANSFORM !== "false";
 
+// public bucket URL 합성용. SDK 의존 제거로 throw 위험 0.
+const PUBLIC_BASE = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+
 let cached: SupabaseClient | null = null;
 
 function getClient(): SupabaseClient {
@@ -48,27 +51,23 @@ const TRANSFORM_OPTS: Record<Size, { width: number; height?: number; quality: nu
 };
 
 // public bucket(brewery-photos)용 동기 헬퍼.
+// SDK(getClient/getPublicUrl) 의존 없이 직접 URL 합성 — throw 위험 0.
 // path가 http(s)로 시작하면 외부 URL로 간주하고 그대로 반환 (향후 외부 URL seed 대비 안전망).
 export function getPublicPhotoUrl(bucket: string, path: string, size: Size): string {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (!PUBLIC_BASE) return "";
 
-  const client = getClient();
   const opts = TRANSFORM_OPTS[size];
-
-  const { data } = client.storage.from(bucket).getPublicUrl(
-    path,
-    useTransform
-      ? {
-          transform: {
-            width: opts.width,
-            ...(opts.height ? { height: opts.height } : {}),
-            quality: opts.quality,
-            ...(opts.resize ? { resize: opts.resize } : {}),
-          },
-        }
-      : undefined,
-  );
-  return data.publicUrl;
+  if (!useTransform) {
+    return `${PUBLIC_BASE}/storage/v1/object/public/${bucket}/${path}`;
+  }
+  const qs = new URLSearchParams({
+    width: String(opts.width),
+    ...(opts.height ? { height: String(opts.height) } : {}),
+    quality: String(opts.quality),
+    ...(opts.resize ? { resize: opts.resize } : {}),
+  });
+  return `${PUBLIC_BASE}/storage/v1/render/image/public/${bucket}/${path}?${qs.toString()}`;
 }
 
 export async function getPhotoUrl(

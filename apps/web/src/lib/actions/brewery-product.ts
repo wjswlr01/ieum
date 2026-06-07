@@ -205,27 +205,32 @@ async function uploadImageIfPresent(
 export async function getBreweryProducts(
   breweryId: string,
 ): Promise<BreweryProductItem[]> {
-  const { brewery } = await requireBreweryAccess(breweryId);
-  const rows = await db.breweryProduct.findMany({
-    where: { breweryId: brewery.id },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      brewType: true,
-      alcoholContent: true,
-      volume: true,
-      price: true,
-      imagePath: true,
-      features: true,
-      ingredients: true,
-      isAvailable: true,
-      sortOrder: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-  return toItems(rows);
+  try {
+    const { brewery } = await requireBreweryAccess(breweryId);
+    const rows = await db.breweryProduct.findMany({
+      where: { breweryId: brewery.id },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        brewType: true,
+        alcoholContent: true,
+        volume: true,
+        price: true,
+        imagePath: true,
+        features: true,
+        ingredients: true,
+        isAvailable: true,
+        sortOrder: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return toItems(rows);
+  } catch (e) {
+    console.error("[brewery-product] getBreweryProducts 실패:", e);
+    return [];
+  }
 }
 
 // ── 생성 ─────────────────────────────────────────────────────────────────────

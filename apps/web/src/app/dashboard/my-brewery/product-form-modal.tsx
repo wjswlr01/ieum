@@ -180,8 +180,8 @@ export default function ProductFormModal(props: Props) {
       const res = mode === "create"
         ? await createBreweryProduct(breweryId, fd)
         : await updateBreweryProduct(initialProduct!.id, fd);
-      if (!res.success) {
-        setError(res.error);
+      if (!res?.success) {
+        setError(res?.error ?? "저장에 실패했습니다. 사진 크기를 확인해주세요.");
         return;
       }
       onSuccess(res.product);

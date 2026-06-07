@@ -65,20 +65,25 @@ function withPhotoUrls(
 // ── 조회 ─────────────────────────────────────────────────────────────────────
 
 export async function getBreweryPhotos(breweryId: string): Promise<BreweryPhotoItem[]> {
-  const { brewery } = await requireBreweryAccess(breweryId);
-  const rows = await db.breweryPhoto.findMany({
-    where: { breweryId: brewery.id },
-    orderBy: [{ sortOrder: "asc" }, { uploadedAt: "desc" }],
-    select: {
-      id: true,
-      originalPath: true,
-      caption: true,
-      isPrimary: true,
-      sortOrder: true,
-      uploadedAt: true,
-    },
-  });
-  return withPhotoUrls(rows);
+  try {
+    const { brewery } = await requireBreweryAccess(breweryId);
+    const rows = await db.breweryPhoto.findMany({
+      where: { breweryId: brewery.id },
+      orderBy: [{ sortOrder: "asc" }, { uploadedAt: "desc" }],
+      select: {
+        id: true,
+        originalPath: true,
+        caption: true,
+        isPrimary: true,
+        sortOrder: true,
+        uploadedAt: true,
+      },
+    });
+    return withPhotoUrls(rows);
+  } catch (e) {
+    console.error("[brewery-photo] getBreweryPhotos 실패:", e);
+    return [];
+  }
 }
 
 // ── 업로드 ───────────────────────────────────────────────────────────────────

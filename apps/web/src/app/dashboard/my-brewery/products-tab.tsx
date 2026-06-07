@@ -64,8 +64,8 @@ export default function ProductsTab({
     if (!window.confirm(`"${product.name}" 제품을 삭제하시겠습니까?`)) return;
     startTransition(async () => {
       const res = await deleteBreweryProduct(product.id);
-      if (!res.success) {
-        onToast(res.error);
+      if (!res?.success) {
+        onToast(res?.error ?? "삭제 중 오류가 발생했습니다.");
         return;
       }
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
@@ -77,8 +77,8 @@ export default function ProductsTab({
   const persistOrder = (orderedIds: string[]) => {
     startTransition(async () => {
       const res = await reorderBreweryProducts(breweryId, orderedIds);
-      if (!res.success) {
-        onToast(res.error);
+      if (!res?.success) {
+        onToast(res?.error ?? "순서 변경 중 오류가 발생했습니다.");
         refreshProducts();
         return;
       }
