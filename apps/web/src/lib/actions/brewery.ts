@@ -8,6 +8,9 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@ieum/db";
 import type { BrewType } from "@ieum/db";
 import { requireBreweryAccess } from "@/lib/brewery-access";
+import { getPublicPhotoUrl } from "@/lib/supabase/storage";
+
+const PHOTO_BUCKET = "brewery-photos";
 
 // ── 공통 타입 ────────────────────────────────────────────────────────────────
 
@@ -28,7 +31,7 @@ export type BreweryCard = {
     brewType: BrewType | null;
     alcoholContent: number | null;
   }>;
-  primaryPhoto: { id: string; originalPath: string } | null;
+  primaryPhotoUrl: string | null;
   averageRating: number | null;
   reviewCount: number;
   favoriteCount: number;
@@ -221,8 +224,8 @@ export async function getBreweries(
       brewType: p.brewType,
       alcoholContent: p.alcoholContent,
     })),
-    primaryPhoto: b.photos[0]
-      ? { id: b.photos[0].id, originalPath: b.photos[0].originalPath }
+    primaryPhotoUrl: b.photos[0]
+      ? getPublicPhotoUrl(PHOTO_BUCKET, b.photos[0].originalPath, "thumb")
       : null,
     averageRating: ratingMap.get(b.id) ?? null,
     reviewCount: reviewCountMap.get(b.id) ?? 0,
@@ -361,6 +364,7 @@ export type BreweryDetail = {
     volume: string | null;
     price: number | null;
     imagePath: string | null;
+    imageUrl: string | null;
     sortOrder: number;
     ingredients: string | null;
     features: string | null;
@@ -373,6 +377,8 @@ export type BreweryDetail = {
     caption: string | null;
     isPrimary: boolean;
     uploadedAt: Date;
+    thumbUrl: string;
+    fullUrl: string;
   }>;
   reviews: Array<{
     id: string;
@@ -456,6 +462,9 @@ export async function getBreweryById(
       volume: p.volume,
       price: p.price,
       imagePath: p.imagePath,
+      imageUrl: p.imagePath
+        ? getPublicPhotoUrl(PHOTO_BUCKET, p.imagePath, "thumb")
+        : null,
       sortOrder: p.sortOrder,
       ingredients: p.ingredients,
       features: p.features,
@@ -468,6 +477,8 @@ export async function getBreweryById(
       caption: ph.caption,
       isPrimary: ph.isPrimary,
       uploadedAt: ph.uploadedAt,
+      thumbUrl: getPublicPhotoUrl(PHOTO_BUCKET, ph.originalPath, "thumb"),
+      fullUrl: getPublicPhotoUrl(PHOTO_BUCKET, ph.originalPath, "full"),
     })),
     reviews: brewery.reviews.map((r) => ({
       id: r.id,
@@ -552,8 +563,8 @@ export async function getFavorites(): Promise<{ favorites: BreweryCard[] }> {
         brewType: p.brewType,
         alcoholContent: p.alcoholContent,
       })),
-      primaryPhoto: b.photos[0]
-        ? { id: b.photos[0].id, originalPath: b.photos[0].originalPath }
+      primaryPhotoUrl: b.photos[0]
+        ? getPublicPhotoUrl(PHOTO_BUCKET, b.photos[0].originalPath, "thumb")
         : null,
       averageRating: ratingMap.get(b.id) ?? null,
       reviewCount: reviewCountMap.get(b.id) ?? 0,

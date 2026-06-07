@@ -169,8 +169,17 @@ function BreweryDetailContent({
                   key={p.id}
                   className="overflow-hidden rounded-xl border border-brew-border bg-white"
                 >
-                  <div className="flex aspect-square items-center justify-center bg-stone-100">
-                    <span className="text-2xl">🍶</span>
+                  <div className="relative flex aspect-square items-center justify-center bg-stone-100">
+                    {p.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.imageUrl}
+                        alt={p.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl">🍶</span>
+                    )}
                   </div>
                   <div className="p-2.5">
                     <p className="truncate text-xs font-medium text-brew-text">

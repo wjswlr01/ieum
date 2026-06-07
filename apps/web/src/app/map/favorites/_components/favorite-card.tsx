@@ -20,7 +20,7 @@ export default function FavoriteCard({
   }, [card.products]);
 
   const regionText = card.city ? `${card.region} ${card.city}` : card.region;
-  const photoUrl = card.primaryPhoto?.originalPath ?? null;
+  const photoUrl = card.primaryPhotoUrl;
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-brew-border bg-white transition hover:border-brew-accent hover:shadow-md">

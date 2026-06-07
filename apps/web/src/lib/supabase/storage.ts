@@ -47,6 +47,30 @@ const TRANSFORM_OPTS: Record<Size, { width: number; height?: number; quality: nu
   full: { width: 1920, quality: 90 },
 };
 
+// public bucket(brewery-photos)용 동기 헬퍼.
+// path가 http(s)로 시작하면 외부 URL로 간주하고 그대로 반환 (향후 외부 URL seed 대비 안전망).
+export function getPublicPhotoUrl(bucket: string, path: string, size: Size): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+
+  const client = getClient();
+  const opts = TRANSFORM_OPTS[size];
+
+  const { data } = client.storage.from(bucket).getPublicUrl(
+    path,
+    useTransform
+      ? {
+          transform: {
+            width: opts.width,
+            ...(opts.height ? { height: opts.height } : {}),
+            quality: opts.quality,
+            ...(opts.resize ? { resize: opts.resize } : {}),
+          },
+        }
+      : undefined,
+  );
+  return data.publicUrl;
+}
+
 export async function getPhotoUrl(
   bucket: string,
   path: string,

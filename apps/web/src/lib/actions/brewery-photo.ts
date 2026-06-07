@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import {
   uploadPhoto,
   deletePhotoFromStorage,
-  getPhotoUrl,
+  getPublicPhotoUrl,
 } from "@/lib/supabase/storage";
 import {
   requireBreweryAccess,
@@ -40,7 +40,7 @@ function safeExt(filename: string): string {
   return ALLOWED_EXT.has(ext) ? ext : "jpg";
 }
 
-async function withSignedUrls(
+function withPhotoUrls(
   rows: Array<{
     id: string;
     originalPath: string;
@@ -49,31 +49,17 @@ async function withSignedUrls(
     sortOrder: number;
     uploadedAt: Date;
   }>,
-): Promise<BreweryPhotoItem[]> {
-  return Promise.all(
-    rows.map(async (p) => {
-      let thumbUrl = "";
-      let fullUrl = "";
-      try {
-        [thumbUrl, fullUrl] = await Promise.all([
-          getPhotoUrl(BUCKET, p.originalPath, "thumb"),
-          getPhotoUrl(BUCKET, p.originalPath, "full"),
-        ]);
-      } catch (e) {
-        console.error("[brewery-photo] signed URL 생성 실패:", p.id, e);
-      }
-      return {
-        id: p.id,
-        originalPath: p.originalPath,
-        caption: p.caption,
-        isPrimary: p.isPrimary,
-        sortOrder: p.sortOrder,
-        uploadedAt: p.uploadedAt,
-        thumbUrl,
-        fullUrl,
-      };
-    }),
-  );
+): BreweryPhotoItem[] {
+  return rows.map((p) => ({
+    id: p.id,
+    originalPath: p.originalPath,
+    caption: p.caption,
+    isPrimary: p.isPrimary,
+    sortOrder: p.sortOrder,
+    uploadedAt: p.uploadedAt,
+    thumbUrl: getPublicPhotoUrl(BUCKET, p.originalPath, "thumb"),
+    fullUrl: getPublicPhotoUrl(BUCKET, p.originalPath, "full"),
+  }));
 }
 
 // ── 조회 ─────────────────────────────────────────────────────────────────────
@@ -92,7 +78,7 @@ export async function getBreweryPhotos(breweryId: string): Promise<BreweryPhotoI
       uploadedAt: true,
     },
   });
-  return withSignedUrls(rows);
+  return withPhotoUrls(rows);
 }
 
 // ── 업로드 ───────────────────────────────────────────────────────────────────
@@ -185,7 +171,7 @@ export async function uploadBreweryPhoto(
     revalidatePath(`/map/brewery/${ctx.brewery.id}`);
     revalidatePath("/map");
 
-    const items = await withSignedUrls([created]);
+    const items = withPhotoUrls([created]);
     const item = items[0];
     if (!item) return { success: false, error: "사진 정보 생성 실패" };
     return { success: true, photo: item };

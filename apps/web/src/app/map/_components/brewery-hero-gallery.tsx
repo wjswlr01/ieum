@@ -1,6 +1,7 @@
 type Photo = {
   id: string;
-  originalPath: string;
+  thumbUrl: string;
+  fullUrl: string;
   caption: string | null;
 };
 
@@ -27,7 +28,7 @@ export default function BreweryHeroGallery({ photos, alt }: Props) {
       <div className="relative col-span-2 overflow-hidden rounded-xl bg-stone-200">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={hero.originalPath}
+          src={hero.fullUrl}
           alt={hero.caption ?? alt}
           className="h-full w-full object-cover"
         />
@@ -44,7 +45,7 @@ export default function BreweryHeroGallery({ photos, alt }: Props) {
               {photo && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={photo.originalPath}
+                  src={photo.thumbUrl}
                   alt={photo.caption ?? alt}
                   className="h-full w-full object-cover"
                 />

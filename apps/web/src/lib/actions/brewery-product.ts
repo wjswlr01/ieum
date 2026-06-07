@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import {
   uploadPhoto,
   deletePhotoFromStorage,
-  getPhotoUrl,
+  getPublicPhotoUrl,
 } from "@/lib/supabase/storage";
 import {
   requireBreweryAccess,
@@ -60,14 +60,9 @@ function safeExt(filename: string): string {
   return ALLOWED_EXT.has(ext) ? ext : "jpg";
 }
 
-async function signImageUrl(path: string | null): Promise<string | null> {
+function productImageUrl(path: string | null): string | null {
   if (!path) return null;
-  try {
-    return await getPhotoUrl(BUCKET, path, "thumb");
-  } catch (e) {
-    console.error("[brewery-product] signed URL 생성 실패:", path, e);
-    return null;
-  }
+  return getPublicPhotoUrl(BUCKET, path, "thumb");
 }
 
 type ProductRow = {
@@ -86,25 +81,23 @@ type ProductRow = {
   updatedAt: Date;
 };
 
-async function toItems(rows: ProductRow[]): Promise<BreweryProductItem[]> {
-  return Promise.all(
-    rows.map(async (p) => ({
-      id: p.id,
-      name: p.name,
-      brewType: p.brewType,
-      alcoholContent: p.alcoholContent,
-      volume: p.volume,
-      price: p.price,
-      imagePath: p.imagePath,
-      imageUrl: await signImageUrl(p.imagePath),
-      features: p.features,
-      ingredients: p.ingredients,
-      isAvailable: p.isAvailable,
-      sortOrder: p.sortOrder,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-    })),
-  );
+function toItems(rows: ProductRow[]): BreweryProductItem[] {
+  return rows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    brewType: p.brewType,
+    alcoholContent: p.alcoholContent,
+    volume: p.volume,
+    price: p.price,
+    imagePath: p.imagePath,
+    imageUrl: productImageUrl(p.imagePath),
+    features: p.features,
+    ingredients: p.ingredients,
+    isAvailable: p.isAvailable,
+    sortOrder: p.sortOrder,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+  }));
 }
 
 // ── 입력 파싱/검증 ───────────────────────────────────────────────────────────
@@ -307,7 +300,7 @@ export async function createBreweryProduct(
     revalidatePath(`/map/brewery/${ctx.brewery.id}`);
     revalidatePath("/map");
 
-    const items = await toItems([created]);
+    const items = toItems([created]);
     const item = items[0];
     if (!item) return { success: false, error: "제품 정보 생성 실패" };
     return { success: true, product: item };
@@ -407,7 +400,7 @@ export async function updateBreweryProduct(
     revalidatePath(`/map/brewery/${ctx.brewery.id}`);
     revalidatePath("/map");
 
-    const items = await toItems([updated]);
+    const items = toItems([updated]);
     const item = items[0];
     if (!item) return { success: false, error: "제품 정보 갱신 실패" };
     return { success: true, product: item };
