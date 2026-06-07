@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import {
-  uploadPhoto,
   deletePhotoFromStorage,
   getPublicPhotoUrl,
+  createSignedUploadUrl,
 } from "@/lib/supabase/storage";
 import {
   requireBreweryAccess,
@@ -86,16 +86,20 @@ export async function getBreweryPhotos(breweryId: string): Promise<BreweryPhotoI
   }
 }
 
-// ── 업로드 ───────────────────────────────────────────────────────────────────
+// ── 업로드 (2-step: signed URL 발급 → 클라이언트 직접 업로드 → DB commit) ────
 
-export type UploadBreweryPhotoResult =
-  | { success: true; photo: BreweryPhotoItem }
+// Vercel Serverless Function payload 제한(~4.5MB) 우회용. 큰 사진은 Vercel을 안 거치고
+// 브라우저 → Supabase Storage 직접 업로드. NextAuth 세션은 1단계(URL 발급)에서 게이트.
+
+export type CreateUploadUrlResult =
+  | { success: true; signedUrl: string; token: string; path: string }
   | { success: false; error: string };
 
-export async function uploadBreweryPhoto(
+export async function createBreweryPhotoUploadUrl(
   breweryId: string,
-  formData: FormData,
-): Promise<UploadBreweryPhotoResult> {
+  fileName: string,
+  fileType: string,
+): Promise<CreateUploadUrlResult> {
   let ctx;
   try {
     ctx = await requireBreweryAccess(breweryId);
@@ -104,14 +108,8 @@ export async function uploadBreweryPhoto(
   }
 
   try {
-    const file = formData.get("file");
-    if (!(file instanceof File)) return { success: false, error: "파일이 없습니다." };
-    if (file.size === 0) return { success: false, error: "빈 파일입니다." };
-    if (file.size > MAX_FILE_SIZE) {
-      return { success: false, error: "파일이 너무 큽니다 (최대 10MB)." };
-    }
-    if (!ALLOWED_MIME.has(file.type)) {
-      return { success: false, error: `지원하지 않는 파일 형식: ${file.type || "unknown"}` };
+    if (typeof fileType !== "string" || !ALLOWED_MIME.has(fileType)) {
+      return { success: false, error: `지원하지 않는 파일 형식: ${fileType || "unknown"}` };
     }
 
     const count = await db.breweryPhoto.count({ where: { breweryId: ctx.brewery.id } });
@@ -119,7 +117,7 @@ export async function uploadBreweryPhoto(
       return { success: false, error: `최대 ${MAX_PHOTOS}장까지 업로드할 수 있습니다.` };
     }
 
-    const ext = safeExt(file.name);
+    const ext = safeExt(fileName);
     const filename = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
     const storagePath = `${ctx.brewery.id}/${filename}`;
 
@@ -127,13 +125,41 @@ export async function uploadBreweryPhoto(
       return { success: false, error: "Storage 경로 검증 실패" };
     }
 
-    const buffer = await file.arrayBuffer();
+    const { signedUrl, token, path } = await createSignedUploadUrl(BUCKET, storagePath);
+    return { success: true, signedUrl, token, path };
+  } catch (e) {
+    console.error("[brewery-photo] createBreweryPhotoUploadUrl 실패:", e);
+    return { success: false, error: "업로드 URL 생성 실패" };
+  }
+}
 
-    try {
-      await uploadPhoto(BUCKET, storagePath, buffer, file.type);
-    } catch (e) {
-      console.error("[brewery-photo] Storage 업로드 실패:", e);
-      return { success: false, error: "Storage 업로드 실패" };
+export type CommitBreweryPhotoResult =
+  | { success: true; photo: BreweryPhotoItem }
+  | { success: false; error: string };
+
+export async function commitBreweryPhoto(
+  breweryId: string,
+  path: string,
+): Promise<CommitBreweryPhotoResult> {
+  let ctx;
+  try {
+    ctx = await requireBreweryAccess(breweryId);
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
+  }
+
+  try {
+    // path squat 방지: 반드시 <breweryId>/ 로 시작
+    if (typeof path !== "string" || !path.startsWith(`${ctx.brewery.id}/`)) {
+      return { success: false, error: "잘못된 경로입니다." };
+    }
+    if (/[^\x00-\x7F]/.test(path) || /\s/.test(path)) {
+      return { success: false, error: "Storage 경로 검증 실패" };
+    }
+
+    const count = await db.breweryPhoto.count({ where: { breweryId: ctx.brewery.id } });
+    if (count >= MAX_PHOTOS) {
+      return { success: false, error: `최대 ${MAX_PHOTOS}장까지 업로드할 수 있습니다.` };
     }
 
     const isPrimary = count === 0;
@@ -148,7 +174,7 @@ export async function uploadBreweryPhoto(
       created = await db.breweryPhoto.create({
         data: {
           breweryId: ctx.brewery.id,
-          originalPath: storagePath,
+          originalPath: path,
           isPrimary,
           sortOrder: nextSortOrder,
           uploadedById: ctx.userId,
@@ -163,12 +189,8 @@ export async function uploadBreweryPhoto(
         },
       });
     } catch (e) {
-      console.error("[brewery-photo] DB 생성 실패, Storage 롤백:", e);
-      try {
-        await deletePhotoFromStorage(BUCKET, storagePath);
-      } catch (cleanup) {
-        console.error("[brewery-photo] Storage 롤백 실패:", cleanup);
-      }
+      // originalPath @unique 위반(중복 commit) 또는 기타 DB 오류
+      console.error("[brewery-photo] commit DB 실패:", e);
       return { success: false, error: "사진 정보 저장 실패" };
     }
 
@@ -181,8 +203,37 @@ export async function uploadBreweryPhoto(
     if (!item) return { success: false, error: "사진 정보 생성 실패" };
     return { success: true, photo: item };
   } catch (e) {
-    console.error("[brewery-photo] uploadBreweryPhoto 실패:", e);
-    return { success: false, error: "사진 업로드 중 오류가 발생했습니다." };
+    console.error("[brewery-photo] commitBreweryPhoto 실패:", e);
+    return { success: false, error: "사진 저장 중 오류가 발생했습니다." };
+  }
+}
+
+// 클라이언트 best-effort 클린업용 (commit 실패 시 호출)
+export type AbortBreweryPhotoResult =
+  | { success: true }
+  | { success: false; error: string };
+
+export async function abortBreweryPhotoUpload(
+  breweryId: string,
+  path: string,
+): Promise<AbortBreweryPhotoResult> {
+  let ctx;
+  try {
+    ctx = await requireBreweryAccess(breweryId);
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
+  }
+
+  if (typeof path !== "string" || !path.startsWith(`${ctx.brewery.id}/`)) {
+    return { success: false, error: "잘못된 경로입니다." };
+  }
+
+  try {
+    await deletePhotoFromStorage(BUCKET, path);
+    return { success: true };
+  } catch (e) {
+    console.error("[brewery-photo] abort 클린업 실패:", e);
+    return { success: false, error: "클린업 실패" };
   }
 }
 

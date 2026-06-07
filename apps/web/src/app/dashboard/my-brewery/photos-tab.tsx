@@ -2,13 +2,23 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import imageCompression from "browser-image-compression";
 import {
-  uploadBreweryPhoto,
+  createBreweryPhotoUploadUrl,
+  commitBreweryPhoto,
+  abortBreweryPhotoUpload,
   deleteBreweryPhoto,
   setPrimaryBreweryPhoto,
   reorderBreweryPhotos,
   type BreweryPhotoItem,
 } from "@/lib/actions/brewery-photo";
+
+const COMPRESS_OPTS = {
+  maxSizeMB: 1,
+  maxWidthOrHeight: 1920,
+  useWebWorker: true,
+  preserveExif: false,
+};
 
 const MAX_PHOTOS = 12;
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,image/webp";
@@ -54,20 +64,65 @@ export default function PhotosTab({
     if (queue.length === 0) return;
 
     startTransition(async () => {
+      let uploaded = 0;
       for (const file of queue) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await uploadBreweryPhoto(breweryId, fd);
-        if (!res?.success) {
-          onToast(res?.error ?? "업로드에 실패했습니다. 파일 크기를 확인해주세요.");
-          break;
-        }
-        setPhotos((prev) => [...prev, res.photo]);
+        const ok = await uploadOne(file);
+        if (!ok) break;
+        uploaded += 1;
       }
-      onToast("업로드되었습니다");
+      if (uploaded > 0) onToast("업로드되었습니다");
       refreshPhotos();
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // 1) 압축 → 2) signed URL 발급 → 3) Supabase 직접 PUT → 4) DB commit
+  const uploadOne = async (file: File): Promise<boolean> => {
+    let compressed: File;
+    try {
+      compressed = await imageCompression(file, COMPRESS_OPTS);
+    } catch (e) {
+      console.error("[photos-tab] 압축 실패:", e);
+      onToast("사진 압축에 실패했습니다.");
+      return false;
+    }
+
+    const urlRes = await createBreweryPhotoUploadUrl(
+      breweryId,
+      file.name,
+      compressed.type || "image/jpeg",
+    );
+    if (!urlRes?.success) {
+      onToast(urlRes?.error ?? "업로드 URL 생성 실패");
+      return false;
+    }
+
+    let putOk = false;
+    try {
+      const putRes = await fetch(urlRes.signedUrl, {
+        method: "PUT",
+        body: compressed,
+        headers: { "Content-Type": compressed.type || "image/jpeg" },
+      });
+      putOk = putRes.ok;
+    } catch (e) {
+      console.error("[photos-tab] Storage PUT 실패:", e);
+    }
+    if (!putOk) {
+      onToast("Storage 업로드에 실패했습니다.");
+      return false;
+    }
+
+    const commitRes = await commitBreweryPhoto(breweryId, urlRes.path);
+    if (!commitRes?.success) {
+      // best-effort orphan 클린업
+      await abortBreweryPhotoUpload(breweryId, urlRes.path).catch(() => {});
+      onToast(commitRes?.error ?? "사진 저장에 실패했습니다.");
+      return false;
+    }
+
+    setPhotos((prev) => [...prev, commitRes.photo]);
+    return true;
   };
 
   const handleDelete = (photoId: string) => {

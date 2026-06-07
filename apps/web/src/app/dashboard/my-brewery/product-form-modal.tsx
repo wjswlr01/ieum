@@ -2,11 +2,21 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { BrewType } from "@ieum/db";
+import imageCompression from "browser-image-compression";
 import {
   createBreweryProduct,
   updateBreweryProduct,
+  createBreweryProductImageUploadUrl,
+  abortBreweryProductImageUpload,
   type BreweryProductItem,
 } from "@/lib/actions/brewery-product";
+
+const COMPRESS_OPTS = {
+  maxSizeMB: 1,
+  maxWidthOrHeight: 1920,
+  useWebWorker: true,
+  preserveExif: false,
+};
 
 const NAME_MAX = 80;
 const VOLUME_MAX = 30;
@@ -165,23 +175,68 @@ export default function ProductFormModal(props: Props) {
       return;
     }
 
-    const fd = new FormData();
-    fd.append("name", form.name);
-    fd.append("brewType", form.brewType);
-    fd.append("alcoholContent", form.alcoholContent);
-    fd.append("volume", form.volume);
-    fd.append("price", form.price);
-    fd.append("features", form.features);
-    fd.append("ingredients", form.ingredients);
-    if (imageFile) fd.append("image", imageFile);
-    if (mode === "edit" && removeImage) fd.append("removeImage", "true");
-
     startTransition(async () => {
+      // 1) 사진이 새로 선택됐다면: 압축 → signed URL → Supabase 직접 PUT → path 확보
+      let newImagePath: string | null = null;
+      if (imageFile) {
+        let compressed: File;
+        try {
+          compressed = await imageCompression(imageFile, COMPRESS_OPTS);
+        } catch (err) {
+          console.error("[product-modal] 압축 실패:", err);
+          setError("사진 압축에 실패했습니다.");
+          return;
+        }
+
+        const urlRes = await createBreweryProductImageUploadUrl(
+          breweryId,
+          imageFile.name,
+          compressed.type || "image/jpeg",
+        );
+        if (!urlRes?.success) {
+          setError(urlRes?.error ?? "업로드 URL 생성 실패");
+          return;
+        }
+
+        let putOk = false;
+        try {
+          const putRes = await fetch(urlRes.signedUrl, {
+            method: "PUT",
+            body: compressed,
+            headers: { "Content-Type": compressed.type || "image/jpeg" },
+          });
+          putOk = putRes.ok;
+        } catch (err) {
+          console.error("[product-modal] Storage PUT 실패:", err);
+        }
+        if (!putOk) {
+          setError("Storage 업로드에 실패했습니다.");
+          return;
+        }
+        newImagePath = urlRes.path;
+      }
+
+      // 2) 서버 액션: 텍스트 필드 + (있다면) imagePath 만 전송 — file 자체는 안 보냄
+      const fd = new FormData();
+      fd.append("name", form.name);
+      fd.append("brewType", form.brewType);
+      fd.append("alcoholContent", form.alcoholContent);
+      fd.append("volume", form.volume);
+      fd.append("price", form.price);
+      fd.append("features", form.features);
+      fd.append("ingredients", form.ingredients);
+      if (newImagePath) fd.append("imagePath", newImagePath);
+      if (mode === "edit" && removeImage) fd.append("removeImage", "true");
+
       const res = mode === "create"
         ? await createBreweryProduct(breweryId, fd)
         : await updateBreweryProduct(initialProduct!.id, fd);
       if (!res?.success) {
-        setError(res?.error ?? "저장에 실패했습니다. 사진 크기를 확인해주세요.");
+        if (newImagePath) {
+          // best-effort orphan 클린업
+          await abortBreweryProductImageUpload(breweryId, newImagePath).catch(() => {});
+        }
+        setError(res?.error ?? "저장에 실패했습니다.");
         return;
       }
       onSuccess(res.product);

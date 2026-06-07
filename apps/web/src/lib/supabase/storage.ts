@@ -2,7 +2,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const SIGNED_URL_EXPIRES_SEC = 60 * 60 * 24; // 24h — 페이지 로드마다 새로 발급
 
-const useTransform = process.env.USE_IMAGE_TRANSFORM !== "false";
+// 무료 플랜은 image transform 미지원 → 기본 false. Pro 이상에서 env "true"로 켬.
+const useTransform = process.env.USE_IMAGE_TRANSFORM === "true";
 
 // public bucket URL 합성용. SDK 의존 제거로 throw 위험 0.
 const PUBLIC_BASE = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -41,6 +42,21 @@ export async function deletePhotoFromStorage(
 ): Promise<void> {
   const { error } = await getClient().storage.from(bucket).remove([path]);
   if (error) throw error;
+}
+
+// 클라이언트 직접 업로드용 signed upload URL 발급 (서버 전용).
+// 토큰 자체가 인증이라 anon key 불필요. 토큰은 해당 path 전용으로 squat 불가.
+export async function createSignedUploadUrl(
+  bucket: string,
+  path: string,
+): Promise<{ signedUrl: string; token: string; path: string }> {
+  const { data, error } = await getClient()
+    .storage.from(bucket)
+    .createSignedUploadUrl(path);
+  if (error || !data) {
+    throw new Error(`signed upload URL 생성 실패: ${error?.message ?? "unknown"}`);
+  }
+  return { signedUrl: data.signedUrl, token: data.token, path: data.path };
 }
 
 type Size = "thumb" | "full";

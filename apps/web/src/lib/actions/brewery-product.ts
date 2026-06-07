@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import type { BrewType } from "@ieum/db";
 import { db } from "@/lib/db";
 import {
-  uploadPhoto,
   deletePhotoFromStorage,
   getPublicPhotoUrl,
+  createSignedUploadUrl,
 } from "@/lib/supabase/storage";
 import {
   requireBreweryAccess,
@@ -177,27 +177,77 @@ function parseInput(formData: FormData): ParsedInput {
   };
 }
 
-async function uploadImageIfPresent(
-  formData: FormData,
+// 클라이언트가 직접 업로드한 path를 검증 — squat 방지.
+function validateProductImagePath(path: string, breweryId: string): string | null {
+  if (typeof path !== "string" || !path) return null;
+  const prefix = `${breweryId}/products/`;
+  if (!path.startsWith(prefix)) return null;
+  if (/[^\x00-\x7F]/.test(path) || /\s/.test(path)) return null;
+  return path;
+}
+
+// ── signed upload URL 발급 (제품 사진) ───────────────────────────────────────
+// Vercel 함수 payload 제한 우회용. 큰 사진은 브라우저 → Supabase 직접 업로드.
+
+export type CreateProductImageUploadUrlResult =
+  | { success: true; signedUrl: string; token: string; path: string }
+  | { success: false; error: string };
+
+export async function createBreweryProductImageUploadUrl(
   breweryId: string,
-): Promise<string | null> {
-  const file = formData.get("image");
-  if (!(file instanceof File) || file.size === 0) return null;
-  if (file.size > MAX_FILE_SIZE) {
-    throw new Error("썸네일이 너무 큽니다 (최대 10MB).");
+  fileName: string,
+  fileType: string,
+): Promise<CreateProductImageUploadUrlResult> {
+  let ctx;
+  try {
+    ctx = await requireBreweryAccess(breweryId);
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
   }
-  if (!ALLOWED_MIME.has(file.type)) {
-    throw new Error(`지원하지 않는 파일 형식: ${file.type || "unknown"}`);
+
+  try {
+    if (typeof fileType !== "string" || !ALLOWED_MIME.has(fileType)) {
+      return { success: false, error: `지원하지 않는 파일 형식: ${fileType || "unknown"}` };
+    }
+    const ext = safeExt(fileName);
+    const filename = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const storagePath = `${ctx.brewery.id}/products/${filename}`;
+    if (/[^\x00-\x7F]/.test(storagePath) || /\s/.test(storagePath)) {
+      return { success: false, error: "Storage 경로 검증 실패" };
+    }
+
+    const { signedUrl, token, path } = await createSignedUploadUrl(BUCKET, storagePath);
+    return { success: true, signedUrl, token, path };
+  } catch (e) {
+    console.error("[brewery-product] createBreweryProductImageUploadUrl 실패:", e);
+    return { success: false, error: "업로드 URL 생성 실패" };
   }
-  const ext = safeExt(file.name);
-  const filename = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
-  const storagePath = `${breweryId}/products/${filename}`;
-  if (/[^\x00-\x7F]/.test(storagePath) || /\s/.test(storagePath)) {
-    throw new Error("Storage 경로 검증 실패");
+}
+
+// 클라이언트 best-effort 클린업 (commit/제출 실패 시 호출).
+export type AbortProductImageResult =
+  | { success: true }
+  | { success: false; error: string };
+
+export async function abortBreweryProductImageUpload(
+  breweryId: string,
+  path: string,
+): Promise<AbortProductImageResult> {
+  let ctx;
+  try {
+    ctx = await requireBreweryAccess(breweryId);
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "권한 확인 실패" };
   }
-  const buffer = await file.arrayBuffer();
-  await uploadPhoto(BUCKET, storagePath, buffer, file.type);
-  return storagePath;
+  const validated = validateProductImagePath(path, ctx.brewery.id);
+  if (!validated) return { success: false, error: "잘못된 경로입니다." };
+  try {
+    await deletePhotoFromStorage(BUCKET, validated);
+    return { success: true };
+  } catch (e) {
+    console.error("[brewery-product] abort 클린업 실패:", e);
+    return { success: false, error: "클린업 실패" };
+  }
 }
 
 // ── 조회 ─────────────────────────────────────────────────────────────────────
@@ -257,11 +307,14 @@ export async function createBreweryProduct(
     return { success: false, error: e instanceof Error ? e.message : "입력값이 올바르지 않습니다." };
   }
 
+  // 클라이언트가 직접 업로드한 path (선택). file 자체는 더 이상 받지 않음.
+  const rawImagePath = formData.get("imagePath");
   let uploadedPath: string | null = null;
-  try {
-    uploadedPath = await uploadImageIfPresent(formData, ctx.brewery.id);
-  } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "썸네일 업로드 실패" };
+  if (typeof rawImagePath === "string" && rawImagePath) {
+    uploadedPath = validateProductImagePath(rawImagePath, ctx.brewery.id);
+    if (!uploadedPath) {
+      return { success: false, error: "이미지 경로가 올바르지 않습니다." };
+    }
   }
 
   try {
@@ -348,11 +401,14 @@ export async function updateBreweryProduct(
 
   const removeImage = formData.get("removeImage") === "true";
 
+  // 클라이언트가 직접 업로드한 신규 path (선택)
+  const rawImagePath = formData.get("imagePath");
   let newImagePath: string | null = null;
-  try {
-    newImagePath = await uploadImageIfPresent(formData, ctx.brewery.id);
-  } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "썸네일 업로드 실패" };
+  if (typeof rawImagePath === "string" && rawImagePath) {
+    newImagePath = validateProductImagePath(rawImagePath, ctx.brewery.id);
+    if (!newImagePath) {
+      return { success: false, error: "이미지 경로가 올바르지 않습니다." };
+    }
   }
 
   const prevImagePath = ctx.product.imagePath;

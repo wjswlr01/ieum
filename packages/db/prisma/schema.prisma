@@ -687,7 +687,7 @@ model BreweryPhoto {
   breweryId String
   brewery   Brewery @relation(fields: [breweryId], references: [id], onDelete: Cascade)
 
-  originalPath String
+  originalPath String  @unique
   caption      String?
   isPrimary    Boolean @default(false)
   sortOrder    Int     @default(0)
