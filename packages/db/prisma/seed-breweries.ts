@@ -183,6 +183,25 @@ function normalizeRegion(address: string): string {
   return REGION_MAP[first] ?? "기타";
 }
 
+// 그룹화 키 정규화 — 공백 trim + 연속 공백 1칸으로
+function normalizeName(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+// 그룹 안에서 가장 완전한 address 선택 — 우편번호 prefix 제거 후 길이 최장
+function pickBestAddress(addresses: string[]): string {
+  let best = addresses[0] ?? "";
+  let bestLen = -1;
+  for (const a of addresses) {
+    const cleaned = cleanAddress(a);
+    if (cleaned.length > bestLen) {
+      best = a;
+      bestLen = cleaned.length;
+    }
+  }
+  return best;
+}
+
 function extractCity(address: string): string | null {
   const tokens = cleanAddress(address).split(/\s+/);
   const second = tokens[1];
@@ -412,6 +431,53 @@ function printGeocodeStats(stats: GeocodeStats) {
   console.log("─────────────────────────────────────────────");
 }
 
+// ── 2차 dedup: 지오코딩 후 (name, region, city)로 머지 ─────────
+// 1차(groupByBrewery)는 (name, address) 키라 같은 양조장의 표기 차이를 못 잡음.
+// 지오코딩으로 region/city가 보강된 후 같은 행정구역+동명을 머지해 재발 방지.
+function dedupGroupedBreweries(
+  breweries: GroupedBrewery[],
+): { merged: GroupedBrewery[]; mergedCount: number } {
+  const buckets = new Map<string, GroupedBrewery[]>();
+  for (const b of breweries) {
+    const key = `${normalizeName(b.name)}|||${b.region}|||${b.city ?? ""}`;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(b);
+  }
+  const merged: GroupedBrewery[] = [];
+  let mergedCount = 0;
+  for (const rows of buckets.values()) {
+    if (rows.length === 1) {
+      merged.push(rows[0]!);
+      continue;
+    }
+    mergedCount += rows.length - 1;
+
+    // address는 가장 완전한 것
+    const bestAddr = pickBestAddress(rows.map((r) => r.address));
+    // 좌표는 있는 것 우선
+    const withCoords = rows.find((r) => r.latitude !== null && r.longitude !== null);
+    // products는 합치고 name dedup
+    const productByName = new Map<string, NormalizedProduct>();
+    for (const r of rows) {
+      for (const p of r.products) {
+        const k = p.name.trim();
+        if (!productByName.has(k)) productByName.set(k, p);
+      }
+    }
+    merged.push({
+      name: rows[0]!.name.trim(),
+      address: bestAddr,
+      website: rows.find((r) => r.website)?.website ?? null,
+      region: rows[0]!.region,
+      city: rows[0]!.city,
+      latitude: withCoords?.latitude ?? null,
+      longitude: withCoords?.longitude ?? null,
+      products: Array.from(productByName.values()),
+    });
+  }
+  return { merged, mergedCount };
+}
+
 // ── DB Upsert ──────────────────────────────────────────────────
 function shouldSkipBrewery(b: GroupedBrewery): boolean {
   // 양조장명과 주소가 동일 → CSV 컬럼 오염 (마마스팜, 오대서주양조 등)
@@ -460,10 +526,10 @@ async function upsertBreweries(
       continue;
     }
 
-    // LIVE
+    // LIVE — 매칭 키: (name, region, city). raw address 표기 차이로 중복 생성되지 않게.
     try {
       const existing = await prisma.brewery.findFirst({
-        where: { name: b.name, address: b.address },
+        where: { name: b.name, region: b.region, city: b.city },
         select: { id: true },
       });
 
@@ -720,12 +786,17 @@ async function main() {
     console.log(`  ${region.padEnd(8)} : ${count}`);
   }
 
+  // ── 2차 dedup: (name, region, city) 기준 머지 ──────────────────
+  const { merged, mergedCount } = dedupGroupedBreweries(breweries);
+  console.log("");
+  console.log(`🧹 2차 dedup (name, region, city): ${breweries.length} → ${merged.length} (-${mergedCount})`);
+
   console.log("");
   console.log(`💾 DB Upsert ${DRY_RUN ? "계획 출력 (DB 변경 없음)" : "실행"}`);
   const prisma = DRY_RUN ? null : new PrismaClient();
   const startedAt = Date.now();
   try {
-    const upsertStats = await upsertBreweries(breweries, prisma);
+    const upsertStats = await upsertBreweries(merged, prisma);
     printUpsertStats(upsertStats, DRY_RUN);
     if (prisma) {
       await verifyDB(prisma);
